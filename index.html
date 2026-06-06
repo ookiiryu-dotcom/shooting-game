@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>スマホ対応シューティングゲーム</title>
 
 <style>
@@ -33,7 +34,13 @@ p {
   justify-content: center;
   align-items: flex-start;
   gap: 18px;
-  padding: 0 12px;
+  padding: 0 12px 20px;
+}
+
+.play-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 canvas {
@@ -42,6 +49,35 @@ canvas {
   width: 400px;
   max-width: 100%;
   height: auto;
+}
+
+.controls {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 14px 0 0;
+  flex-wrap: wrap;
+}
+
+.controls button {
+  min-width: 74px;
+  height: 54px;
+  border: none;
+  border-radius: 12px;
+  background: #333;
+  color: white;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.controls .shot {
+  min-width: 104px;
+  background: #b22222;
+}
+
+.controls .reset {
+  min-width: 104px;
+  background: #1f5fbf;
 }
 
 .score-board {
@@ -69,42 +105,40 @@ canvas {
   font-size: 15px;
 }
 
-.controls {
-  display: none;
-  justify-content: center;
-  gap: 12px;
-  margin: 14px auto 20px;
-}
-
-.controls button {
-  width: 78px;
-  height: 54px;
-  border: none;
-  border-radius: 12px;
-  background: #333;
-  color: white;
-  font-size: 20px;
-  font-weight: bold;
-}
-
-.controls .shot {
-  width: 110px;
-  background: #b22222;
-}
-
 @media (max-width: 700px) {
   .game-area {
     flex-direction: column;
     align-items: center;
   }
 
-  .score-board {
-    width: 400px;
-    max-width: 100%;
+  .play-area {
+    width: 100%;
+  }
+
+  canvas {
+    width: 96vw;
+    max-width: 400px;
   }
 
   .controls {
-    display: flex;
+    width: 96vw;
+    max-width: 400px;
+  }
+
+  .controls button {
+    flex: 1;
+    min-width: 70px;
+  }
+
+  .controls .shot,
+  .controls .reset {
+    flex: 1.2;
+  }
+
+  .score-board {
+    width: 96vw;
+    max-width: 400px;
+    margin-top: 6px;
   }
 }
 </style>
@@ -117,7 +151,18 @@ canvas {
 
 <div class="game-area">
 
-  <canvas id="game" width="400" height="500"></canvas>
+  <div class="play-area">
+
+    <canvas id="game" width="400" height="500"></canvas>
+
+    <div class="controls">
+      <button id="leftBtn">←</button>
+      <button id="shotBtn" class="shot">SHOT</button>
+      <button id="rightBtn">→</button>
+      <button id="resetBtn" class="reset">RESET</button>
+    </div>
+
+  </div>
 
   <div class="score-board">
     <h2>High Scores</h2>
@@ -126,16 +171,15 @@ canvas {
 
 </div>
 
-<div class="controls">
-  <button id="leftBtn">←</button>
-  <button id="shotBtn" class="shot">SHOT</button>
-  <button id="rightBtn">→</button>
-</div>
-
 <script>
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 const highScoresList = document.getElementById("highScores");
+
+const leftBtn = document.getElementById("leftBtn");
+const rightBtn = document.getElementById("rightBtn");
+const shotBtn = document.getElementById("shotBtn");
+const resetBtn = document.getElementById("resetBtn");
 
 let player;
 let bullets;
@@ -180,19 +224,16 @@ function saveHighScore() {
 
   let scores = getHighScores();
   scores.push(score);
-
   scores.sort((a, b) => b - a);
   scores = scores.slice(0, 10);
 
   localStorage.setItem("shootingHighScores", JSON.stringify(scores));
   scoreSaved = true;
-
   showHighScores();
 }
 
 function showHighScores() {
   const scores = getHighScores();
-
   highScoresList.innerHTML = "";
 
   for (let i = 0; i < 10; i++) {
@@ -221,7 +262,7 @@ document.addEventListener("keydown", e => {
     shoot();
   }
 
-  if (e.code === "KeyR" && gameOver) {
+  if (e.code === "KeyR") {
     resetGame();
   }
 });
@@ -333,8 +374,7 @@ function draw() {
     ctx.fillText("GAME OVER", 80, 230);
 
     ctx.font = "20px sans-serif";
-    ctx.fillText("PC: Press R", 140, 270);
-    ctx.fillText("スマホ: RESTART", 120, 300);
+    ctx.fillText("RESETボタンで再開", 115, 280);
   }
 }
 
@@ -352,52 +392,49 @@ function releaseKey(code) {
   keys[code] = false;
 }
 
-const leftBtn = document.getElementById("leftBtn");
-const rightBtn = document.getElementById("rightBtn");
-const shotBtn = document.getElementById("shotBtn");
+function addHoldButton(button, code) {
+  button.addEventListener("touchstart", e => {
+    e.preventDefault();
+    pressKey(code);
+  });
 
-leftBtn.addEventListener("touchstart", e => {
-  e.preventDefault();
-  pressKey("ArrowLeft");
-});
+  button.addEventListener("touchend", e => {
+    e.preventDefault();
+    releaseKey(code);
+  });
 
-leftBtn.addEventListener("touchend", e => {
-  e.preventDefault();
-  releaseKey("ArrowLeft");
-});
+  button.addEventListener("mousedown", () => {
+    pressKey(code);
+  });
 
-rightBtn.addEventListener("touchstart", e => {
-  e.preventDefault();
-  pressKey("ArrowRight");
-});
+  button.addEventListener("mouseup", () => {
+    releaseKey(code);
+  });
 
-rightBtn.addEventListener("touchend", e => {
-  e.preventDefault();
-  releaseKey("ArrowRight");
-});
+  button.addEventListener("mouseleave", () => {
+    releaseKey(code);
+  });
+}
+
+addHoldButton(leftBtn, "ArrowLeft");
+addHoldButton(rightBtn, "ArrowRight");
 
 shotBtn.addEventListener("touchstart", e => {
   e.preventDefault();
-
-  if (gameOver) {
-    resetGame();
-  } else {
-    shoot();
-  }
+  shoot();
 });
 
-leftBtn.addEventListener("mousedown", () => pressKey("ArrowLeft"));
-leftBtn.addEventListener("mouseup", () => releaseKey("ArrowLeft"));
-
-rightBtn.addEventListener("mousedown", () => pressKey("ArrowRight"));
-rightBtn.addEventListener("mouseup", () => releaseKey("ArrowRight"));
-
 shotBtn.addEventListener("click", () => {
-  if (gameOver) {
-    resetGame();
-  } else {
-    shoot();
-  }
+  shoot();
+});
+
+resetBtn.addEventListener("touchstart", e => {
+  e.preventDefault();
+  resetGame();
+});
+
+resetBtn.addEventListener("click", () => {
+  resetGame();
 });
 
 showHighScores();
