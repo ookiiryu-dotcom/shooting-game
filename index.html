@@ -25,8 +25,20 @@ h1 {
 }
 
 p {
-  margin: 6px 0 12px;
+  margin: 6px 0 8px;
   font-size: 14px;
+}
+
+.top-reset {
+  margin: 0 auto 12px;
+  width: 140px;
+  height: 42px;
+  border: none;
+  border-radius: 10px;
+  background: #1f5fbf;
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
 }
 
 .game-area {
@@ -56,11 +68,12 @@ canvas {
   justify-content: center;
   gap: 10px;
   margin: 14px 0 0;
-  flex-wrap: wrap;
+  width: 400px;
+  max-width: 100%;
 }
 
 .controls button {
-  min-width: 74px;
+  flex: 1;
   height: 54px;
   border: none;
   border-radius: 12px;
@@ -71,13 +84,8 @@ canvas {
 }
 
 .controls .shot {
-  min-width: 104px;
+  flex: 1.4;
   background: #b22222;
-}
-
-.controls .reset {
-  min-width: 104px;
-  background: #1f5fbf;
 }
 
 .score-board {
@@ -125,16 +133,6 @@ canvas {
     max-width: 400px;
   }
 
-  .controls button {
-    flex: 1;
-    min-width: 70px;
-  }
-
-  .controls .shot,
-  .controls .reset {
-    flex: 1.2;
-  }
-
   .score-board {
     width: 96vw;
     max-width: 400px;
@@ -147,7 +145,10 @@ canvas {
 <body>
 
 <h1>シューティングゲーム</h1>
+
 <p>PC：← → で移動 / Spaceで弾 / Rでリセット</p>
+
+<button id="resetBtn" class="top-reset">RESET</button>
 
 <div class="game-area">
 
@@ -159,7 +160,6 @@ canvas {
       <button id="leftBtn">←</button>
       <button id="shotBtn" class="shot">SHOT</button>
       <button id="rightBtn">→</button>
-      <button id="resetBtn" class="reset">RESET</button>
     </div>
 
   </div>
@@ -174,6 +174,7 @@ canvas {
 <script>
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
+
 const highScoresList = document.getElementById("highScores");
 
 const leftBtn = document.getElementById("leftBtn");
@@ -191,6 +192,8 @@ let enemyTimer;
 let enemyBaseSpeed;
 let gameStartTime;
 let scoreSaved;
+
+let gameStarted = false;
 
 function resetGame() {
   player = {
@@ -214,6 +217,13 @@ function resetGame() {
   enemyTimer = setInterval(createEnemy, 900);
 }
 
+function startGame() {
+  if (!gameStarted) {
+    gameStarted = true;
+    resetGame();
+  }
+}
+
 function getHighScores() {
   const data = localStorage.getItem("shootingHighScores");
   return data ? JSON.parse(data) : [];
@@ -223,17 +233,21 @@ function saveHighScore() {
   if (scoreSaved) return;
 
   let scores = getHighScores();
+
   scores.push(score);
   scores.sort((a, b) => b - a);
   scores = scores.slice(0, 10);
 
   localStorage.setItem("shootingHighScores", JSON.stringify(scores));
+
   scoreSaved = true;
+
   showHighScores();
 }
 
 function showHighScores() {
   const scores = getHighScores();
+
   highScoresList.innerHTML = "";
 
   for (let i = 0; i < 10; i++) {
@@ -244,6 +258,11 @@ function showHighScores() {
 }
 
 function shoot() {
+  if (!gameStarted) {
+    startGame();
+    return;
+  }
+
   if (gameOver) return;
 
   bullets.push({
@@ -258,11 +277,16 @@ function shoot() {
 document.addEventListener("keydown", e => {
   keys[e.code] = true;
 
+  if (!gameStarted && e.code === "Enter") {
+    startGame();
+  }
+
   if (e.code === "Space") {
     shoot();
   }
 
   if (e.code === "KeyR") {
+    gameStarted = true;
     resetGame();
   }
 });
@@ -272,9 +296,10 @@ document.addEventListener("keyup", e => {
 });
 
 function createEnemy() {
-  if (gameOver) return;
+  if (!gameStarted || gameOver) return;
 
   const elapsed = Math.floor((Date.now() - gameStartTime) / 10000);
+
   enemyBaseSpeed = 2 + elapsed * 0.4;
 
   enemies.push({
@@ -287,6 +312,8 @@ function createEnemy() {
 }
 
 function update() {
+  if (!gameStarted) return;
+
   if (gameOver) return;
 
   if (keys["ArrowLeft"] && player.x > 0) {
@@ -342,8 +369,29 @@ function update() {
   });
 }
 
+function drawTitleScreen() {
+  ctx.fillStyle = "rgba(0,0,0,0.85)";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.fillStyle = "white";
+
+  ctx.font = "34px sans-serif";
+  ctx.fillText("SHOOTING GAME", 45, 185);
+
+  ctx.font = "22px sans-serif";
+  ctx.fillText("スタートしますか？", 90, 255);
+
+  ctx.font = "18px sans-serif";
+  ctx.fillText("ENTER または SHOT", 92, 305);
+}
+
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  if (!gameStarted) {
+    drawTitleScreen();
+    return;
+  }
 
   ctx.fillStyle = "cyan";
   ctx.fillRect(player.x, player.y, player.width, player.height);
@@ -374,7 +422,7 @@ function draw() {
     ctx.fillText("GAME OVER", 80, 230);
 
     ctx.font = "20px sans-serif";
-    ctx.fillText("RESETボタンで再開", 115, 280);
+    ctx.fillText("RESETで再開", 140, 280);
   }
 }
 
@@ -430,10 +478,12 @@ shotBtn.addEventListener("click", () => {
 
 resetBtn.addEventListener("touchstart", e => {
   e.preventDefault();
+  gameStarted = true;
   resetGame();
 });
 
 resetBtn.addEventListener("click", () => {
+  gameStarted = true;
   resetGame();
 });
 
