@@ -41,6 +41,22 @@ p {
   font-weight: bold;
 }
 
+.back-btn {
+  display: inline-block;
+  margin-bottom: 14px;
+  padding: 10px 18px;
+  border-radius: 10px;
+  background: #333;
+  color: white;
+  text-decoration: none;
+  font-size: 15px;
+  border: 1px solid #555;
+}
+
+.back-btn:hover {
+  background: #444;
+}
+
 .game-area {
   display: flex;
   justify-content: center;
@@ -149,6 +165,10 @@ canvas {
 <p>PC：← → で移動 / Spaceで弾 / Rでリセット</p>
 
 <button id="resetBtn" class="top-reset">RESET</button>
+
+<br>
+
+<a href="index.html" class="back-btn">← ホームへ戻る</a>
 
 <div class="game-area">
 
