@@ -29,27 +29,34 @@ p {
   font-size: 14px;
 }
 
-.top-reset {
-  margin: 0 auto 12px;
+.top-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.top-reset,
+.back-btn {
   width: 140px;
   height: 42px;
-  border: none;
   border-radius: 10px;
-  background: #1f5fbf;
   color: white;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: bold;
 }
 
+.top-reset {
+  border: none;
+  background: #1f5fbf;
+}
+
 .back-btn {
-  display: inline-block;
-  margin-bottom: 14px;
-  padding: 10px 18px;
-  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background: #333;
-  color: white;
   text-decoration: none;
-  font-size: 15px;
   border: 1px solid #555;
 }
 
@@ -154,6 +161,18 @@ canvas {
     max-width: 400px;
     margin-top: 6px;
   }
+
+  .top-buttons {
+    width: 96vw;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .top-reset,
+  .back-btn {
+    width: 48%;
+    max-width: 180px;
+  }
 }
 </style>
 </head>
@@ -164,11 +183,10 @@ canvas {
 
 <p>PC：← → で移動 / Spaceで弾 / Rでリセット</p>
 
-<button id="resetBtn" class="top-reset">RESET</button>
-
-<br>
-
-<a href="index.html" class="back-btn">← ホームへ戻る</a>
+<div class="top-buttons">
+  <button id="resetBtn" class="top-reset">RESET</button>
+  <a href="index.html" class="back-btn">← ホームへ戻る</a>
+</div>
 
 <div class="game-area">
 
