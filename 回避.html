@@ -116,6 +116,10 @@ canvas {
   box-shadow: 0 0 10px rgba(0,255,255,0.4);
 }
 
+.controls .start-btn {
+  background: #b22222;
+}
+
 .score-board {
   width: 190px;
   background: rgba(10, 10, 30, 0.9);
@@ -173,7 +177,6 @@ canvas {
 <p>PC：← → で移動 / Enterで開始 / Rでリセット</p>
 
 <div class="top-buttons">
-  <button id="startBtn" class="start-btn">START</button>
   <button id="resetBtn" class="reset-btn">RESET</button>
   <a href="index.html" class="back-btn">← ホームへ戻る</a>
 </div>
@@ -186,6 +189,7 @@ canvas {
 
     <div class="controls">
       <button id="leftBtn">←</button>
+      <button id="startBtn" class="start-btn">START</button>
       <button id="rightBtn">→</button>
     </div>
 
