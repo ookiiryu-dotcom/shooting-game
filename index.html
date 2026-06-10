@@ -3,8 +3,81 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>ゲーム置き場</title>
-<link rel="stylesheet" href="style.css">
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #111;
+  color: white;
+  font-family: sans-serif;
+  text-align: center;
+}
+
+header {
+  padding: 40px 16px 24px;
+}
+
+h1 {
+  margin: 0 0 12px;
+  font-size: 32px;
+}
+
+p {
+  margin: 0;
+  color: #ccc;
+}
+
+.game-list {
+  width: 94%;
+  max-width: 900px;
+  margin: 30px auto;
+}
+
+.game-card {
+  display: block;
+  margin-bottom: 20px;
+  padding: 24px;
+  border-radius: 14px;
+  background: #1e1e1e;
+  border: 1px solid #444;
+  color: white;
+  text-decoration: none;
+}
+
+.game-card h2 {
+  margin: 0 0 10px;
+  font-size: 24px;
+}
+
+.game-card p {
+  color: #bbb;
+  line-height: 1.7;
+}
+
+.game-card:hover {
+  background: #2a2a2a;
+}
+
+@media (min-width: 700px) {
+  .game-list {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .game-card {
+    width: 280px;
+    margin-bottom: 0;
+  }
+}
+</style>
 </head>
 
 <body>
@@ -23,7 +96,7 @@
 
   <a class="game-card" href="#">
     <h2>準備中</h2>
-    <p>次のゲームを追加予定</p>
+    <p>新しいゲームを追加予定</p>
   </a>
 
 </main>
