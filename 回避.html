@@ -60,9 +60,21 @@ p {
   background: #1f5fbf;
 }
 
+.start-btn {
+  background: #b22222;
+}
+
 .back-btn {
   background: #333;
   border: 1px solid #555;
+}
+
+.game-layout {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 18px;
+  padding: 0 12px 24px;
 }
 
 .game-wrap {
@@ -104,7 +116,34 @@ canvas {
   box-shadow: 0 0 10px rgba(0,255,255,0.4);
 }
 
-@media (max-width: 600px) {
+.score-board {
+  width: 190px;
+  background: rgba(10, 10, 30, 0.9);
+  border: 1px solid #00ffff;
+  box-shadow: 0 0 14px rgba(0,255,255,0.35);
+  border-radius: 12px;
+  padding: 12px;
+  text-align: left;
+}
+
+.score-board h2 {
+  margin: 0 0 10px;
+  color: #00ffff;
+  font-size: 18px;
+  text-align: center;
+}
+
+.score-board ol {
+  margin: 0;
+  padding-left: 24px;
+}
+
+.score-board li {
+  margin-bottom: 6px;
+  font-size: 15px;
+}
+
+@media (max-width: 760px) {
   h1 {
     font-size: 22px;
   }
@@ -112,6 +151,16 @@ canvas {
   .top-buttons button,
   .top-buttons a {
     width: 130px;
+  }
+
+  .game-layout {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .score-board {
+    width: 96vw;
+    max-width: 500px;
   }
 }
 </style>
@@ -121,20 +170,30 @@ canvas {
 
 <h1>Cyber Cat Runner</h1>
 
-<p>PC：← → で移動 / Rでリセット</p>
+<p>PC：← → で移動 / Enterで開始 / Rでリセット</p>
 
 <div class="top-buttons">
+  <button id="startBtn" class="start-btn">START</button>
   <button id="resetBtn" class="reset-btn">RESET</button>
   <a href="index.html" class="back-btn">← ホームへ戻る</a>
 </div>
 
-<div class="game-wrap">
+<div class="game-layout">
 
-  <canvas id="game" width="500" height="700"></canvas>
+  <div class="game-wrap">
 
-  <div class="controls">
-    <button id="leftBtn">←</button>
-    <button id="rightBtn">→</button>
+    <canvas id="game" width="500" height="700"></canvas>
+
+    <div class="controls">
+      <button id="leftBtn">←</button>
+      <button id="rightBtn">→</button>
+    </div>
+
+  </div>
+
+  <div class="score-board">
+    <h2>High Scores</h2>
+    <ol id="highScores"></ol>
   </div>
 
 </div>
@@ -145,7 +204,9 @@ const ctx = canvas.getContext("2d");
 
 const leftBtn = document.getElementById("leftBtn");
 const rightBtn = document.getElementById("rightBtn");
+const startBtn = document.getElementById("startBtn");
 const resetBtn = document.getElementById("resetBtn");
+const highScoresList = document.getElementById("highScores");
 
 let player;
 let enemies;
@@ -155,6 +216,8 @@ let keys;
 let enemyTimer;
 let gameStartTime;
 let enemyBaseSpeed;
+let gameStarted = false;
+let scoreSaved = false;
 
 function resetGame() {
   player = {
@@ -170,14 +233,64 @@ function resetGame() {
   keys = {};
   enemyBaseSpeed = 3;
   gameStartTime = Date.now();
+  scoreSaved = false;
 
   clearInterval(enemyTimer);
 
   enemyTimer = setInterval(function() {
-    if (!gameOver) {
+    if (gameStarted && !gameOver) {
       spawnEnemy();
     }
   }, 700);
+}
+
+function startGame() {
+  if (!gameStarted) {
+    gameStarted = true;
+    resetGame();
+  }
+}
+
+function getHighScores() {
+  const data = localStorage.getItem("catRunnerHighScores");
+  return data ? JSON.parse(data) : [];
+}
+
+function saveHighScore() {
+  if (scoreSaved) return;
+
+  let scores = getHighScores();
+
+  scores.push(score);
+  scores.sort(function(a, b) {
+    return b - a;
+  });
+
+  scores = scores.slice(0, 10);
+
+  localStorage.setItem("catRunnerHighScores", JSON.stringify(scores));
+
+  scoreSaved = true;
+
+  showHighScores();
+}
+
+function showHighScores() {
+  const scores = getHighScores();
+
+  highScoresList.innerHTML = "";
+
+  for (let i = 0; i < 10; i++) {
+    const li = document.createElement("li");
+
+    if (scores[i] !== undefined) {
+      li.textContent = scores[i] + " 点";
+    } else {
+      li.textContent = "-";
+    }
+
+    highScoresList.appendChild(li);
+  }
 }
 
 function spawnEnemy() {
@@ -196,7 +309,12 @@ function spawnEnemy() {
 document.addEventListener("keydown", function(e) {
   keys[e.key] = true;
 
+  if (!gameStarted && e.key === "Enter") {
+    startGame();
+  }
+
   if (e.key === "r" || e.key === "R") {
+    gameStarted = true;
     resetGame();
   }
 });
@@ -215,6 +333,8 @@ function collision(a, b) {
 }
 
 function update() {
+  if (!gameStarted) return;
+
   if (gameOver) return;
 
   if (keys["ArrowLeft"]) {
@@ -235,6 +355,7 @@ function update() {
 
     if (collision(player, enemy)) {
       gameOver = true;
+      saveHighScore();
     }
   });
 
@@ -349,6 +470,22 @@ function drawMonster(enemy) {
   ctx.restore();
 }
 
+function drawStartScreen() {
+  ctx.fillStyle = "rgba(0,0,0,0.75)";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.fillStyle = "#00ffff";
+  ctx.font = "42px Arial";
+  ctx.fillText("CYBER CAT", 120, 270);
+
+  ctx.fillStyle = "white";
+  ctx.font = "26px Arial";
+  ctx.fillText("スタートしますか？", 130, 340);
+
+  ctx.font = "20px Arial";
+  ctx.fillText("ENTER または START", 135, 390);
+}
+
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -365,6 +502,11 @@ function draw() {
 
   ctx.font = "18px Arial";
   ctx.fillText("SPEED : " + enemyBaseSpeed.toFixed(1), 15, 62);
+
+  if (!gameStarted) {
+    drawStartScreen();
+    return;
+  }
 
   if (gameOver) {
     ctx.fillStyle = "rgba(0,0,0,0.65)";
@@ -424,15 +566,27 @@ function addHoldButton(button, code) {
 addHoldButton(leftBtn, "ArrowLeft");
 addHoldButton(rightBtn, "ArrowRight");
 
+startBtn.addEventListener("touchstart", function(e) {
+  e.preventDefault();
+  startGame();
+});
+
+startBtn.addEventListener("click", function() {
+  startGame();
+});
+
 resetBtn.addEventListener("touchstart", function(e) {
   e.preventDefault();
+  gameStarted = true;
   resetGame();
 });
 
 resetBtn.addEventListener("click", function() {
+  gameStarted = true;
   resetGame();
 });
 
+showHighScores();
 resetGame();
 loop();
 </script>
