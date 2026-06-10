@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>AI Fighting Battle</title>
+
+<style>
+*{
+  box-sizing:border-box;
+}
+
+body{
+  margin:0;
+  background:
+  radial-gradient(circle at top,#2a102a,#050510 70%);
+  color:white;
+  font-family:sans-serif;
+  text-align:center;
+  overflow-x:hidden;
+}
+
+h1{
+  margin:18px 0 8px;
+  color:#ff66ff;
+  text-shadow:0 0 14px #ff66ff;
+}
+
+p{
+  margin:0 0 12px;
+  color:#ddd;
+  font-size:14px;
+}
+
+.top-buttons{
+  display:flex;
+  justify-content:center;
+  gap:10px;
+  margin-bottom:14px;
+  flex-wrap:wrap;
+}
+
+.top-buttons button,
+.top-buttons a{
+  width:140px;
+  height:42px;
+  line-height:42px;
+  border:none;
+  border-radius:10px;
+  color:white;
+  font-size:15px;
+  font-weight:bold;
+  text-decoration:none;
+}
+
+.reset-btn{
+  background:#1f5fbf;
+}
+
+.back-btn{
+  background:#333;
+  border:1px solid #555;
+}
+
+.game-layout{
+  display:flex;
+  justify-content:center;
+  align-items:flex-start;
+  gap:18px;
+  padding:0 12px 24px;
+}
+
+.game-wrap{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+}
+
+canvas{
+  background:
+  linear-gradient(to bottom,#140014,#050510);
+  border:2px solid #ff66ff;
+  box-shadow:
+    0 0 20px #ff66ff,
+    0 0 40px #ff66ff;
+
+  width:700px;
+  max-width:96vw;
+  height:auto;
+}
+
+.controls{
+  width:700px;
+  max-width:96vw;
+
+  display:flex;
+  gap:10px;
+  margin-top:14px;
+}
+
+.controls button{
+  flex:1;
+  height:56px;
+  border:none;
+  border-radius:12px;
+  background:#222;
+  color:white;
+  font-size:18px;
+  font-weight:bold;
+  border:1px solid #ff66ff;
+}
+
+.attack-btn{
+  background:#8b0000 !important;
+}
+
+.start-btn{
+  background:#b22222 !important;
+}
+
+.score-board{
+  width:220px;
+  background:rgba(20,0,20,0.9);
+  border:1px solid #ff66ff;
+  border-radius:12px;
+  padding:12px;
+  text-align:left;
+}
+
+.score-board h2{
+  margin:0 0 10px;
+  text-align:center;
+  color:#ff66ff;
+}
+
+.score-board ol{
+  margin:0;
+  padding-left:24px;
+}
+
+.score-board li{
+  margin-bottom:6px;
+}
+
+@media(max-width:850px){
+
+  .game-layout{
+    flex-direction:column;
+    align-items:center;
+  }
+
+  .score-board{
+    width:96vw;
+    max-width:700px;
+  }
+
+}
+</style>
+</head>
+
+<body>
+
+<h1>AI Fighting Battle</h1>
+
+<p>
+PC：← → 移動 / Zで攻撃 / Enterで開始 / Rでリセット
+</p>
+
+<div class="top-buttons">
+
+  <button id="resetBtn" class="reset-btn">
+    RESET
+  </button>
+
+  <a href="index.html" class="back-btn">
+    ← ホームへ戻る
+  </a>
+
+</div>
+
+<div class="game-layout">
+
+  <div class="game-wrap">
+
+    <canvas id="game" width="700" height="450"></canvas>
+
+    <div class="controls">
+
+      <button id="leftBtn">←</button>
+
+      <button id="attackBtn" class="attack-btn">
+        ATTACK
+      </button>
+
+      <button id="startBtn" class="start-btn">
+        START
+      </button>
+
+      <button id="rightBtn">→</button>
+
+    </div>
+
+  </div>
+
+  <div class="score-board">
+
+    <h2>High Scores</h2>
+
+    <ol id="highScores"></ol>
+
+  </div>
+
+</div>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+const leftBtn = document.getElementById("leftBtn");
+const rightBtn = document.getElementById("rightBtn");
+const attackBtn = document.getElementById("attackBtn");
+const startBtn = document.getElementById("startBtn");
+const resetBtn = document.getElementById("resetBtn");
+
+const highScoresList =
+document.getElementById("highScores");
+
+let keys = {};
+
+let gameStarted = false;
+let gameOver = false;
+let scoreSaved = false;
+
+let level;
+let enemyMaxHp;
+
+let player;
+let enemy;
+
+function resetGame(){
+
+  player = {
+    x:120,
+    y:300,
+    width:60,
+    height:100,
+    hp:100,
+    attack:10,
+    speed:6,
+    attacking:false
+  };
+
+  level = 1;
+
+  spawnEnemy();
+
+  gameOver = false;
+  scoreSaved = false;
+}
+
+function spawnEnemy(){
+
+  enemyMaxHp = 50 + level * 20;
+
+  enemy = {
+    x:520,
+    y:300,
+    width:60,
+    height:100,
+    hp:enemyMaxHp,
+    attack:4 + level,
+    speed:2 + level * 0.3,
+    attacking:false
+  };
+}
+
+function startGame(){
+
+  if(!gameStarted){
+    gameStarted = true;
+    resetGame();
+  }
+
+}
+
+function getHighScores(){
+
+  const data =
+  localStorage.getItem("fightHighScores");
+
+  return data ? JSON.parse(data) : [];
+}
+
+function saveHighScore(){
+
+  if(scoreSaved) return;
+
+  let scores = getHighScores();
+
+  scores.push(level);
+
+  scores.sort((a,b)=>b-a);
+
+  scores = scores.slice(0,10);
+
+  localStorage.setItem(
+    "fightHighScores",
+    JSON.stringify(scores)
+  );
+
+  scoreSaved = true;
+
+  showHighScores();
+}
+
+function showHighScores(){
+
+  const scores = getHighScores();
+
+  highScoresList.innerHTML = "";
+
+  for(let i=0;i<10;i++){
+
+    const li = document.createElement("li");
+
+    li.textContent =
+    scores[i] !== undefined
+    ? "Lv " + scores[i]
+    : "-";
+
+    highScoresList.appendChild(li);
+  }
+}
+
+function attack(){
+
+  if(!gameStarted) {
+    startGame();
+    return;
+  }
+
+  if(gameOver) return;
+
+  player.attacking = true;
+
+  setTimeout(()=>{
+    player.attacking = false;
+  },200);
+
+  const distance =
+  Math.abs(player.x - enemy.x);
+
+  if(distance < 90){
+
+    enemy.hp -= player.attack;
+
+    if(enemy.hp <= 0){
+
+      level++;
+
+      player.hp =
+      Math.min(100, player.hp + 20);
+
+      spawnEnemy();
+    }
+  }
+}
+
+document.addEventListener("keydown",e=>{
+
+  keys[e.code] = true;
+
+  if(!gameStarted &&
+     e.code === "Enter"){
+    startGame();
+  }
+
+  if(e.code === "KeyZ"){
+    attack();
+  }
+
+  if(e.code === "KeyR"){
+    gameStarted = true;
+    resetGame();
+  }
+
+});
+
+document.addEventListener("keyup",e=>{
+  keys[e.code] = false;
+});
+
+function update(){
+
+  if(!gameStarted) return;
+
+  if(gameOver) return;
+
+  if(keys["ArrowLeft"]){
+    player.x -= player.speed;
+  }
+
+  if(keys["ArrowRight"]){
+    player.x += player.speed;
+  }
+
+  player.x = Math.max(
+    0,
+    Math.min(
+      canvas.width-player.width,
+      player.x
+    )
+  );
+
+  if(enemy.x > player.x + 70){
+    enemy.x -= enemy.speed;
+  }
+
+  if(enemy.x < player.x - 70){
+    enemy.x += enemy.speed;
+  }
+
+  const distance =
+  Math.abs(player.x - enemy.x);
+
+  if(distance < 80){
+
+    if(Math.random() < 0.02){
+
+      player.hp -= enemy.attack;
+
+      if(player.hp <= 0){
+
+        player.hp = 0;
+        gameOver = true;
+
+        saveHighScore();
+      }
+    }
+  }
+}
+
+function drawHpBar(x,y,hp,maxHp,color){
+
+  ctx.fillStyle = "#333";
+  ctx.fillRect(x,y,200,20);
+
+  ctx.fillStyle = color;
+  ctx.fillRect(
+    x,
+    y,
+    (hp/maxHp)*200,
+    20
+  );
+
+  ctx.strokeStyle = "white";
+  ctx.strokeRect(x,y,200,20);
+}
+
+function drawPlayer(){
+
+  ctx.fillStyle =
+  player.attacking
+  ? "#ffffff"
+  : "#66ccff";
+
+  ctx.fillRect(
+    player.x,
+    player.y,
+    player.width,
+    player.height
+  );
+
+  ctx.fillStyle = "black";
+  ctx.font = "18px sans-serif";
+
+  ctx.fillText(
+    "YOU",
+    player.x + 6,
+    player.y + 55
+  );
+}
+
+function drawEnemy(){
+
+  ctx.fillStyle = "#ff4444";
+
+  ctx.fillRect(
+    enemy.x,
+    enemy.y,
+    enemy.width,
+    enemy.height
+  );
+
+  ctx.fillStyle = "white";
+  ctx.font = "18px sans-serif";
+
+  ctx.fillText(
+    "AI",
+    enemy.x + 15,
+    enemy.y + 55
+  );
+}
+
+function drawStartScreen(){
+
+  ctx.fillStyle =
+  "rgba(0,0,0,0.75)";
+
+  ctx.fillRect(
+    0,
+    0,
+    canvas.width,
+    canvas.height
+  );
+
+  ctx.fillStyle = "#ff66ff";
+
+  ctx.font = "48px sans-serif";
+
+  ctx.fillText(
+    "AI FIGHT",
+    220,
+    180
+  );
+
+  ctx.fillStyle = "white";
+
+  ctx.font = "28px sans-serif";
+
+  ctx.fillText(
+    "スタートしますか？",
+    210,
+    250
+  );
+
+  ctx.font = "22px sans-serif";
+
+  ctx.fillText(
+    "ENTER または START",
+    205,
+    310
+  );
+}
+
+function draw(){
+
+  ctx.clearRect(
+    0,
+    0,
+    canvas.width,
+    canvas.height
+  );
+
+  ctx.fillStyle = "#220022";
+
+  ctx.fillRect(
+    0,
+    380,
+    canvas.width,
+    70
+  );
+
+  if(!gameStarted){
+
+    drawStartScreen();
+    return;
+  }
+
+  drawPlayer();
+  drawEnemy();
+
+  drawHpBar(
+    20,
+    20,
+    player.hp,
+    100,
+    "#00ccff"
+  );
+
+  drawHpBar(
+    480,
+    20,
+    enemy.hp,
+    enemyMaxHp,
+    "#ff4444"
+  );
+
+  ctx.fillStyle = "white";
+
+  ctx.font = "22px sans-serif";
+
+  ctx.fillText(
+    "LEVEL : " + level,
+    300,
+    40
+  );
+
+  if(gameOver){
+
+    ctx.fillStyle =
+    "rgba(0,0,0,0.7)";
+
+    ctx.fillRect(
+      0,
+      0,
+      canvas.width,
+      canvas.height
+    );
+
+    ctx.fillStyle = "#ff3355";
+
+    ctx.font = "54px sans-serif";
+
+    ctx.fillText(
+      "GAME OVER",
+      180,
+      180
+    );
+
+    ctx.fillStyle = "white";
+
+    ctx.font = "28px sans-serif";
+
+    ctx.fillText(
+      "到達レベル : " + level,
+      250,
+      250
+    );
+
+    ctx.fillText(
+      "RESETで再開",
+      240,
+      320
+    );
+  }
+}
+
+function loop(){
+
+  update();
+  draw();
+
+  requestAnimationFrame(loop);
+}
+
+function pressKey(code){
+  keys[code] = true;
+}
+
+function releaseKey(code){
+  keys[code] = false;
+}
+
+function addHoldButton(button,code){
+
+  button.addEventListener(
+    "touchstart",
+    e=>{
+      e.preventDefault();
+      pressKey(code);
+    }
+  );
+
+  button.addEventListener(
+    "touchend",
+    e=>{
+      e.preventDefault();
+      releaseKey(code);
+    }
+  );
+
+  button.addEventListener(
+    "mousedown",
+    ()=>{
+      pressKey(code);
+    }
+  );
+
+  button.addEventListener(
+    "mouseup",
+    ()=>{
+      releaseKey(code);
+    }
+  );
+
+}
+
+addHoldButton(leftBtn,"ArrowLeft");
+addHoldButton(rightBtn,"ArrowRight");
+
+attackBtn.addEventListener(
+  "touchstart",
+  e=>{
+    e.preventDefault();
+    attack();
+  }
+);
+
+attackBtn.addEventListener(
+  "click",
+  ()=>{
+    attack();
+  }
+);
+
+startBtn.addEventListener(
+  "touchstart",
+  e=>{
+    e.preventDefault();
+    startGame();
+  }
+);
+
+startBtn.addEventListener(
+  "click",
+  ()=>{
+    startGame();
+  }
+);
+
+resetBtn.addEventListener(
+  "touchstart",
+  e=>{
+    e.preventDefault();
+    gameStarted = true;
+    resetGame();
+  }
+);
+
+resetBtn.addEventListener(
+  "click",
+  ()=>{
+    gameStarted = true;
+    resetGame();
+  }
+);
+
+showHighScores();
+resetGame();
+loop();
+</script>
+
+</body>
+</html>
