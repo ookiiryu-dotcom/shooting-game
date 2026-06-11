@@ -1,84 +1,44 @@
-<!-- ========================= -->
-<!-- 変更点まとめ -->
-<!-- ========================= -->
-
-<!--
-■ ゲーム性変更
-
-・左右移動 → 縦移動のみ
-・ジャンプ削除
-・ダッシュ削除
-・近距離攻撃削除
-・遠距離攻撃のみ
-
-■ 色属性追加
-
-赤攻撃
-青攻撃
-緑攻撃
-
-赤防御
-青防御
-緑防御
-
-→ 同じ色だけ防げる
-→ 別色は貫通
-
-■ 防御仕様
-
-・3秒で消滅
-・1回受けると消滅
-
-■ 敵AI強化
-
-・上下ランダム移動
-・ランダム攻撃
-・ランダム防御
-・高レベルほど反応精度上昇
-
-■ ボタン配置
-
-        赤防御 赤攻撃
-上      青防御 青攻撃      下
-        緑防御 緑攻撃
-
--->
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport"
-content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>COLOR BATTLE AI</title>
+<title>SERVER CORE BATTLE</title>
 
 <style>
-
 *{
   box-sizing:border-box;
 }
 
 body{
   margin:0;
-  background:
-  radial-gradient(circle at top,#101830,#050510 70%);
+  background:radial-gradient(circle at top,#152033,#03060d 70%);
   color:white;
   font-family:sans-serif;
   text-align:center;
   overflow-x:hidden;
 }
 
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  background:
+    linear-gradient(rgba(0,255,255,0.03) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,255,255,0.03) 1px,transparent 1px);
+  background-size:40px 40px;
+  pointer-events:none;
+}
+
 h1{
   margin:18px 0 8px;
   color:#66ccff;
-  text-shadow:0 0 16px #66ccff;
+  text-shadow:0 0 10px #66ccff,0 0 25px #66ccff;
 }
 
 p{
-  margin:0 0 12px;
   color:#ddd;
-  font-size:14px;
 }
 
 .top-buttons{
@@ -91,15 +51,17 @@ p{
 
 .top-buttons button,
 .top-buttons a{
-  width:150px;
-  height:44px;
-  line-height:44px;
+  width:160px;
+  height:46px;
   border:none;
   border-radius:12px;
-  color:white;
   font-size:15px;
   font-weight:bold;
+  color:white;
   text-decoration:none;
+  display:flex;
+  align-items:center;
+  justify-content:center;
 }
 
 .reset-btn{
@@ -107,8 +69,8 @@ p{
 }
 
 .back-btn{
-  background:#333;
-  border:1px solid #666;
+  background:#222;
+  border:1px solid #66ccff;
 }
 
 .game-layout{
@@ -126,48 +88,43 @@ p{
 }
 
 canvas{
-  background:
-  linear-gradient(to bottom,#0b1025,#050510);
-
-  border:2px solid #66ccff;
-
-  box-shadow:
-    0 0 25px #66ccff;
-
   width:720px;
   max-width:96vw;
   height:auto;
+  background:linear-gradient(to bottom,#09111f,#02040a);
+  border:2px solid #66ccff;
+  box-shadow:
+    0 0 20px #66ccff,
+    inset 0 0 20px rgba(0,255,255,0.08);
 }
 
 .controls{
-
   width:720px;
   max-width:96vw;
 
   display:grid;
-
-  grid-template-columns:
-  1fr 1fr 1fr 1fr;
-
+  grid-template-columns:1fr 1fr 1fr 1fr;
   gap:10px;
 
   margin-top:14px;
 }
 
 .controls button{
-
-  height:58px;
-
   border:none;
   border-radius:14px;
-
   color:white;
   font-size:15px;
   font-weight:bold;
-
-  background:#222;
-
+  background:#1a1a1a;
   border:1px solid #66ccff;
+  box-shadow:0 0 10px rgba(0,255,255,0.3);
+  min-height:64px;
+}
+
+.vertical-btn{
+  grid-row:span 3;
+  min-height:212px;
+  font-size:36px !important;
 }
 
 .red{
@@ -183,32 +140,22 @@ canvas{
 }
 
 .move{
-  background:#444 !important;
+  background:#333 !important;
 }
 
 .score-board{
-  width:230px;
-
-  background:rgba(10,20,35,0.92);
-
+  width:240px;
+  background:rgba(10,20,35,0.95);
   border:1px solid #66ccff;
-
   border-radius:14px;
-
   padding:14px;
-
   text-align:left;
+  box-shadow:0 0 15px rgba(0,255,255,0.2);
 }
 
 .score-board h2{
-  margin:0 0 10px;
   text-align:center;
   color:#66ccff;
-}
-
-.score-board ol{
-  margin:0;
-  padding-left:24px;
 }
 
 .score-board li{
@@ -227,32 +174,28 @@ canvas{
     max-width:720px;
   }
 
-}
+  .vertical-btn{
+    min-height:212px;
+    font-size:30px !important;
+  }
 
+}
 </style>
 </head>
 
 <body>
 
-<h1>COLOR BATTLE AI</h1>
+<h1>SERVER CORE BATTLE</h1>
 
-<p>
-↑ ↓ 移動 /
-色攻撃 /
-色防御
-</p>
+<p>↑ ↓ 移動 / 色攻撃 / 色防御</p>
 
 <div class="top-buttons">
 
-  <button
-  id="resetBtn"
-  class="reset-btn">
+  <button id="resetBtn" class="reset-btn">
     RESET
   </button>
 
-  <a
-  href="index.html"
-  class="back-btn">
+  <a href="index.html" class="back-btn">
     ← ホームへ戻る
   </a>
 
@@ -262,37 +205,39 @@ canvas{
 
   <div class="game-wrap">
 
-    <canvas
-    id="game"
-    width="720"
-    height="480">
-    </canvas>
+    <canvas id="game" width="720" height="480"></canvas>
 
     <div class="controls">
 
-      <button id="upBtn" class="move">
+      <button id="upBtn"
+      class="move vertical-btn">
         ↑
       </button>
 
-      <button id="redGuardBtn" class="red">
+      <button id="redGuardBtn"
+      class="red">
         赤防御
       </button>
 
-      <button id="redAttackBtn" class="red">
+      <button id="redAttackBtn"
+      class="red">
         赤攻撃
       </button>
 
-      <button id="downBtn" class="move">
+      <button id="downBtn"
+      class="move vertical-btn">
         ↓
       </button>
 
       <button style="opacity:0"></button>
 
-      <button id="blueGuardBtn" class="blue">
+      <button id="blueGuardBtn"
+      class="blue">
         青防御
       </button>
 
-      <button id="blueAttackBtn" class="blue">
+      <button id="blueAttackBtn"
+      class="blue">
         青攻撃
       </button>
 
@@ -300,11 +245,13 @@ canvas{
 
       <button style="opacity:0"></button>
 
-      <button id="greenGuardBtn" class="green">
+      <button id="greenGuardBtn"
+      class="green">
         緑防御
       </button>
 
-      <button id="greenAttackBtn" class="green">
+      <button id="greenAttackBtn"
+      class="green">
         緑攻撃
       </button>
 
@@ -325,22 +272,15 @@ canvas{
 </div>
 
 <script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
 
-const canvas =
-document.getElementById("game");
-
-const ctx =
-canvas.getContext("2d");
-
-const highScoresList =
-document.getElementById("highScores");
+let gameStarted = false;
+let gameOver = false;
 
 let keys = {};
 
 let level = 1;
-
-let gameStarted = true;
-let gameOver = false;
 
 let player;
 let enemy;
@@ -351,25 +291,19 @@ let enemyShots = [];
 function resetGame(){
 
   player = {
-
     x:80,
     y:200,
-
+    targetY:200,
     width:60,
     height:60,
-
     hp:100,
-
-    speed:7,
-
     barrier:null,
-
     barrierTimer:0
   };
 
-  spawnEnemy();
-
   level = 1;
+
+  spawnEnemy();
 
   playerShots = [];
   enemyShots = [];
@@ -380,41 +314,49 @@ function resetGame(){
 function spawnEnemy(){
 
   enemy = {
-
     x:580,
     y:200,
-
+    targetY:200,
     width:60,
     height:60,
-
-    hp:100 + level*20,
-
-    speed:4 + level*0.2,
-
+    hp:120 + level * 25,
+    maxHp:120 + level * 25,
     barrier:null,
-
     barrierTimer:0,
-
-    aiLevel:
-    0.3 + level*0.08,
-
-    thinkTimer:0
+    aiLevel:0.25 + level * 0.05
   };
+}
+
+function enemyColor(){
+
+  if(level < 4){
+    return "#55ff88";
+  }
+
+  if(level < 7){
+    return "#ffaa33";
+  }
+
+  if(level < 10){
+    return "#ff4444";
+  }
+
+  return "#cc44ff";
 }
 
 function shoot(color){
 
+  if(!gameStarted){
+    gameStarted = true;
+    return;
+  }
+
   playerShots.push({
-
-    x:player.x + 50,
-
-    y:player.y + 25,
-
-    width:20,
+    x:player.x + 55,
+    y:player.y + 24,
+    width:22,
     height:12,
-
     speed:10,
-
     color:color
   });
 }
@@ -422,104 +364,84 @@ function shoot(color){
 function activateBarrier(color){
 
   player.barrier = color;
-
   player.barrierTimer = 180;
 }
 
 function enemyShoot(color){
 
   enemyShots.push({
-
     x:enemy.x,
-
-    y:enemy.y + 25,
-
-    width:20,
+    y:enemy.y + 24,
+    width:22,
     height:12,
-
     speed:9,
-
     color:color
   });
 }
 
-function enemyBarrier(color){
-
-  enemy.barrier = color;
-
-  enemy.barrierTimer = 180;
-}
-
 function randomColor(){
 
-  const colors =
-  ["red","blue","green"];
+  const colors = [
+    "red",
+    "blue",
+    "green"
+  ];
 
   return colors[
-    Math.floor(Math.random()*3)
+    Math.floor(Math.random() * 3)
   ];
 }
 
 function update(){
 
+  if(!gameStarted) return;
   if(gameOver) return;
 
   if(keys["ArrowUp"]){
-    player.y -= player.speed;
+    player.targetY -= 10;
   }
 
   if(keys["ArrowDown"]){
-    player.y += player.speed;
+    player.targetY += 10;
   }
 
-  player.y = Math.max(
+  player.targetY = Math.max(
     0,
     Math.min(
-      canvas.height-player.height,
-      player.y
+      canvas.height - player.height,
+      player.targetY
     )
   );
 
-  enemy.thinkTimer--;
+  player.y +=
+  (player.targetY - player.y) * 0.22;
 
-  if(enemy.thinkTimer <= 0){
+  const enemyMove =
+  Math.sin(Date.now() * 0.004)
+  * (60 + level * 5);
 
-    const move =
-    Math.random() < 0.5
-    ? -1
-    : 1;
+  enemy.targetY = 200 + enemyMove;
 
-    enemy.y +=
-    move *
-    enemy.speed *
-    (4 + Math.random()*4);
+  enemy.y +=
+  (enemy.targetY - enemy.y)
+  * (0.12 + level * 0.003);
 
-    enemy.thinkTimer =
-    8 + Math.random()*15;
+  if(Math.random()
+     < enemy.aiLevel * 0.02){
 
-    if(Math.random() <
-       enemy.aiLevel){
-
-      enemyShoot(
-        randomColor()
-      );
-    }
-
-    if(Math.random() <
-       enemy.aiLevel * 0.7){
-
-      enemyBarrier(
-        randomColor()
-      );
-    }
+    enemyShoot(randomColor());
   }
 
-  enemy.y = Math.max(
-    0,
-    Math.min(
-      canvas.height-enemy.height,
-      enemy.y
-    )
+  if(Math.random()
+     < enemy.aiLevel * 0.012){
+
+    enemy.barrier = randomColor();
+    enemy.barrierTimer = 180;
+  }
+
+  enemy.hp = Math.min(
+    enemy.maxHp,
+    enemy.hp + 0.02 * level
   );
 
   playerShots.forEach(s=>{
@@ -533,17 +455,10 @@ function update(){
   playerShots.forEach(s=>{
 
     if(
-      s.x <
-      enemy.x + enemy.width &&
-
-      s.x + s.width >
-      enemy.x &&
-
-      s.y <
-      enemy.y + enemy.height &&
-
-      s.y + s.height >
-      enemy.y
+      s.x < enemy.x + enemy.width &&
+      s.x + s.width > enemy.x &&
+      s.y < enemy.y + enemy.height &&
+      s.y + s.height > enemy.y
     ){
 
       if(enemy.barrier === s.color){
@@ -552,28 +467,20 @@ function update(){
 
       }else{
 
-        enemy.hp -= 12;
+        enemy.hp -= 16;
       }
 
       s.hit = true;
     }
-
   });
 
   enemyShots.forEach(s=>{
 
     if(
-      s.x <
-      player.x + player.width &&
-
-      s.x + s.width >
-      player.x &&
-
-      s.y <
-      player.y + player.height &&
-
-      s.y + s.height >
-      player.y
+      s.x < player.x + player.width &&
+      s.x + s.width > player.x &&
+      s.y < player.y + player.height &&
+      s.y + s.height > player.y
     ){
 
       if(player.barrier === s.color){
@@ -582,12 +489,11 @@ function update(){
 
       }else{
 
-        player.hp -= 12;
+        player.hp -= 15;
       }
 
       s.hit = true;
     }
-
   });
 
   playerShots =
@@ -605,7 +511,6 @@ function update(){
     player.barrierTimer--;
 
     if(player.barrierTimer <= 0){
-
       player.barrier = null;
     }
   }
@@ -615,7 +520,6 @@ function update(){
     enemy.barrierTimer--;
 
     if(enemy.barrierTimer <= 0){
-
       enemy.barrier = null;
     }
   }
@@ -624,88 +528,185 @@ function update(){
 
     level++;
 
+    player.hp = 100;
+
     spawnEnemy();
   }
 
   if(player.hp <= 0){
-
     gameOver = true;
   }
 }
 
-function drawCharacter(obj,isPlayer){
+function drawBarrier(obj){
 
-  ctx.fillStyle =
-  isPlayer
-  ? "#66ccff"
-  : "#ff4444";
+  if(!obj.barrier) return;
 
-  ctx.fillRect(
-    obj.x,
-    obj.y,
-    obj.width,
-    obj.height
+  if(obj.barrier === "red"){
+    ctx.strokeStyle = "#ff4444";
+  }
+
+  if(obj.barrier === "blue"){
+    ctx.strokeStyle = "#4488ff";
+  }
+
+  if(obj.barrier === "green"){
+    ctx.strokeStyle = "#44ff88";
+  }
+
+  ctx.lineWidth = 5;
+
+  ctx.beginPath();
+
+  ctx.arc(
+    obj.x + 30,
+    obj.y + 30,
+    45,
+    0,
+    Math.PI * 2
   );
 
-  ctx.fillStyle =
-  "white";
+  ctx.stroke();
+}
+
+function drawPlayer(){
+
+  ctx.fillStyle = "#66ccff";
 
   ctx.fillRect(
-    obj.x + 15,
-    obj.y + 15,
-    30,
+    player.x,
+    player.y,
+    60,
+    60
+  );
+
+  ctx.fillStyle = "#ffffff";
+
+  ctx.fillRect(
+    player.x + 14,
+    player.y + 18,
+    32,
     10
   );
 
-  if(obj.barrier){
+  ctx.fillRect(
+    player.x + 22,
+    player.y + 35,
+    16,
+    10
+  );
 
-    ctx.lineWidth = 6;
+  drawBarrier(player);
+}
 
-    if(obj.barrier==="red"){
-      ctx.strokeStyle="#ff4444";
-    }
+function drawEnemy(){
 
-    if(obj.barrier==="blue"){
-      ctx.strokeStyle="#4488ff";
-    }
+  ctx.fillStyle = enemyColor();
 
-    if(obj.barrier==="green"){
-      ctx.strokeStyle="#44ff88";
-    }
+  ctx.beginPath();
+
+  ctx.arc(
+    enemy.x + 30,
+    enemy.y + 30,
+    28,
+    0,
+    Math.PI * 2
+  );
+
+  ctx.fill();
+
+  for(let i = 0; i < 8; i++){
+
+    const angle =
+    (Math.PI * 2 / 8) * i;
+
+    ctx.strokeStyle = enemyColor();
+    ctx.lineWidth = 4;
 
     ctx.beginPath();
 
-    ctx.arc(
-      obj.x + 30,
-      obj.y + 30,
-      48,
-      0,
-      Math.PI*2
+    ctx.moveTo(
+      enemy.x + 30,
+      enemy.y + 30
+    );
+
+    ctx.lineTo(
+      enemy.x + 30 +
+      Math.cos(angle) * 42,
+
+      enemy.y + 30 +
+      Math.sin(angle) * 42
     );
 
     ctx.stroke();
   }
+
+  drawBarrier(enemy);
 }
 
 function drawShot(s){
 
-  if(s.color==="red"){
-    ctx.fillStyle="#ff4444";
+  if(s.color === "red"){
+    ctx.fillStyle = "#ff4444";
   }
 
-  if(s.color==="blue"){
-    ctx.fillStyle="#4488ff";
+  if(s.color === "blue"){
+    ctx.fillStyle = "#4488ff";
   }
 
-  if(s.color==="green"){
-    ctx.fillStyle="#44ff88";
+  if(s.color === "green"){
+    ctx.fillStyle = "#44ff88";
   }
+
+  ctx.shadowColor = ctx.fillStyle;
+  ctx.shadowBlur = 10;
 
   ctx.fillRect(
     s.x,
     s.y,
     s.width,
     s.height
+  );
+
+  ctx.shadowBlur = 0;
+}
+
+function drawStartScreen(){
+
+  ctx.fillStyle =
+  "rgba(0,0,0,0.82)";
+
+  ctx.fillRect(
+    0,
+    0,
+    canvas.width,
+    canvas.height
+  );
+
+  ctx.fillStyle = "#66ccff";
+
+  ctx.font = "54px sans-serif";
+
+  ctx.fillText(
+    "SERVER CORE",
+    180,
+    170
+  );
+
+  ctx.fillText(
+    "BATTLE",
+    250,
+    240
+  );
+
+  ctx.fillStyle = "white";
+
+  ctx.font = "28px sans-serif";
+
+  ctx.fillText(
+    "赤攻撃ボタンで開始",
+    220,
+    340
   );
 }
 
@@ -718,49 +719,66 @@ function draw(){
     canvas.height
   );
 
-  drawCharacter(player,true);
+  ctx.fillStyle =
+  "rgba(0,255,255,0.06)";
 
-  drawCharacter(enemy,false);
+  for(let i = 0;
+      i < canvas.height;
+      i += 40){
+
+    ctx.fillRect(
+      0,
+      i,
+      canvas.width,
+      1
+    );
+  }
+
+  drawPlayer();
+  drawEnemy();
 
   playerShots.forEach(drawShot);
-
   enemyShots.forEach(drawShot);
 
-  ctx.fillStyle="#333";
+  ctx.fillStyle = "#333";
 
-  ctx.fillRect(20,20,220,20);
+  ctx.fillRect(20,20,220,18);
 
-  ctx.fillStyle="#66ccff";
+  ctx.fillStyle = "#66ccff";
 
   ctx.fillRect(
     20,
     20,
     player.hp * 2.2,
-    20
+    18
   );
 
-  ctx.fillStyle="#333";
+  ctx.fillStyle = "#333";
 
-  ctx.fillRect(480,20,220,20);
+  ctx.fillRect(480,20,220,18);
 
-  ctx.fillStyle="#ff4444";
+  ctx.fillStyle = enemyColor();
 
   ctx.fillRect(
     480,
     20,
-    enemy.hp * 1.5,
-    20
+    enemy.hp / enemy.maxHp * 220,
+    18
   );
 
-  ctx.fillStyle="white";
+  ctx.fillStyle = "white";
 
-  ctx.font="24px sans-serif";
+  ctx.font = "24px sans-serif";
 
   ctx.fillText(
     "LEVEL : " + level,
     300,
     40
   );
+
+  if(!gameStarted){
+    drawStartScreen();
+  }
 
   if(gameOver){
 
@@ -774,16 +792,14 @@ function draw(){
       canvas.height
     );
 
-    ctx.fillStyle =
-    "#ff3355";
+    ctx.fillStyle = "#ff3355";
 
-    ctx.font =
-    "56px sans-serif";
+    ctx.font = "60px sans-serif";
 
     ctx.fillText(
       "GAME OVER",
-      180,
-      180
+      170,
+      220
     );
   }
 }
@@ -791,13 +807,45 @@ function draw(){
 function loop(){
 
   update();
-
   draw();
 
   requestAnimationFrame(loop);
 }
 
-function addButton(id,action){
+document.addEventListener("keydown",e=>{
+
+  keys[e.code] = true;
+
+  if(e.code === "KeyZ"){
+    shoot("red");
+  }
+
+  if(e.code === "KeyX"){
+    shoot("blue");
+  }
+
+  if(e.code === "KeyC"){
+    shoot("green");
+  }
+
+  if(e.code === "KeyA"){
+    activateBarrier("red");
+  }
+
+  if(e.code === "KeyS"){
+    activateBarrier("blue");
+  }
+
+  if(e.code === "KeyD"){
+    activateBarrier("green");
+  }
+});
+
+document.addEventListener("keyup",e=>{
+  keys[e.code] = false;
+});
+
+function holdButton(id,code){
 
   const btn =
   document.getElementById(id);
@@ -806,105 +854,102 @@ function addButton(id,action){
     "touchstart",
     e=>{
       e.preventDefault();
-      action();
+      keys[code] = true;
+    }
+  );
+
+  btn.addEventListener(
+    "touchend",
+    e=>{
+      e.preventDefault();
+      keys[code] = false;
+    }
+  );
+
+  btn.addEventListener(
+    "mousedown",
+    ()=>{
+      keys[code] = true;
+    }
+  );
+
+  btn.addEventListener(
+    "mouseup",
+    ()=>{
+      keys[code] = false;
+    }
+  );
+
+  btn.addEventListener(
+    "mouseleave",
+    ()=>{
+      keys[code] = false;
+    }
+  );
+}
+
+holdButton("upBtn","ArrowUp");
+holdButton("downBtn","ArrowDown");
+
+function tapButton(id,func){
+
+  const btn =
+  document.getElementById(id);
+
+  btn.addEventListener(
+    "touchstart",
+    e=>{
+      e.preventDefault();
+      func();
     }
   );
 
   btn.addEventListener(
     "click",
-    action
+    func
   );
 }
 
-document.addEventListener(
-"keydown",
-e=>{
+tapButton(
+  "redAttackBtn",
+  ()=>shoot("red")
+);
 
-  keys[e.code]=true;
+tapButton(
+  "blueAttackBtn",
+  ()=>shoot("blue")
+);
 
-  if(e.code==="KeyZ"){
-    shoot("red");
-  }
+tapButton(
+  "greenAttackBtn",
+  ()=>shoot("green")
+);
 
-  if(e.code==="KeyX"){
-    shoot("blue");
-  }
+tapButton(
+  "redGuardBtn",
+  ()=>activateBarrier("red")
+);
 
-  if(e.code==="KeyC"){
-    shoot("green");
-  }
+tapButton(
+  "blueGuardBtn",
+  ()=>activateBarrier("blue")
+);
 
-  if(e.code==="KeyA"){
-    activateBarrier("red");
-  }
+tapButton(
+  "greenGuardBtn",
+  ()=>activateBarrier("green")
+);
 
-  if(e.code==="KeyS"){
-    activateBarrier("blue");
-  }
+document.getElementById("resetBtn")
+.addEventListener("click",()=>{
 
-  if(e.code==="KeyD"){
-    activateBarrier("green");
-  }
+  gameStarted = true;
+  resetGame();
 
 });
-
-document.addEventListener(
-"keyup",
-e=>{
-  keys[e.code]=false;
-});
-
-addButton(
-"redAttackBtn",
-()=>shoot("red")
-);
-
-addButton(
-"blueAttackBtn",
-()=>shoot("blue")
-);
-
-addButton(
-"greenAttackBtn",
-()=>shoot("green")
-);
-
-addButton(
-"redGuardBtn",
-()=>activateBarrier("red")
-);
-
-addButton(
-"blueGuardBtn",
-()=>activateBarrier("blue")
-);
-
-addButton(
-"greenGuardBtn",
-()=>activateBarrier("green")
-);
-
-addButton(
-"upBtn",
-()=>player.y -= 40
-);
-
-addButton(
-"downBtn",
-()=>player.y += 40
-);
-
-document.getElementById(
-"resetBtn"
-).addEventListener(
-"click",
-resetGame
-);
 
 resetGame();
-
 loop();
-
 </script>
 
 </body>
