@@ -3,38 +3,31 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>TOY CYBER TENNIS</title>
+<title>TOY TENNIS BOT BATTLE</title>
 
 <style>
-*{box-sizing:border-box;}
+*{
+  box-sizing:border-box;
+}
 
-html{touch-action:manipulation;}
+html{
+  touch-action:manipulation;
+}
 
 body{
   margin:0;
   min-height:100vh;
-  background:radial-gradient(circle at top,#16304a,#030712 72%);
+  background:radial-gradient(circle at top,#173b32,#030706 75%);
   color:white;
   font-family:sans-serif;
   text-align:center;
   overflow-x:hidden;
 }
 
-body::before{
-  content:"";
-  position:fixed;
-  inset:0;
-  background:
-    linear-gradient(rgba(0,255,255,0.035) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(0,255,255,0.035) 1px,transparent 1px);
-  background-size:42px 42px;
-  pointer-events:none;
-}
-
 h1{
   margin:18px 0 8px;
-  color:#66ccff;
-  text-shadow:0 0 12px #66ccff,0 0 26px #66ccff;
+  color:#7cff9a;
+  text-shadow:0 0 12px #7cff9a,0 0 26px #7cff9a;
 }
 
 p{
@@ -67,11 +60,17 @@ p{
   cursor:pointer;
 }
 
-.start-btn{background:#b22222;}
-.reset-btn{background:#1f5fbf;}
+.start-btn{
+  background:#b22222;
+}
+
+.reset-btn{
+  background:#1f5fbf;
+}
+
 .back-btn{
   background:#222;
-  border:1px solid #66ccff;
+  border:1px solid #7cff9a;
 }
 
 .game-layout{
@@ -92,11 +91,11 @@ canvas{
   width:720px;
   max-width:96vw;
   height:auto;
-  background:linear-gradient(to bottom,#07111f,#02040a);
-  border:2px solid #66ccff;
+  background:#123d22;
+  border:3px solid #7cff9a;
   box-shadow:
-    0 0 20px #66ccff,
-    inset 0 0 24px rgba(0,255,255,0.08);
+    0 0 20px rgba(124,255,154,0.75),
+    inset 0 0 24px rgba(255,255,255,0.08);
 }
 
 .controls{
@@ -116,8 +115,8 @@ canvas{
   font-size:18px;
   font-weight:bold;
   background:#222;
-  border:1px solid #66ccff;
-  box-shadow:0 0 10px rgba(0,255,255,0.25);
+  border:1px solid #7cff9a;
+  box-shadow:0 0 10px rgba(124,255,154,0.25);
   cursor:pointer;
   user-select:none;
   -webkit-user-select:none;
@@ -130,22 +129,27 @@ canvas{
 #rightBtn{grid-column:3;grid-row:2;}
 #downBtn{grid-column:2;grid-row:3;}
 
-.move-btn{background:#224499 !important;}
-.hit-btn{background:#228844 !important;}
+.move-btn{
+  background:#255a9b !important;
+}
+
+.hit-btn{
+  background:#258844 !important;
+}
 
 .score-board{
   width:270px;
-  background:rgba(10,20,35,0.95);
-  border:1px solid #66ccff;
+  background:rgba(8,26,16,0.95);
+  border:1px solid #7cff9a;
   border-radius:14px;
   padding:14px;
   text-align:left;
-  box-shadow:0 0 15px rgba(0,255,255,0.2);
+  box-shadow:0 0 15px rgba(124,255,154,0.2);
 }
 
 .score-board h2{
   text-align:center;
-  color:#66ccff;
+  color:#7cff9a;
   margin:4px 0 12px;
 }
 
@@ -155,7 +159,9 @@ canvas{
   color:#eee;
 }
 
-.info-line strong{color:#66ccff;}
+.info-line strong{
+  color:#7cff9a;
+}
 
 .score-board ol{
   padding-left:24px;
@@ -195,9 +201,9 @@ canvas{
 
 <body>
 
-<h1>TOY CYBER TENNIS</h1>
+<h1>TOY TENNIS BOT BATTLE</h1>
 
-<p>PC：↑↓←→で移動 / Spaceで打つ / ←+打つでロング / H上部でスマッシュ</p>
+<p>PC：↑↓←→で移動 / Spaceでショット / Enterで開始 / Rでリセット</p>
 
 <div class="top-buttons">
   <button id="startBtn" class="start-btn">START</button>
@@ -209,12 +215,12 @@ canvas{
 
   <div class="game-wrap">
 
-    <canvas id="game" width="720" height="480"></canvas>
+    <canvas id="game" width="720" height="520"></canvas>
 
     <div class="controls">
       <button id="upBtn" class="move-btn">↑</button>
       <button id="leftBtn" class="move-btn">←</button>
-      <button id="hitBtn" class="hit-btn">HIT</button>
+      <button id="hitBtn" class="hit-btn">SHOT</button>
       <button id="rightBtn" class="move-btn">→</button>
       <button id="downBtn" class="move-btn">↓</button>
     </div>
@@ -233,9 +239,9 @@ canvas{
     <ol id="highScores"></ol>
 
     <div class="score-note">
-      5点先取でレベルアップ<br>
+      5点取るとLEVEL UP<br>
       BOTが5点取るとGAME OVER<br>
-      H上部で打つとスマッシュ
+      上側で打つとSMASH
     </div>
   </div>
 
@@ -261,28 +267,7 @@ const rallyInfo = document.getElementById("rallyInfo");
 const shotInfo = document.getElementById("shotInfo");
 const highScoresList = document.getElementById("highScores");
 
-const SCORE_KEY = "toyCyberTennisHighScoresV2";
-
-const hZones = {
-  top:{
-    x:46,
-    y:58,
-    width:235,
-    height:88
-  },
-  middle:{
-    x:128,
-    y:58,
-    width:72,
-    height:364
-  },
-  bottom:{
-    x:46,
-    y:334,
-    width:235,
-    height:88
-  }
-};
+const SCORE_KEY = "toyTennisBotBattleScores";
 
 let keys = {};
 let gameStarted = false;
@@ -306,6 +291,35 @@ let hitCooldown = 0;
 
 let lastShotName = "NORMAL";
 
+const court = {
+  x:70,
+  y:35,
+  width:580,
+  height:450,
+  netY:260
+};
+
+const playerArea = {
+  x:105,
+  y:300,
+  width:245,
+  height:150
+};
+
+const botArea = {
+  x:370,
+  y:70,
+  width:245,
+  height:150
+};
+
+const smashZone = {
+  x:105,
+  y:300,
+  width:245,
+  height:45
+};
+
 function resetGame(){
   level = 1;
   playerScore = 0;
@@ -321,23 +335,26 @@ function resetGame(){
 
   hitPressed = false;
   hitCooldown = 0;
-
   lastShotName = "NORMAL";
 
   player = {
-    x:120,
-    y:205,
-    width:24,
-    height:74,
-    speed:6.2
+    x:220,
+    y:392,
+    width:34,
+    height:56,
+    speed:6.2,
+    swingTimer:0,
+    facing:1
   };
 
   bot = {
-    x:626,
-    y:190,
-    width:24,
-    height:96,
-    speed:4.2
+    x:480,
+    y:95,
+    width:34,
+    height:56,
+    speed:4.3,
+    swingTimer:0,
+    facing:-1
   };
 
   resetBall(1);
@@ -357,9 +374,9 @@ function resetBall(direction){
     x:canvas.width / 2,
     y:canvas.height / 2,
     radius:10,
-    vx:direction * (5.2 + level * 0.25),
-    vy:Math.random() * 4 - 2,
-    speedLimit:13 + level * 0.48
+    vx:direction * (4.7 + level * 0.23),
+    vy:direction > 0 ? 3.2 : -3.2,
+    speedLimit:12.5 + level * 0.48
   };
 
   rally = 0;
@@ -406,62 +423,51 @@ function updatePlayer(){
     nextX += player.speed;
   }
 
-  if(canPlayerMoveTo(nextX,player.y)){
-    player.x = nextX;
-  }
+  player.x = clamp(
+    nextX,
+    playerArea.x,
+    playerArea.x + playerArea.width - player.width
+  );
 
-  if(canPlayerMoveTo(player.x,nextY)){
-    player.y = nextY;
-  }
+  player.y = clamp(
+    nextY,
+    playerArea.y,
+    playerArea.y + playerArea.height - player.height
+  );
 
   if(hitCooldown > 0){
     hitCooldown--;
   }
-}
 
-function canPlayerMoveTo(x,y){
-  const centerX = x + player.width / 2;
-  const centerY = y + player.height / 2;
-
-  return isPointInHZone(centerX,centerY);
-}
-
-function isPointInHZone(x,y){
-  return (
-    pointInRect(x,y,hZones.top) ||
-    pointInRect(x,y,hZones.middle) ||
-    pointInRect(x,y,hZones.bottom)
-  );
-}
-
-function pointInRect(x,y,r){
-  return (
-    x >= r.x &&
-    x <= r.x + r.width &&
-    y >= r.y &&
-    y <= r.y + r.height
-  );
-}
-
-function isPlayerInTopH(){
-  const centerX = player.x + player.width / 2;
-  const centerY = player.y + player.height / 2;
-
-  return pointInRect(centerX,centerY,hZones.top);
+  if(player.swingTimer > 0){
+    player.swingTimer--;
+  }
 }
 
 function updateBot(){
   const stats = botStats();
 
+  let targetX = ball.x - bot.width / 2;
   let targetY = ball.y - bot.height / 2;
 
-  if(ball.vx < 0){
-    targetY = canvas.height / 2 - bot.height / 2;
+  if(ball.vy < 0){
+    targetX += Math.sin(Date.now() * 0.006) * stats.error;
+    targetY += Math.cos(Date.now() * 0.005) * stats.error;
   }else{
-    targetY += Math.sin(Date.now() * 0.004) * stats.error;
+    targetX = botArea.x + botArea.width / 2 - bot.width / 2;
+    targetY = botArea.y + botArea.height / 2 - bot.height / 2;
   }
 
+  bot.x += (targetX - bot.x) * stats.reaction;
   bot.y += (targetY - bot.y) * stats.reaction;
+
+  if(bot.x < targetX){
+    bot.x += Math.min(stats.speed,targetX - bot.x);
+  }
+
+  if(bot.x > targetX){
+    bot.x -= Math.min(stats.speed,bot.x - targetX);
+  }
 
   if(bot.y < targetY){
     bot.y += Math.min(stats.speed,targetY - bot.y);
@@ -471,27 +477,32 @@ function updateBot(){
     bot.y -= Math.min(stats.speed,bot.y - targetY);
   }
 
-  bot.y = clamp(bot.y,48,canvas.height - bot.height - 48);
+  bot.x = clamp(bot.x,botArea.x,botArea.x + botArea.width - bot.width);
+  bot.y = clamp(bot.y,botArea.y,botArea.y + botArea.height - bot.height);
+
+  if(bot.swingTimer > 0){
+    bot.swingTimer--;
+  }
 }
 
 function updateBall(){
   ball.x += ball.vx;
   ball.y += ball.vy;
 
-  if(ball.y - ball.radius <= 28){
-    ball.y = 28 + ball.radius;
-    ball.vy *= -1;
+  if(ball.x - ball.radius <= court.x){
+    ball.x = court.x + ball.radius;
+    ball.vx *= -1;
   }
 
-  if(ball.y + ball.radius >= canvas.height - 28){
-    ball.y = canvas.height - 28 - ball.radius;
-    ball.vy *= -1;
+  if(ball.x + ball.radius >= court.x + court.width){
+    ball.x = court.x + court.width - ball.radius;
+    ball.vx *= -1;
   }
 
   checkPlayerHit();
   checkBotHit();
 
-  if(ball.x < -40){
+  if(ball.y > court.y + court.height + 45){
     botScore++;
     pointMessage = "BOT POINT";
     pointMessageTimer = 70;
@@ -499,7 +510,7 @@ function updateBall(){
     resetBall(1);
   }
 
-  if(ball.x > canvas.width + 40){
+  if(ball.y < court.y - 45){
     playerScore++;
     pointMessage = "PLAYER POINT";
     pointMessageTimer = 70;
@@ -510,10 +521,10 @@ function updateBall(){
 
 function checkPlayerHit(){
   const paddle = {
-    x:player.x,
-    y:player.y,
-    width:player.width,
-    height:player.height
+    x:player.x - 14,
+    y:player.y - 8,
+    width:player.width + 42,
+    height:player.height + 24
   };
 
   const b = {
@@ -527,81 +538,85 @@ function checkPlayerHit(){
     return;
   }
 
-  if(ball.vx >= 0){
+  if(ball.vy <= 0){
     return;
   }
 
-  const hitPos =
-    (ball.y - (player.y + player.height / 2)) /
-    (player.height / 2);
-
   const manualHit = hitPressed && hitCooldown <= 0;
-  const backShot = keys["ArrowLeft"] && manualHit;
-  const rightAim = keys["ArrowRight"] && manualHit;
-  const leftAim = keys["ArrowLeft"] && manualHit;
-  const smash = isPlayerInTopH() && manualHit && !backShot;
+  const smash = isPlayerInSmashZone() && manualHit;
+  const slowLong = keys["ArrowDown"] && manualHit;
 
-  let vxPower = 1.08;
-  let baseSpeedAdd = 0.25;
-  let vyPower = 6.2 + level * 0.18;
+  let xAim = 0;
+  let yPower = 1.08;
+  let addSpeed = 0.22;
 
   lastShotName = "NORMAL";
 
   if(manualHit){
-    vxPower = 1.18;
-    baseSpeedAdd = 0.55;
-    lastShotName = "HIT";
-    hitCooldown = 20;
+    yPower = 1.18;
+    addSpeed = 0.55;
+    lastShotName = "SHOT";
+    hitCooldown = 18;
   }
 
-  if(backShot){
-    vxPower = 0.72;
-    baseSpeedAdd = 0.08;
-    vyPower = 3.2;
-    lastShotName = "LONG SLOW";
+  if(keys["ArrowLeft"] && manualHit){
+    xAim -= 4.2;
+    lastShotName = "LEFT SHOT";
+  }
+
+  if(keys["ArrowRight"] && manualHit){
+    xAim += 4.2;
+    lastShotName = "RIGHT SHOT";
+  }
+
+  if(slowLong){
+    yPower = 0.72;
+    addSpeed = 0.08;
+    xAim *= 0.65;
+    lastShotName = "SLOW LONG";
   }
 
   if(smash){
-    vxPower = 1.55;
-    baseSpeedAdd = 1.2;
-    vyPower = 8.0 + level * 0.24;
+    yPower = 1.62;
+    addSpeed = 1.35;
     lastShotName = "SMASH";
-  }
 
-  let aim = hitPos * vyPower;
+    if(keys["ArrowLeft"]){
+      xAim -= 5.5;
+    }
 
-  if(rightAim){
-    aim += 4.2;
-    if(lastShotName === "HIT"){
-      lastShotName = "RIGHT SHOT";
+    if(keys["ArrowRight"]){
+      xAim += 5.5;
     }
   }
 
-  if(leftAim){
-    aim -= 4.2;
-    if(lastShotName === "HIT"){
-      lastShotName = "LEFT SHOT";
-    }
-  }
+  const hitPos =
+    (ball.x - (player.x + player.width / 2)) /
+    (player.width / 2);
 
-  ball.x = player.x + player.width + ball.radius;
+  ball.y = player.y - ball.radius - 6;
 
-  ball.vx = Math.min(
-    Math.abs(ball.vx) * vxPower + baseSpeedAdd,
+  ball.vy = -Math.min(
+    Math.abs(ball.vy) * yPower + addSpeed,
     ball.speedLimit
   );
 
-  ball.vy = clamp(aim,-10.5,10.5);
+  ball.vx = clamp(
+    hitPos * 3.4 + xAim,
+    -9.5,
+    9.5
+  );
 
+  player.swingTimer = 12;
   rally++;
 }
 
 function checkBotHit(){
   const paddle = {
-    x:bot.x,
-    y:bot.y,
-    width:bot.width,
-    height:bot.height
+    x:bot.x - 14,
+    y:bot.y - 16,
+    width:bot.width + 42,
+    height:bot.height + 34
   };
 
   const b = {
@@ -615,31 +630,46 @@ function checkBotHit(){
     return;
   }
 
-  if(ball.vx <= 0){
+  if(ball.vy >= 0){
     return;
   }
 
   const stats = botStats();
 
   const hitPos =
-    (ball.y - (bot.y + bot.height / 2)) /
-    (bot.height / 2);
+    (ball.x - (bot.x + bot.width / 2)) /
+    (bot.width / 2);
 
   const mistake =
-    (Math.random() - 0.5) * (stats.error / 12);
+    (Math.random() - 0.5) * (stats.error / 8);
 
-  ball.x = bot.x - ball.radius;
+  ball.y = bot.y + bot.height + ball.radius + 6;
 
-  ball.vx = -Math.min(
-    Math.abs(ball.vx) * stats.hitPower + 0.18,
+  ball.vy = Math.min(
+    Math.abs(ball.vy) * stats.hitPower + 0.25,
     ball.speedLimit
   );
 
-  ball.vy =
-    (hitPos + mistake) *
-    (5.8 + level * 0.22);
+  ball.vx = clamp(
+    hitPos * 3.2 + mistake,
+    -8.5,
+    8.5
+  );
 
+  bot.swingTimer = 12;
   rally++;
+}
+
+function isPlayerInSmashZone(){
+  const cx = player.x + player.width / 2;
+  const cy = player.y + player.height / 2;
+
+  return (
+    cx >= smashZone.x &&
+    cx <= smashZone.x + smashZone.width &&
+    cy >= smashZone.y &&
+    cy <= smashZone.y + smashZone.height
+  );
 }
 
 function checkScore(){
@@ -669,10 +699,10 @@ function updateTimers(){
 function draw(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
-  drawCourt();
-  drawHZone();
-  drawPaddle(player,"#66ccff");
-  drawPaddle(bot,"#ff5577");
+  drawToyCourt();
+  drawMoveAreas();
+  drawPlayerToy(player,"#3b80ff",true);
+  drawPlayerToy(bot,"#ff5e7a",false);
   drawBall();
   drawHud();
 
@@ -685,65 +715,188 @@ function draw(){
   }
 }
 
-function drawCourt(){
-  ctx.fillStyle = "rgba(0,255,255,0.05)";
-
-  for(let y = 0; y < canvas.height; y += 40){
-    ctx.fillRect(0,y,canvas.width,1);
-  }
-
-  for(let x = 0; x < canvas.width; x += 40){
-    ctx.fillRect(x,0,1,canvas.height);
-  }
-
-  ctx.strokeStyle = "rgba(102,204,255,0.75)";
-  ctx.lineWidth = 2;
-  ctx.strokeRect(28,28,canvas.width - 56,canvas.height - 56);
-
-  ctx.setLineDash([10,10]);
-  ctx.beginPath();
-  ctx.moveTo(canvas.width / 2,28);
-  ctx.lineTo(canvas.width / 2,canvas.height - 28);
-  ctx.stroke();
-  ctx.setLineDash([]);
+function drawToyCourt(){
+  ctx.fillStyle = "#1f6b36";
+  ctx.fillRect(court.x,court.y,court.width,court.height);
 
   ctx.fillStyle = "rgba(255,255,255,0.08)";
-  ctx.fillRect(canvas.width / 2 - 2,0,4,canvas.height);
-}
+  for(let i = 0; i < 40; i++){
+    ctx.fillRect(
+      court.x + Math.random() * court.width,
+      court.y + Math.random() * court.height,
+      1,
+      1
+    );
+  }
 
-function drawHZone(){
-  drawZoneRect(hZones.top,"rgba(102,204,255,0.16)");
-  drawZoneRect(hZones.middle,"rgba(102,204,255,0.10)");
-  drawZoneRect(hZones.bottom,"rgba(102,204,255,0.10)");
+  ctx.strokeStyle = "rgba(255,255,255,0.88)";
+  ctx.lineWidth = 4;
 
-  ctx.strokeStyle = "rgba(102,204,255,0.65)";
+  ctx.strokeRect(court.x,court.y,court.width,court.height);
+
+  ctx.lineWidth = 3;
+
+  ctx.beginPath();
+  ctx.moveTo(court.x + 70,court.y);
+  ctx.lineTo(court.x + 70,court.y + court.height);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(court.x + court.width - 70,court.y);
+  ctx.lineTo(court.x + court.width - 70,court.y + court.height);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(court.x,court.netY);
+  ctx.lineTo(court.x + court.width,court.netY);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(court.x + court.width / 2,court.y);
+  ctx.lineTo(court.x + court.width / 2,court.y + court.height);
+  ctx.stroke();
+
   ctx.lineWidth = 2;
 
-  Object.values(hZones).forEach(r=>{
-    ctx.strokeRect(r.x,r.y,r.width,r.height);
-  });
+  ctx.strokeRect(court.x + 70,court.y + 35,court.width - 140,155);
+  ctx.strokeRect(court.x + 70,court.netY + 35,court.width - 140,155);
 
-  ctx.fillStyle = "#66ccff";
-  ctx.font = "13px sans-serif";
-  ctx.fillText("SMASH ZONE",hZones.top.x + 68,hZones.top.y + 26);
+  drawNet();
+
+  drawBanner(35,385,"Cyber","#53dfff");
+  drawBanner(585,315,"Tennis","#d26743");
+  drawBanner(98,92,"TOY","#e46e9a");
+  drawBanner(550,94,"BOT","#58c6df");
 }
 
-function drawZoneRect(r,color){
+function drawNet(){
+  const netX = court.x + 35;
+  const netY = court.netY - 12;
+  const netW = court.width - 70;
+  const netH = 24;
+
+  ctx.fillStyle = "#e8e8e8";
+  ctx.fillRect(netX,netY,netW,netH);
+
+  ctx.strokeStyle = "#666";
+  ctx.lineWidth = 1;
+
+  for(let x = netX; x <= netX + netW; x += 12){
+    ctx.beginPath();
+    ctx.moveTo(x,netY);
+    ctx.lineTo(x,netY + netH);
+    ctx.stroke();
+  }
+
+  for(let y = netY; y <= netY + netH; y += 6){
+    ctx.beginPath();
+    ctx.moveTo(netX,y);
+    ctx.lineTo(netX + netW,y);
+    ctx.stroke();
+  }
+}
+
+function drawBanner(x,y,text,color){
+  ctx.save();
+
+  ctx.translate(x,y);
+  ctx.rotate(-0.22);
+
   ctx.fillStyle = color;
-  ctx.fillRect(r.x,r.y,r.width,r.height);
+  ctx.fillRect(0,0,92,34);
+
+  ctx.strokeStyle = "rgba(255,255,255,0.45)";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(0,0,92,34);
+
+  ctx.fillStyle = "white";
+  ctx.font = "14px sans-serif";
+  ctx.fillText(text,14,22);
+
+  ctx.restore();
 }
 
-function drawPaddle(p,color){
+function drawMoveAreas(){
+  ctx.fillStyle = "rgba(102,204,255,0.12)";
+  ctx.fillRect(playerArea.x,playerArea.y,playerArea.width,playerArea.height);
+
+  ctx.strokeStyle = "rgba(102,204,255,0.55)";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(playerArea.x,playerArea.y,playerArea.width,playerArea.height);
+
+  ctx.fillStyle = "rgba(255,255,255,0.13)";
+  ctx.fillRect(smashZone.x,smashZone.y,smashZone.width,smashZone.height);
+
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "13px sans-serif";
+  ctx.fillText("SMASH ZONE",smashZone.x + 76,smashZone.y + 28);
+
+  ctx.fillStyle = "rgba(255,90,120,0.10)";
+  ctx.fillRect(botArea.x,botArea.y,botArea.width,botArea.height);
+
+  ctx.strokeStyle = "rgba(255,90,120,0.45)";
+  ctx.strokeRect(botArea.x,botArea.y,botArea.width,botArea.height);
+}
+
+function drawPlayerToy(obj,color,isPlayer){
+  const x = obj.x;
+  const y = obj.y;
+
   ctx.save();
 
   ctx.shadowColor = color;
-  ctx.shadowBlur = 16;
+  ctx.shadowBlur = 12;
 
   ctx.fillStyle = color;
-  ctx.fillRect(p.x,p.y,p.width,p.height);
+  ctx.fillRect(x,y + 20,obj.width,obj.height - 18);
 
-  ctx.fillStyle = "rgba(255,255,255,0.45)";
-  ctx.fillRect(p.x + 5,p.y + 10,p.width - 10,p.height - 20);
+  ctx.fillStyle = isPlayer ? "#ffe066" : "#d8b4ff";
+  ctx.beginPath();
+  ctx.arc(x + obj.width / 2,y + 12,13,0,Math.PI * 2);
+  ctx.fill();
+
+  const swing = obj.swingTimer > 0;
+  const armAngle = swing ? (isPlayer ? -0.9 : 0.9) : (isPlayer ? -0.25 : 0.25);
+  const shoulderX = x + obj.width / 2;
+  const shoulderY = y + 35;
+  const armLen = 34;
+  const racketX = shoulderX + Math.cos(armAngle) * armLen;
+  const racketY = shoulderY + Math.sin(armAngle) * armLen;
+
+  ctx.strokeStyle = "#f0d8b8";
+  ctx.lineWidth = 5;
+
+  ctx.beginPath();
+  ctx.moveTo(shoulderX,shoulderY);
+  ctx.lineTo(racketX,racketY);
+  ctx.stroke();
+
+  ctx.strokeStyle = isPlayer ? "#2540dd" : "#dd2540";
+  ctx.lineWidth = 4;
+
+  ctx.beginPath();
+  ctx.ellipse(racketX + 8,racketY,12,17,0,0,Math.PI * 2);
+  ctx.stroke();
+
+  ctx.fillStyle = "rgba(255,255,255,0.25)";
+  ctx.beginPath();
+  ctx.ellipse(racketX + 8,racketY,8,12,0,0,Math.PI * 2);
+  ctx.fill();
+
+  if(swing){
+    ctx.strokeStyle = "rgba(255,255,255,0.75)";
+    ctx.lineWidth = 2;
+
+    ctx.beginPath();
+    ctx.arc(
+      shoulderX,
+      shoulderY,
+      46,
+      isPlayer ? -1.2 : -0.1,
+      isPlayer ? -0.2 : 1.1
+    );
+    ctx.stroke();
+  }
 
   ctx.restore();
 }
@@ -751,10 +904,10 @@ function drawPaddle(p,color){
 function drawBall(){
   ctx.save();
 
-  ctx.shadowColor = "#ffffff";
+  ctx.shadowColor = "#d7ff31";
   ctx.shadowBlur = 18;
 
-  ctx.fillStyle = "#ffffff";
+  ctx.fillStyle = "#d7ff31";
 
   ctx.beginPath();
   ctx.arc(ball.x,ball.y,ball.radius,0,Math.PI * 2);
@@ -765,21 +918,19 @@ function drawBall(){
 
 function drawHud(){
   ctx.fillStyle = "white";
-  ctx.font = "26px sans-serif";
+  ctx.font = "28px sans-serif";
 
-  ctx.fillText(playerScore,canvas.width / 2 - 70,48);
-  ctx.fillText(botScore,canvas.width / 2 + 58,48);
+  ctx.fillText(playerScore,court.x + 20,court.y + 38);
+  ctx.fillText(botScore,court.x + 20,court.y + 78);
 
+  ctx.fillStyle = "#7cff9a";
   ctx.font = "18px sans-serif";
-  ctx.fillStyle = "#66ccff";
-  ctx.fillText("LEVEL " + level,canvas.width / 2 - 40,82);
+  ctx.fillText("LEVEL " + level,canvas.width / 2 - 40,28);
 
-  ctx.font = "14px sans-serif";
   ctx.fillStyle = "#ddd";
-  ctx.fillText("RALLY " + rally,canvas.width / 2 - 35,105);
-
-  ctx.fillStyle = "#ffffff";
-  ctx.fillText("SHOT " + lastShotName,canvas.width / 2 - 55,128);
+  ctx.font = "14px sans-serif";
+  ctx.fillText("RALLY " + rally,canvas.width / 2 - 35,50);
+  ctx.fillText("SHOT " + lastShotName,canvas.width / 2 - 55,70);
 
   if(pointMessageTimer > 0){
     ctx.fillStyle = "#ffffff";
@@ -788,7 +939,7 @@ function drawHud(){
     ctx.fillText(
       pointMessage,
       canvas.width / 2 - ctx.measureText(pointMessage).width / 2,
-      canvas.height / 2 - 20
+      canvas.height / 2 - 35
     );
   }
 }
@@ -797,19 +948,18 @@ function drawStartScreen(){
   ctx.fillStyle = "rgba(0,0,0,0.78)";
   ctx.fillRect(0,0,canvas.width,canvas.height);
 
-  ctx.fillStyle = "#66ccff";
-  ctx.font = "54px sans-serif";
-  ctx.fillText("TOY CYBER",185,160);
-  ctx.fillText("TENNIS",250,225);
+  ctx.fillStyle = "#7cff9a";
+  ctx.font = "52px sans-serif";
+  ctx.fillText("TOY TENNIS",205,175);
 
   ctx.fillStyle = "white";
   ctx.font = "24px sans-serif";
-  ctx.fillText("Enter または STARTで開始",205,315);
+  ctx.fillText("Enter または STARTで開始",205,260);
 
   ctx.font = "17px sans-serif";
-  ctx.fillText("↑↓←→でHエリア内を移動",245,355);
-  ctx.fillText("Spaceで打つ / H上部ならスマッシュ",210,382);
-  ctx.fillText("←+Spaceで遅いロング / ←→+Spaceで打ち分け",160,409);
+  ctx.fillText("↑↓←→で移動 / Spaceでショット",210,305);
+  ctx.fillText("上エリアで打つとSMASH",250,335);
+  ctx.fillText("↓を押しながら打つとゆっくり遠距離ショット",175,365);
 }
 
 function drawGameOver(){
