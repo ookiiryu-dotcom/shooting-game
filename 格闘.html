@@ -82,6 +82,7 @@ p{
 canvas{
   background:
   linear-gradient(to bottom,#0b1025,#050510);
+
   border:2px solid #66ccff;
 
   box-shadow:
@@ -167,10 +168,12 @@ canvas{
 
 <p>
 ← → 移動 /
-ジャンプ /
-攻撃 /
-バリア /
-ダッシュ
+Spaceジャンプ /
+Z近距離 /
+X遠距離 /
+A近距離バリア /
+S遠距離バリア /
+Cダッシュ
 </p>
 
 <div class="top-buttons">
@@ -222,7 +225,7 @@ canvas{
       </button>
 
       <button id="dashBtn">
-        近距離ダッシュ
+        ダッシュ
       </button>
 
     </div>
@@ -299,6 +302,8 @@ function resetGame(){
 
     speed:6,
 
+    attackPower:10,
+
     vy:0,
 
     jumping:false,
@@ -306,12 +311,14 @@ function resetGame(){
     meleeBarrier:false,
     rangeBarrier:false,
 
-    dashTimer:0
+    dashTimer:0,
+
+    attackEffect:0
   };
 
-  spawnEnemy();
-
   level = 1;
+
+  spawnEnemy();
 
   gameOver = false;
 
@@ -350,13 +357,21 @@ function spawnEnemy(){
 
     hp:50 + level*25,
 
-    attack:4 + level,
+    attackPower:10 + level,
 
     speed:2 + level*0.25,
 
     color:color,
 
-    shootTimer:0
+    shootTimer:0,
+
+    moveTimer:0,
+
+    moveDirection:1,
+
+    aiLevel:1 + level*0.15,
+
+    hitEffect:0
   };
 }
 
@@ -439,7 +454,12 @@ function meleeAttack(){
 
   if(distance < 110){
 
-    enemy.hp -= 14;
+    enemy.hp -=
+    player.attackPower;
+
+    player.attackEffect = 10;
+
+    enemy.hitEffect = 10;
 
     if(enemy.hp <= 0){
 
@@ -633,17 +653,65 @@ function update(){
     player.dashTimer--;
   }
 
-  if(enemy.x > player.x + 90){
-    enemy.x -= enemy.speed;
+  enemy.moveTimer--;
+
+  if(enemy.moveTimer <= 0){
+
+    enemy.moveDirection =
+    Math.random() < 0.5
+    ? -1
+    : 1;
+
+    enemy.moveTimer =
+    30 + Math.random()*50;
   }
 
-  if(enemy.x < player.x - 90){
-    enemy.x += enemy.speed;
+  enemy.x +=
+  enemy.moveDirection *
+  enemy.speed;
+
+  if(enemy.x < 350){
+
+    enemy.moveDirection = 1;
   }
+
+  if(enemy.x > 620){
+
+    enemy.moveDirection = -1;
+  }
+
+  projectiles.forEach(p=>{
+
+    const dx =
+    Math.abs(p.x - enemy.x);
+
+    const dy =
+    Math.abs(p.y - enemy.y);
+
+    if(
+      dx < 120 &&
+      dy < 60 &&
+      Math.random() <
+      enemy.aiLevel * 0.08
+    ){
+
+      enemy.x +=
+      Math.random() < 0.5
+      ? -30
+      : 30;
+    }
+
+  });
 
   enemy.shootTimer++;
 
-  if(enemy.shootTimer > 90){
+  if(
+    enemy.shootTimer >
+    Math.max(
+      25,
+      90 - level * 4
+    )
+  ){
 
     enemyShoot();
 
@@ -670,7 +738,10 @@ function update(){
       }
     )){
 
-      enemy.hp -= 10;
+      enemy.hp -=
+      player.attackPower;
+
+      enemy.hitEffect = 10;
 
       p.hit = true;
 
@@ -698,7 +769,8 @@ function update(){
 
       if(!player.rangeBarrier){
 
-        player.hp -= enemy.attack;
+        player.hp -=
+        enemy.attackPower;
       }
 
       p.hit = true;
@@ -716,7 +788,8 @@ function update(){
 
     if(!player.meleeBarrier){
 
-      player.hp -= enemy.attack;
+      player.hp -=
+      enemy.attackPower;
     }
   }
 
@@ -783,6 +856,26 @@ function drawVirus(){
     );
 
     ctx.fill();
+  }
+
+  if(enemy.hitEffect > 0){
+
+    ctx.fillStyle =
+    "rgba(255,255,255,0.5)";
+
+    ctx.beginPath();
+
+    ctx.arc(
+      enemy.x + 35,
+      enemy.y + 35,
+      45,
+      0,
+      Math.PI*2
+    );
+
+    ctx.fill();
+
+    enemy.hitEffect--;
   }
 
   ctx.restore();
@@ -860,6 +953,21 @@ function drawHero(){
     );
 
     ctx.stroke();
+  }
+
+  if(player.attackEffect > 0){
+
+    ctx.fillStyle =
+    "rgba(255,255,255,0.7)";
+
+    ctx.fillRect(
+      player.x + 55,
+      player.y + 20,
+      40,
+      18
+    );
+
+    player.attackEffect--;
   }
 
   ctx.restore();
