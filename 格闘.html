@@ -119,44 +119,44 @@ canvas{
   box-shadow:0 0 10px rgba(0,255,255,0.3);
 }
 
-#upBtn{
+#redGuardBtn{
   grid-column:1;
+  grid-row:1;
+}
+
+#redAttackBtn{
+  grid-column:2;
+  grid-row:1;
+}
+
+#blueGuardBtn{
+  grid-column:1;
+  grid-row:2;
+}
+
+#blueAttackBtn{
+  grid-column:2;
+  grid-row:2;
+}
+
+#greenGuardBtn{
+  grid-column:1;
+  grid-row:3;
+}
+
+#greenAttackBtn{
+  grid-column:2;
+  grid-row:3;
+}
+
+#upBtn{
+  grid-column:3;
   grid-row:1 / 4;
 }
 
 #downBtn{
   grid-column:4;
   grid-row:1 / 4;
-}
-
-#redGuardBtn{
-  grid-column:2;
-  grid-row:1;
-}
-
-#redAttackBtn{
-  grid-column:3;
-  grid-row:1;
-}
-
-#blueGuardBtn{
-  grid-column:2;
-  grid-row:2;
-}
-
-#blueAttackBtn{
-  grid-column:3;
-  grid-row:2;
-}
-
-#greenGuardBtn{
-  grid-column:2;
-  grid-row:3;
-}
-
-#greenAttackBtn{
-  grid-column:3;
-  grid-row:3;
 }
 
 .vertical-btn{
@@ -209,10 +209,6 @@ canvas{
     max-width:720px;
   }
 
-  .controls{
-    grid-template-rows:64px 64px 64px;
-  }
-
   .vertical-btn{
     font-size:32px !important;
   }
@@ -239,8 +235,6 @@ canvas{
 
     <div class="controls">
 
-      <button id="upBtn" class="move vertical-btn">↑</button>
-
       <button id="redGuardBtn" class="red">赤防御</button>
       <button id="redAttackBtn" class="red">赤攻撃</button>
 
@@ -250,6 +244,7 @@ canvas{
       <button id="greenGuardBtn" class="green">緑防御</button>
       <button id="greenAttackBtn" class="green">緑攻撃</button>
 
+      <button id="upBtn" class="move vertical-btn">↑</button>
       <button id="downBtn" class="move vertical-btn">↓</button>
 
     </div>
@@ -313,7 +308,11 @@ function spawnEnemy(){
     maxHp:120 + level * 25,
     barrier:null,
     barrierTimer:0,
-    aiLevel:0.25 + level * 0.05
+    aiLevel:0.25 + level * 0.06,
+    moveTimer:0,
+    shootCooldown:80,
+    burstCount:0,
+    burstTimer:0
   };
 }
 
@@ -360,23 +359,15 @@ function enemyShoot(color){
     y:enemy.y + 24,
     width:22,
     height:12,
-    speed:9,
+    speed:9 + level * 0.15,
     color:color
   });
 }
 
 function randomColor(){
-  const colors = [
-    "red",
-    "blue",
-    "green"
-  ];
-
-  return colors[
-    Math.floor(Math.random() * 3)
-  ];
+  const colors = ["red","blue","green"];
+  return colors[Math.floor(Math.random() * 3)];
 }
-
 function update(){
   if(!gameStarted) return;
   if(gameOver) return;
@@ -391,34 +382,39 @@ function update(){
 
   player.targetY = Math.max(
     0,
-    Math.min(
-      canvas.height - player.height,
-      player.targetY
-    )
+    Math.min(canvas.height - player.height, player.targetY)
   );
 
-  player.y +=
-  (player.targetY - player.y) * 0.22;
+  player.y += (player.targetY - player.y) * 0.22;
 
-  const enemyMove =
-  Math.sin(Date.now() * 0.004)
-  * (60 + level * 5);
+  enemy.moveTimer--;
 
-  enemy.targetY = 200 + enemyMove;
-
-  enemy.y +=
-  (enemy.targetY - enemy.y)
-  * (0.12 + level * 0.003);
-
-  if(Math.random()
-     < enemy.aiLevel * 0.02){
-
-    enemyShoot(randomColor());
+  if(enemy.moveTimer <= 0){
+    enemy.targetY = Math.random() * (canvas.height - enemy.height);
+    enemy.moveTimer = Math.max(12, 45 - level * 2);
   }
 
-  if(Math.random()
-     < enemy.aiLevel * 0.012){
+  enemy.y += (enemy.targetY - enemy.y) * Math.min(0.32, 0.12 + level * 0.012);
 
+  enemy.shootCooldown--;
+
+  if(enemy.shootCooldown <= 0){
+    enemy.burstCount = 1 + Math.min(4, Math.floor(level / 3));
+    enemy.burstTimer = 0;
+    enemy.shootCooldown = Math.max(28, 95 - level * 5);
+  }
+
+  if(enemy.burstCount > 0){
+    enemy.burstTimer--;
+
+    if(enemy.burstTimer <= 0){
+      enemyShoot(randomColor());
+      enemy.burstCount--;
+      enemy.burstTimer = Math.max(8, 18 - level);
+    }
+  }
+
+  if(Math.random() < enemy.aiLevel * 0.012){
     enemy.barrier = randomColor();
     enemy.barrierTimer = 180;
   }
@@ -437,14 +433,12 @@ function update(){
   });
 
   playerShots.forEach(s=>{
-
     if(
       s.x < enemy.x + enemy.width &&
       s.x + s.width > enemy.x &&
       s.y < enemy.y + enemy.height &&
       s.y + s.height > enemy.y
     ){
-
       if(enemy.barrier === s.color){
         enemy.barrier = null;
       }else{
@@ -456,14 +450,12 @@ function update(){
   });
 
   enemyShots.forEach(s=>{
-
     if(
       s.x < player.x + player.width &&
       s.x + s.width > player.x &&
       s.y < player.y + player.height &&
       s.y + s.height > player.y
     ){
-
       if(player.barrier === s.color){
         player.barrier = null;
       }else{
@@ -474,18 +466,15 @@ function update(){
     }
   });
 
-  playerShots =
-  playerShots.filter(
+  playerShots = playerShots.filter(
     s=>!s.hit && s.x < canvas.width
   );
 
-  enemyShots =
-  enemyShots.filter(
+  enemyShots = enemyShots.filter(
     s=>!s.hit && s.x > -40
   );
 
   if(player.barrierTimer > 0){
-
     player.barrierTimer--;
 
     if(player.barrierTimer <= 0){
@@ -494,7 +483,6 @@ function update(){
   }
 
   if(enemy.barrierTimer > 0){
-
     enemy.barrierTimer--;
 
     if(enemy.barrierTimer <= 0){
@@ -503,11 +491,8 @@ function update(){
   }
 
   if(enemy.hp <= 0){
-
     level++;
-
     player.hp = 100;
-
     spawnEnemy();
   }
 
@@ -591,9 +576,7 @@ function drawEnemy(){
   ctx.fill();
 
   for(let i = 0; i < 8; i++){
-
-    const angle =
-    (Math.PI * 2 / 8) * i;
+    const angle = (Math.PI * 2 / 8) * i;
 
     ctx.strokeStyle = enemyColor();
     ctx.lineWidth = 4;
@@ -606,11 +589,8 @@ function drawEnemy(){
     );
 
     ctx.lineTo(
-      enemy.x + 30 +
-      Math.cos(angle) * 42,
-
-      enemy.y + 30 +
-      Math.sin(angle) * 42
+      enemy.x + 30 + Math.cos(angle) * 42,
+      enemy.y + 30 + Math.sin(angle) * 42
     );
 
     ctx.stroke();
@@ -646,8 +626,7 @@ function drawShot(s){
 }
 
 function drawStartScreen(){
-  ctx.fillStyle =
-  "rgba(0,0,0,0.82)";
+  ctx.fillStyle = "rgba(0,0,0,0.82)";
 
   ctx.fillRect(
     0,
@@ -691,13 +670,9 @@ function draw(){
     canvas.height
   );
 
-  ctx.fillStyle =
-  "rgba(0,255,255,0.06)";
+  ctx.fillStyle = "rgba(0,255,255,0.06)";
 
-  for(let i = 0;
-      i < canvas.height;
-      i += 40){
-
+  for(let i = 0; i < canvas.height; i += 40){
     ctx.fillRect(
       0,
       i,
@@ -753,9 +728,7 @@ function draw(){
   }
 
   if(gameOver){
-
-    ctx.fillStyle =
-    "rgba(0,0,0,0.7)";
+    ctx.fillStyle = "rgba(0,0,0,0.7)";
 
     ctx.fillRect(
       0,
@@ -779,12 +752,10 @@ function draw(){
 function loop(){
   update();
   draw();
-
   requestAnimationFrame(loop);
 }
 
 document.addEventListener("keydown",e=>{
-
   keys[e.code] = true;
 
   if(e.code === "KeyZ"){
@@ -817,106 +788,56 @@ document.addEventListener("keyup",e=>{
 });
 
 function holdButton(id,code){
+  const btn = document.getElementById(id);
 
-  const btn =
-  document.getElementById(id);
+  btn.addEventListener("touchstart",e=>{
+    e.preventDefault();
+    keys[code] = true;
+  });
 
-  btn.addEventListener(
-    "touchstart",
-    e=>{
-      e.preventDefault();
-      keys[code] = true;
-    }
-  );
+  btn.addEventListener("touchend",e=>{
+    e.preventDefault();
+    keys[code] = false;
+  });
 
-  btn.addEventListener(
-    "touchend",
-    e=>{
-      e.preventDefault();
-      keys[code] = false;
-    }
-  );
+  btn.addEventListener("mousedown",()=>{
+    keys[code] = true;
+  });
 
-  btn.addEventListener(
-    "mousedown",
-    ()=>{
-      keys[code] = true;
-    }
-  );
+  btn.addEventListener("mouseup",()=>{
+    keys[code] = false;
+  });
 
-  btn.addEventListener(
-    "mouseup",
-    ()=>{
-      keys[code] = false;
-    }
-  );
-
-  btn.addEventListener(
-    "mouseleave",
-    ()=>{
-      keys[code] = false;
-    }
-  );
+  btn.addEventListener("mouseleave",()=>{
+    keys[code] = false;
+  });
 }
 
 holdButton("upBtn","ArrowUp");
 holdButton("downBtn","ArrowDown");
 
 function tapButton(id,func){
+  const btn = document.getElementById(id);
 
-  const btn =
-  document.getElementById(id);
+  btn.addEventListener("touchstart",e=>{
+    e.preventDefault();
+    func();
+  });
 
-  btn.addEventListener(
-    "touchstart",
-    e=>{
-      e.preventDefault();
-      func();
-    }
-  );
-
-  btn.addEventListener(
-    "click",
-    func
-  );
+  btn.addEventListener("click",func);
 }
 
-tapButton(
-  "redAttackBtn",
-  ()=>shoot("red")
-);
+tapButton("redAttackBtn",()=>shoot("red"));
+tapButton("blueAttackBtn",()=>shoot("blue"));
+tapButton("greenAttackBtn",()=>shoot("green"));
 
-tapButton(
-  "blueAttackBtn",
-  ()=>shoot("blue")
-);
+tapButton("redGuardBtn",()=>activateBarrier("red"));
+tapButton("blueGuardBtn",()=>activateBarrier("blue"));
+tapButton("greenGuardBtn",()=>activateBarrier("green"));
 
-tapButton(
-  "greenAttackBtn",
-  ()=>shoot("green")
-);
-
-tapButton(
-  "redGuardBtn",
-  ()=>activateBarrier("red")
-);
-
-tapButton(
-  "blueGuardBtn",
-  ()=>activateBarrier("blue")
-);
-
-tapButton(
-  "greenGuardBtn",
-  ()=>activateBarrier("green")
-);
-
-document.getElementById("resetBtn")
-.addEventListener("click",()=>{
-
+document.getElementById("resetBtn").addEventListener("click",()=>{
   gameStarted = true;
   resetGame();
-
 });
 
 resetGame();
