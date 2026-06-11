@@ -11,6 +11,10 @@
   box-sizing:border-box;
 }
 
+html{
+  touch-action:manipulation;
+}
+
 body{
   margin:0;
   background:radial-gradient(circle at top,#152033,#03060d 70%);
@@ -62,6 +66,7 @@ p{
   display:flex;
   align-items:center;
   justify-content:center;
+  cursor:pointer;
 }
 
 .reset-btn{
@@ -117,6 +122,10 @@ canvas{
   background:#1a1a1a;
   border:1px solid #66ccff;
   box-shadow:0 0 10px rgba(0,255,255,0.3);
+  cursor:pointer;
+  user-select:none;
+  -webkit-user-select:none;
+  -webkit-tap-highlight-color:transparent;
 }
 
 #redGuardBtn{
@@ -182,7 +191,7 @@ canvas{
 }
 
 .score-board{
-  width:240px;
+  width:260px;
   background:rgba(10,20,35,0.95);
   border:1px solid #66ccff;
   border-radius:14px;
@@ -194,10 +203,24 @@ canvas{
 .score-board h2{
   text-align:center;
   color:#66ccff;
+  margin-top:4px;
+}
+
+.score-board ol{
+  padding-left:24px;
 }
 
 .score-board li{
-  margin-bottom:7px;
+  margin-bottom:8px;
+  color:#eee;
+  font-size:14px;
+}
+
+.score-note{
+  font-size:12px;
+  color:#aaa;
+  text-align:center;
+  line-height:1.6;
 }
 
 @media(max-width:900px){
@@ -222,7 +245,8 @@ canvas{
 
 <h1>SERVER CORE BATTLE</h1>
 
-<p>↑ ↓ 移動 / 色攻撃 / 色防御</p>
+<p>↑ ↓ 移動 / 色攻撃 / 色防御/Z赤攻撃/X青攻撃/C緑攻撃/A赤防御/S青防御/D緑防御
+</p>
 
 <div class="top-buttons">
   <button id="resetBtn" class="reset-btn">RESET</button>
@@ -258,6 +282,10 @@ canvas{
   <div class="score-board">
     <h2>High Scores</h2>
     <ol id="highScores"></ol>
+    <div class="score-note">
+      ゲームオーバー時に<br>
+      倒した最高レベルを保存します
+    </div>
   </div>
 
 </div>
@@ -268,16 +296,88 @@ const ctx = canvas.getContext("2d");
 
 let gameStarted = false;
 let gameOver = false;
+let scoreSaved = false;
 
 let keys = {};
 
 let level = 1;
+let defeatedLevel = 0;
 
 let player;
 let enemy;
 
 let playerShots = [];
 let enemyShots = [];
+
+const SCORE_KEY = "serverCoreBattleHighScores";
+
+let highScores = loadHighScores();
+
+function loadHighScores(){
+  const data = localStorage.getItem(SCORE_KEY);
+
+  if(!data){
+    return [];
+  }
+
+  try{
+    const parsed = JSON.parse(data);
+
+    if(Array.isArray(parsed)){
+      return parsed
+        .filter(score=>Number.isFinite(score))
+        .slice(0,10);
+    }
+
+    return [];
+  }catch(e){
+    return [];
+  }
+}
+
+function saveHighScores(){
+  localStorage.setItem(
+    SCORE_KEY,
+    JSON.stringify(highScores)
+  );
+}
+
+function addHighScore(score){
+  if(score <= 0){
+    displayHighScores();
+    return;
+  }
+
+  highScores.push(score);
+
+  highScores.sort((a,b)=>{
+    return b - a;
+  });
+
+  highScores = highScores.slice(0,10);
+
+  saveHighScores();
+  displayHighScores();
+}
+
+function displayHighScores(){
+  const list = document.getElementById("highScores");
+
+  list.innerHTML = "";
+
+  if(highScores.length === 0){
+    const li = document.createElement("li");
+    li.textContent = "まだスコアなし";
+    list.appendChild(li);
+    return;
+  }
+
+  highScores.forEach((score,index)=>{
+    const li = document.createElement("li");
+    li.textContent = (index + 1) + "位：LEVEL " + score + " まで撃破";
+    list.appendChild(li);
+  });
+}
 
 function resetGame(){
   player = {
@@ -287,11 +387,13 @@ function resetGame(){
     width:60,
     height:60,
     hp:100,
+    maxHp:100,
     barrier:null,
     barrierTimer:0
   };
 
   level = 1;
+  defeatedLevel = 0;
 
   spawnEnemy();
 
@@ -299,6 +401,10 @@ function resetGame(){
   enemyShots = [];
 
   gameOver = false;
+  scoreSaved = false;
+  gameStarted = false;
+
+  keys = {};
 }
 
 function spawnEnemy(){
@@ -336,9 +442,20 @@ function enemyColor(){
   return "#cc44ff";
 }
 
-function shoot(color){
+function startGame(){
+  if(gameOver){
+    return;
+  }
+
   if(!gameStarted){
     gameStarted = true;
+  }
+}
+
+function shoot(color){
+  startGame();
+
+  if(gameOver){
     return;
   }
 
@@ -353,6 +470,12 @@ function shoot(color){
 }
 
 function activateBarrier(color){
+  startGame();
+
+  if(gameOver){
+    return;
+  }
+
   player.barrier = color;
   player.barrierTimer = 180;
 }
@@ -370,12 +493,33 @@ function enemyShoot(color){
 
 function randomColor(){
   const colors = ["red","blue","green"];
-  return colors[Math.floor(Math.random() * 3)];
+  return colors[Math.floor(Math.random() * colors.length)];
 }
-function update(){
-  if(!gameStarted) return;
-  if(gameOver) return;
 
+function update(){
+  if(!gameStarted){
+    return;
+  }
+
+  if(gameOver){
+    return;
+  }
+
+  updatePlayerMove();
+  updateEnemyMove();
+  updateEnemyAttack();
+  updateEnemyBarrier();
+  updateEnemyHeal();
+  updateShots();
+  checkPlayerShotHits();
+  checkEnemyShotHits();
+  cleanShots();
+  updateBarriers();
+  checkEnemyDefeat();
+  checkPlayerDefeat();
+}
+
+function updatePlayerMove(){
   if(keys["ArrowUp"]){
     player.targetY -= 10;
   }
@@ -390,22 +534,29 @@ function update(){
   );
 
   player.y += (player.targetY - player.y) * 0.22;
+}
 
+function updateEnemyMove(){
   enemy.moveTimer--;
 
   if(enemy.moveTimer <= 0){
     enemy.targetY = Math.random() * (canvas.height - enemy.height);
-    enemy.moveTimer = Math.max(12, 45 - level * 2);
+    enemy.moveTimer = Math.max(12,45 - level * 2);
   }
 
-  enemy.y += (enemy.targetY - enemy.y) * Math.min(0.32, 0.12 + level * 0.012);
+  enemy.y += (enemy.targetY - enemy.y) * Math.min(
+    0.32,
+    0.12 + level * 0.012
+  );
+}
 
+function updateEnemyAttack(){
   enemy.shootCooldown--;
 
   if(enemy.shootCooldown <= 0){
-    enemy.burstCount = 1 + Math.min(4, Math.floor(level / 3));
+    enemy.burstCount = 1 + Math.min(4,Math.floor(level / 3));
     enemy.burstTimer = 0;
-    enemy.shootCooldown = Math.max(28, 95 - level * 5);
+    enemy.shootCooldown = Math.max(28,95 - level * 5);
   }
 
   if(enemy.burstCount > 0){
@@ -414,70 +565,85 @@ function update(){
     if(enemy.burstTimer <= 0){
       enemyShoot(randomColor());
       enemy.burstCount--;
-      enemy.burstTimer = Math.max(8, 18 - level);
+      enemy.burstTimer = Math.max(8,18 - level);
     }
   }
+}
 
+function updateEnemyBarrier(){
   if(Math.random() < enemy.aiLevel * 0.012){
     enemy.barrier = randomColor();
     enemy.barrierTimer = 180;
   }
+}
 
+function updateEnemyHeal(){
   enemy.hp = Math.min(
     enemy.maxHp,
     enemy.hp + 0.02 * level
   );
+}
 
-  playerShots.forEach(s=>{
-    s.x += s.speed;
+function updateShots(){
+  playerShots.forEach(shot=>{
+    shot.x += shot.speed;
   });
 
-  enemyShots.forEach(s=>{
-    s.x -= s.speed;
+  enemyShots.forEach(shot=>{
+    shot.x -= shot.speed;
   });
+}
 
-  playerShots.forEach(s=>{
-    if(
-      s.x < enemy.x + enemy.width &&
-      s.x + s.width > enemy.x &&
-      s.y < enemy.y + enemy.height &&
-      s.y + s.height > enemy.y
-    ){
-      if(enemy.barrier === s.color){
+function hitTest(a,b){
+  return (
+    a.x < b.x + b.width &&
+    a.x + a.width > b.x &&
+    a.y < b.y + b.height &&
+    a.y + a.height > b.y
+  );
+}
+
+function checkPlayerShotHits(){
+  playerShots.forEach(shot=>{
+    if(hitTest(shot,enemy)){
+      if(enemy.barrier === shot.color){
         enemy.barrier = null;
+        enemy.barrierTimer = 0;
       }else{
         enemy.hp -= 16;
       }
 
-      s.hit = true;
+      shot.hit = true;
     }
   });
+}
 
-  enemyShots.forEach(s=>{
-    if(
-      s.x < player.x + player.width &&
-      s.x + s.width > player.x &&
-      s.y < player.y + player.height &&
-      s.y + s.height > player.y
-    ){
-      if(player.barrier === s.color){
+function checkEnemyShotHits(){
+  enemyShots.forEach(shot=>{
+    if(hitTest(shot,player)){
+      if(player.barrier === shot.color){
         player.barrier = null;
+        player.barrierTimer = 0;
       }else{
         player.hp -= 15;
       }
 
-      s.hit = true;
+      shot.hit = true;
     }
   });
+}
 
-  playerShots = playerShots.filter(
-    s=>!s.hit && s.x < canvas.width
-  );
+function cleanShots(){
+  playerShots = playerShots.filter(shot=>{
+    return !shot.hit && shot.x < canvas.width;
+  });
 
-  enemyShots = enemyShots.filter(
-    s=>!s.hit && s.x > -40
-  );
+  enemyShots = enemyShots.filter(shot=>{
+    return !shot.hit && shot.x > -40;
+  });
+}
 
+function updateBarriers(){
   if(player.barrierTimer > 0){
     player.barrierTimer--;
 
@@ -493,20 +659,39 @@ function update(){
       enemy.barrier = null;
     }
   }
+}
 
+function checkEnemyDefeat(){
   if(enemy.hp <= 0){
+    defeatedLevel = level;
+
     level++;
-    player.hp = 100;
+
+    player.hp = player.maxHp;
+
+    playerShots = [];
+    enemyShots = [];
+
     spawnEnemy();
   }
+}
 
+function checkPlayerDefeat(){
   if(player.hp <= 0){
+    player.hp = 0;
     gameOver = true;
+
+    if(!scoreSaved){
+      scoreSaved = true;
+      addHighScore(defeatedLevel);
+    }
   }
 }
 
 function drawBarrier(obj){
-  if(!obj.barrier) return;
+  if(!obj.barrier){
+    return;
+  }
 
   if(obj.barrier === "red"){
     ctx.strokeStyle = "#ff4444";
@@ -541,8 +726,8 @@ function drawPlayer(){
   ctx.fillRect(
     player.x,
     player.y,
-    60,
-    60
+    player.width,
+    player.height
   );
 
   ctx.fillStyle = "#ffffff";
@@ -559,6 +744,16 @@ function drawPlayer(){
     player.y + 35,
     16,
     10
+  );
+
+  ctx.strokeStyle = "rgba(255,255,255,0.35)";
+  ctx.lineWidth = 2;
+
+  ctx.strokeRect(
+    player.x + 6,
+    player.y + 6,
+    player.width - 12,
+    player.height - 12
   );
 
   drawBarrier(player);
@@ -603,16 +798,16 @@ function drawEnemy(){
   drawBarrier(enemy);
 }
 
-function drawShot(s){
-  if(s.color === "red"){
+function drawShot(shot){
+  if(shot.color === "red"){
     ctx.fillStyle = "#ff4444";
   }
 
-  if(s.color === "blue"){
+  if(shot.color === "blue"){
     ctx.fillStyle = "#4488ff";
   }
 
-  if(s.color === "green"){
+  if(shot.color === "green"){
     ctx.fillStyle = "#44ff88";
   }
 
@@ -620,13 +815,88 @@ function drawShot(s){
   ctx.shadowBlur = 10;
 
   ctx.fillRect(
-    s.x,
-    s.y,
-    s.width,
-    s.height
+    shot.x,
+    shot.y,
+    shot.width,
+    shot.height
   );
 
   ctx.shadowBlur = 0;
+}
+
+function drawBackgroundLines(){
+  ctx.fillStyle = "rgba(0,255,255,0.06)";
+
+  for(let i = 0; i < canvas.height; i += 40){
+    ctx.fillRect(
+      0,
+      i,
+      canvas.width,
+      1
+    );
+  }
+
+  ctx.fillStyle = "rgba(0,255,255,0.04)";
+
+  for(let x = 0; x < canvas.width; x += 40){
+    ctx.fillRect(
+      x,
+      0,
+      1,
+      canvas.height
+    );
+  }
+}
+
+function drawHpBars(){
+  ctx.fillStyle = "#333";
+  ctx.fillRect(20,20,220,18);
+
+  ctx.fillStyle = "#66ccff";
+  ctx.fillRect(
+    20,
+    20,
+    Math.max(0,player.hp) / player.maxHp * 220,
+    18
+  );
+
+  ctx.strokeStyle = "#ffffff";
+  ctx.lineWidth = 1;
+  ctx.strokeRect(20,20,220,18);
+
+  ctx.fillStyle = "#333";
+  ctx.fillRect(480,20,220,18);
+
+  ctx.fillStyle = enemyColor();
+  ctx.fillRect(
+    480,
+    20,
+    Math.max(0,enemy.hp) / enemy.maxHp * 220,
+    18
+  );
+
+  ctx.strokeStyle = "#ffffff";
+  ctx.lineWidth = 1;
+  ctx.strokeRect(480,20,220,18);
+}
+
+function drawTexts(){
+  ctx.fillStyle = "white";
+  ctx.font = "24px sans-serif";
+
+  ctx.fillText(
+    "LEVEL : " + level,
+    300,
+    40
+  );
+
+  ctx.font = "14px sans-serif";
+
+  ctx.fillText(
+    "倒したLEVEL : " + defeatedLevel,
+    300,
+    65
+  );
 }
 
 function drawStartScreen(){
@@ -640,7 +910,6 @@ function drawStartScreen(){
   );
 
   ctx.fillStyle = "#66ccff";
-
   ctx.font = "54px sans-serif";
 
   ctx.fillText(
@@ -656,13 +925,57 @@ function drawStartScreen(){
   );
 
   ctx.fillStyle = "white";
-
-  ctx.font = "28px sans-serif";
+  ctx.font = "26px sans-serif";
 
   ctx.fillText(
-    "赤攻撃ボタンで開始",
-    220,
-    340
+    "攻撃または防御ボタンで開始",
+    190,
+    330
+  );
+
+  ctx.font = "18px sans-serif";
+
+  ctx.fillText(
+    "敵を倒すとLEVELが上がり、HPが全回復します",
+    155,
+    370
+  );
+}
+
+function drawGameOver(){
+  ctx.fillStyle = "rgba(0,0,0,0.74)";
+
+  ctx.fillRect(
+    0,
+    0,
+    canvas.width,
+    canvas.height
+  );
+
+  ctx.fillStyle = "#ff3355";
+  ctx.font = "60px sans-serif";
+
+  ctx.fillText(
+    "GAME OVER",
+    170,
+    210
+  );
+
+  ctx.fillStyle = "white";
+  ctx.font = "26px sans-serif";
+
+  ctx.fillText(
+    "LEVEL " + defeatedLevel + " まで撃破",
+    235,
+    275
+  );
+
+  ctx.font = "20px sans-serif";
+
+  ctx.fillText(
+    "RESETで再挑戦",
+    285,
+    330
   );
 }
 
@@ -674,16 +987,7 @@ function draw(){
     canvas.height
   );
 
-  ctx.fillStyle = "rgba(0,255,255,0.06)";
-
-  for(let i = 0; i < canvas.height; i += 40){
-    ctx.fillRect(
-      0,
-      i,
-      canvas.width,
-      1
-    );
-  }
+  drawBackgroundLines();
 
   drawPlayer();
   drawEnemy();
@@ -691,65 +995,15 @@ function draw(){
   playerShots.forEach(drawShot);
   enemyShots.forEach(drawShot);
 
-  ctx.fillStyle = "#333";
-
-  ctx.fillRect(20,20,220,18);
-
-  ctx.fillStyle = "#66ccff";
-
-  ctx.fillRect(
-    20,
-    20,
-    player.hp * 2.2,
-    18
-  );
-
-  ctx.fillStyle = "#333";
-
-  ctx.fillRect(480,20,220,18);
-
-  ctx.fillStyle = enemyColor();
-
-  ctx.fillRect(
-    480,
-    20,
-    enemy.hp / enemy.maxHp * 220,
-    18
-  );
-
-  ctx.fillStyle = "white";
-
-  ctx.font = "24px sans-serif";
-
-  ctx.fillText(
-    "LEVEL : " + level,
-    300,
-    40
-  );
+  drawHpBars();
+  drawTexts();
 
   if(!gameStarted){
     drawStartScreen();
   }
 
   if(gameOver){
-    ctx.fillStyle = "rgba(0,0,0,0.7)";
-
-    ctx.fillRect(
-      0,
-      0,
-      canvas.width,
-      canvas.height
-    );
-
-    ctx.fillStyle = "#ff3355";
-
-    ctx.font = "60px sans-serif";
-
-    ctx.fillText(
-      "GAME OVER",
-      170,
-      220
-    );
+    drawGameOver();
   }
 }
 
@@ -796,15 +1050,22 @@ function holdButton(id,code){
 
   btn.addEventListener("touchstart",e=>{
     e.preventDefault();
+    startGame();
     keys[code] = true;
-  });
+  },{passive:false});
 
   btn.addEventListener("touchend",e=>{
     e.preventDefault();
     keys[code] = false;
-  });
+  },{passive:false});
+
+  btn.addEventListener("touchcancel",e=>{
+    e.preventDefault();
+    keys[code] = false;
+  },{passive:false});
 
   btn.addEventListener("mousedown",()=>{
+    startGame();
     keys[code] = true;
   });
 
@@ -817,34 +1078,50 @@ function holdButton(id,code){
   });
 }
 
-holdButton("upBtn","ArrowUp");
-holdButton("downBtn","ArrowDown");
-
 function tapButton(id,func){
   const btn = document.getElementById(id);
 
   btn.addEventListener("touchstart",e=>{
     e.preventDefault();
     func();
-  });
+  },{passive:false});
 
   btn.addEventListener("click",func);
 }
 
-tapButton("redAttackBtn",()=>shoot("red"));
-tapButton("blueAttackBtn",()=>shoot("blue"));
-tapButton("greenAttackBtn",()=>shoot("green"));
+holdButton("upBtn","ArrowUp");
+holdButton("downBtn","ArrowDown");
 
-tapButton("redGuardBtn",()=>activateBarrier("red"));
-tapButton("blueGuardBtn",()=>activateBarrier("blue"));
-tapButton("greenGuardBtn",()=>activateBarrier("green"));
+tapButton("redAttackBtn",()=>{
+  shoot("red");
+});
+
+tapButton("blueAttackBtn",()=>{
+  shoot("blue");
+});
+
+tapButton("greenAttackBtn",()=>{
+  shoot("green");
+});
+
+tapButton("redGuardBtn",()=>{
+  activateBarrier("red");
+});
+
+tapButton("blueGuardBtn",()=>{
+  activateBarrier("blue");
+});
+
+tapButton("greenGuardBtn",()=>{
+  activateBarrier("green");
+});
 
 document.getElementById("resetBtn").addEventListener("click",()=>{
-  gameStarted = true;
   resetGame();
 });
 
 resetGame();
+displayHighScores();
 loop();
 </script>
 
