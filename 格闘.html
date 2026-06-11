@@ -101,11 +101,10 @@ canvas{
 .controls{
   width:720px;
   max-width:96vw;
-
   display:grid;
   grid-template-columns:1fr 1fr 1fr 1fr;
+  grid-template-rows:64px 64px 64px;
   gap:10px;
-
   margin-top:14px;
 }
 
@@ -118,12 +117,49 @@ canvas{
   background:#1a1a1a;
   border:1px solid #66ccff;
   box-shadow:0 0 10px rgba(0,255,255,0.3);
-  min-height:64px;
+}
+
+#upBtn{
+  grid-column:1;
+  grid-row:1 / 4;
+}
+
+#downBtn{
+  grid-column:4;
+  grid-row:1 / 4;
+}
+
+#redGuardBtn{
+  grid-column:2;
+  grid-row:1;
+}
+
+#redAttackBtn{
+  grid-column:3;
+  grid-row:1;
+}
+
+#blueGuardBtn{
+  grid-column:2;
+  grid-row:2;
+}
+
+#blueAttackBtn{
+  grid-column:3;
+  grid-row:2;
+}
+
+#greenGuardBtn{
+  grid-column:2;
+  grid-row:3;
+}
+
+#greenAttackBtn{
+  grid-column:3;
+  grid-row:3;
 }
 
 .vertical-btn{
-  grid-row:span 3;
-  min-height:212px;
   font-size:36px !important;
 }
 
@@ -163,7 +199,6 @@ canvas{
 }
 
 @media(max-width:900px){
-
   .game-layout{
     flex-direction:column;
     align-items:center;
@@ -174,11 +209,13 @@ canvas{
     max-width:720px;
   }
 
-  .vertical-btn{
-    min-height:212px;
-    font-size:30px !important;
+  .controls{
+    grid-template-rows:64px 64px 64px;
   }
 
+  .vertical-btn{
+    font-size:32px !important;
+  }
 }
 </style>
 </head>
@@ -190,15 +227,8 @@ canvas{
 <p>↑ ↓ 移動 / 色攻撃 / 色防御</p>
 
 <div class="top-buttons">
-
-  <button id="resetBtn" class="reset-btn">
-    RESET
-  </button>
-
-  <a href="index.html" class="back-btn">
-    ← ホームへ戻る
-  </a>
-
+  <button id="resetBtn" class="reset-btn">RESET</button>
+  <a href="index.html" class="back-btn">← ホームへ戻る</a>
 </div>
 
 <div class="game-layout">
@@ -209,64 +239,26 @@ canvas{
 
     <div class="controls">
 
-      <button id="upBtn"
-      class="move vertical-btn">
-        ↑
-      </button>
+      <button id="upBtn" class="move vertical-btn">↑</button>
 
-      <button id="redGuardBtn"
-      class="red">
-        赤防御
-      </button>
+      <button id="redGuardBtn" class="red">赤防御</button>
+      <button id="redAttackBtn" class="red">赤攻撃</button>
 
-      <button id="redAttackBtn"
-      class="red">
-        赤攻撃
-      </button>
+      <button id="blueGuardBtn" class="blue">青防御</button>
+      <button id="blueAttackBtn" class="blue">青攻撃</button>
 
-      <button id="downBtn"
-      class="move vertical-btn">
-        ↓
-      </button>
+      <button id="greenGuardBtn" class="green">緑防御</button>
+      <button id="greenAttackBtn" class="green">緑攻撃</button>
 
-      <button style="opacity:0"></button>
-
-      <button id="blueGuardBtn"
-      class="blue">
-        青防御
-      </button>
-
-      <button id="blueAttackBtn"
-      class="blue">
-        青攻撃
-      </button>
-
-      <button style="opacity:0"></button>
-
-      <button style="opacity:0"></button>
-
-      <button id="greenGuardBtn"
-      class="green">
-        緑防御
-      </button>
-
-      <button id="greenAttackBtn"
-      class="green">
-        緑攻撃
-      </button>
-
-      <button style="opacity:0"></button>
+      <button id="downBtn" class="move vertical-btn">↓</button>
 
     </div>
 
   </div>
 
   <div class="score-board">
-
     <h2>High Scores</h2>
-
     <ol id="highScores"></ol>
-
   </div>
 
 </div>
@@ -289,7 +281,6 @@ let playerShots = [];
 let enemyShots = [];
 
 function resetGame(){
-
   player = {
     x:80,
     y:200,
@@ -312,7 +303,6 @@ function resetGame(){
 }
 
 function spawnEnemy(){
-
   enemy = {
     x:580,
     y:200,
@@ -328,7 +318,6 @@ function spawnEnemy(){
 }
 
 function enemyColor(){
-
   if(level < 4){
     return "#55ff88";
   }
@@ -345,7 +334,6 @@ function enemyColor(){
 }
 
 function shoot(color){
-
   if(!gameStarted){
     gameStarted = true;
     return;
@@ -362,13 +350,11 @@ function shoot(color){
 }
 
 function activateBarrier(color){
-
   player.barrier = color;
   player.barrierTimer = 180;
 }
 
 function enemyShoot(color){
-
   enemyShots.push({
     x:enemy.x,
     y:enemy.y + 24,
@@ -380,7 +366,6 @@ function enemyShoot(color){
 }
 
 function randomColor(){
-
   const colors = [
     "red",
     "blue",
@@ -393,7 +378,6 @@ function randomColor(){
 }
 
 function update(){
-
   if(!gameStarted) return;
   if(gameOver) return;
 
@@ -462,11 +446,8 @@ function update(){
     ){
 
       if(enemy.barrier === s.color){
-
         enemy.barrier = null;
-
       }else{
-
         enemy.hp -= 16;
       }
 
@@ -484,11 +465,8 @@ function update(){
     ){
 
       if(player.barrier === s.color){
-
         player.barrier = null;
-
       }else{
-
         player.hp -= 15;
       }
 
@@ -539,7 +517,6 @@ function update(){
 }
 
 function drawBarrier(obj){
-
   if(!obj.barrier) return;
 
   if(obj.barrier === "red"){
@@ -570,7 +547,6 @@ function drawBarrier(obj){
 }
 
 function drawPlayer(){
-
   ctx.fillStyle = "#66ccff";
 
   ctx.fillRect(
@@ -600,7 +576,6 @@ function drawPlayer(){
 }
 
 function drawEnemy(){
-
   ctx.fillStyle = enemyColor();
 
   ctx.beginPath();
@@ -645,7 +620,6 @@ function drawEnemy(){
 }
 
 function drawShot(s){
-
   if(s.color === "red"){
     ctx.fillStyle = "#ff4444";
   }
@@ -672,7 +646,6 @@ function drawShot(s){
 }
 
 function drawStartScreen(){
-
   ctx.fillStyle =
   "rgba(0,0,0,0.82)";
 
@@ -711,7 +684,6 @@ function drawStartScreen(){
 }
 
 function draw(){
-
   ctx.clearRect(
     0,
     0,
@@ -805,7 +777,6 @@ function draw(){
 }
 
 function loop(){
-
   update();
   draw();
 
