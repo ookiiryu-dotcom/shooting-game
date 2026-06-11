@@ -102,7 +102,7 @@ canvas{
   width:720px;
   max-width:96vw;
   display:grid;
-  grid-template-columns:1fr 1fr 1fr 1fr;
+  grid-template-columns:1fr 1fr 1fr;
   grid-template-rows:64px 64px 64px;
   gap:10px;
   margin-top:14px;
@@ -149,18 +149,20 @@ canvas{
   grid-row:3;
 }
 
-#upBtn{
+.move-panel{
   grid-column:3;
   grid-row:1 / 4;
-}
-
-#downBtn{
-  grid-column:4;
-  grid-row:1 / 4;
+  display:grid;
+  grid-template-rows:1fr 1fr;
+  gap:10px;
 }
 
 .vertical-btn{
-  font-size:36px !important;
+  font-size:42px !important;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:0;
 }
 
 .red{
@@ -210,7 +212,7 @@ canvas{
   }
 
   .vertical-btn{
-    font-size:32px !important;
+    font-size:36px !important;
   }
 }
 </style>
@@ -244,8 +246,10 @@ canvas{
       <button id="greenGuardBtn" class="green">緑防御</button>
       <button id="greenAttackBtn" class="green">緑攻撃</button>
 
-      <button id="upBtn" class="move vertical-btn">↑</button>
-      <button id="downBtn" class="move vertical-btn">↓</button>
+      <div class="move-panel">
+        <button id="upBtn" class="move vertical-btn">↑</button>
+        <button id="downBtn" class="move vertical-btn">↓</button>
+      </div>
 
     </div>
 
