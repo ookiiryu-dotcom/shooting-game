@@ -245,8 +245,7 @@ canvas{
 
 <h1>SERVER CORE BATTLE</h1>
 
-<p>↑ ↓ 移動 / 色攻撃 / 色防御/
-</p>
+<p>↑ ↓ 移動 / Z X C 攻撃 / A S D 防御</p>
 
 <div class="top-buttons">
   <button id="resetBtn" class="reset-btn">RESET</button>
@@ -261,14 +260,14 @@ canvas{
 
     <div class="controls">
 
-      <button id="redGuardBtn" class="red">赤防御</button>
-      <button id="redAttackBtn" class="red">赤攻撃</button>
+      <button id="redGuardBtn" class="red">赤防御 A</button>
+      <button id="redAttackBtn" class="red">赤攻撃 Z</button>
 
-      <button id="blueGuardBtn" class="blue">青防御</button>
-      <button id="blueAttackBtn" class="blue">青攻撃</button>
+      <button id="blueGuardBtn" class="blue">青防御 S</button>
+      <button id="blueAttackBtn" class="blue">青攻撃 X</button>
 
-      <button id="greenGuardBtn" class="green">緑防御</button>
-      <button id="greenAttackBtn" class="green">緑攻撃</button>
+      <button id="greenGuardBtn" class="green">緑防御 D</button>
+      <button id="greenAttackBtn" class="green">緑攻撃 C</button>
 
       <div class="move-panel">
         <button id="upBtn" class="move vertical-btn">↑</button>
@@ -388,8 +387,7 @@ function resetGame(){
     height:60,
     hp:100,
     maxHp:100,
-    barrier:null,
-    barrierTimer:0
+    barrier:null
   };
 
   level = 1;
@@ -417,7 +415,6 @@ function spawnEnemy(){
     hp:120 + level * 25,
     maxHp:120 + level * 25,
     barrier:null,
-    barrierTimer:0,
     aiLevel:0.25 + level * 0.06,
     moveTimer:0,
     shootCooldown:80,
@@ -477,7 +474,6 @@ function activateBarrier(color){
   }
 
   player.barrier = color;
-  player.barrierTimer = 180;
 }
 
 function enemyShoot(color){
@@ -514,7 +510,6 @@ function update(){
   checkPlayerShotHits();
   checkEnemyShotHits();
   cleanShots();
-  updateBarriers();
   checkEnemyDefeat();
   checkPlayerDefeat();
 }
@@ -573,7 +568,6 @@ function updateEnemyAttack(){
 function updateEnemyBarrier(){
   if(Math.random() < enemy.aiLevel * 0.012){
     enemy.barrier = randomColor();
-    enemy.barrierTimer = 180;
   }
 }
 
@@ -606,9 +600,9 @@ function hitTest(a,b){
 function checkPlayerShotHits(){
   playerShots.forEach(shot=>{
     if(hitTest(shot,enemy)){
+
       if(enemy.barrier === shot.color){
-        enemy.barrier = null;
-        enemy.barrierTimer = 0;
+        // 防御成功。敵の防御は消さない。
       }else{
         enemy.hp -= 16;
       }
@@ -621,9 +615,9 @@ function checkPlayerShotHits(){
 function checkEnemyShotHits(){
   enemyShots.forEach(shot=>{
     if(hitTest(shot,player)){
+
       if(player.barrier === shot.color){
-        player.barrier = null;
-        player.barrierTimer = 0;
+        // 防御成功。プレイヤーの防御は消さない。
       }else{
         player.hp -= 15;
       }
@@ -641,24 +635,6 @@ function cleanShots(){
   enemyShots = enemyShots.filter(shot=>{
     return !shot.hit && shot.x > -40;
   });
-}
-
-function updateBarriers(){
-  if(player.barrierTimer > 0){
-    player.barrierTimer--;
-
-    if(player.barrierTimer <= 0){
-      player.barrier = null;
-    }
-  }
-
-  if(enemy.barrierTimer > 0){
-    enemy.barrierTimer--;
-
-    if(enemy.barrierTimer <= 0){
-      enemy.barrier = null;
-    }
-  }
 }
 
 function checkEnemyDefeat(){
@@ -936,8 +912,8 @@ function drawStartScreen(){
   ctx.font = "18px sans-serif";
 
   ctx.fillText(
-    "敵を倒すとLEVELが上がり、HPが全回復します",
-    155,
+    "Z X C：攻撃 / A S D：防御 / ↑ ↓：移動",
+    170,
     370
   );
 }
