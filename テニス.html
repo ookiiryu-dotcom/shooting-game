@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>TOY CYBER TENNIS</title>
+
+<style>
+*{box-sizing:border-box;}
+
+html{touch-action:manipulation;}
+
+body{
+  margin:0;
+  min-height:100vh;
+  background:radial-gradient(circle at top,#16304a,#030712 72%);
+  color:white;
+  font-family:sans-serif;
+  text-align:center;
+  overflow-x:hidden;
+}
+
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  background:
+    linear-gradient(rgba(0,255,255,0.035) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,255,255,0.035) 1px,transparent 1px);
+  background-size:42px 42px;
+  pointer-events:none;
+}
+
+h1{
+  margin:18px 0 8px;
+  color:#66ccff;
+  text-shadow:0 0 12px #66ccff,0 0 26px #66ccff;
+}
+
+p{
+  margin:0 0 10px;
+  color:#ddd;
+  font-size:14px;
+}
+
+.top-buttons{
+  display:flex;
+  justify-content:center;
+  gap:10px;
+  margin:12px 0 14px;
+  flex-wrap:wrap;
+}
+
+.top-buttons button,
+.top-buttons a{
+  width:160px;
+  height:44px;
+  border:none;
+  border-radius:12px;
+  font-size:15px;
+  font-weight:bold;
+  color:white;
+  text-decoration:none;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+}
+
+.start-btn{background:#b22222;}
+.reset-btn{background:#1f5fbf;}
+.back-btn{
+  background:#222;
+  border:1px solid #66ccff;
+}
+
+.game-layout{
+  display:flex;
+  justify-content:center;
+  align-items:flex-start;
+  gap:18px;
+  padding:0 12px 24px;
+}
+
+.game-wrap{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+}
+
+canvas{
+  width:720px;
+  max-width:96vw;
+  height:auto;
+  background:linear-gradient(to bottom,#07111f,#02040a);
+  border:2px solid #66ccff;
+  box-shadow:
+    0 0 20px #66ccff,
+    inset 0 0 24px rgba(0,255,255,0.08);
+}
+
+.controls{
+  width:720px;
+  max-width:96vw;
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr;
+  grid-template-rows:58px 58px 58px;
+  gap:10px;
+  margin-top:14px;
+}
+
+.controls button{
+  border:none;
+  border-radius:14px;
+  color:white;
+  font-size:18px;
+  font-weight:bold;
+  background:#222;
+  border:1px solid #66ccff;
+  box-shadow:0 0 10px rgba(0,255,255,0.25);
+  cursor:pointer;
+  user-select:none;
+  -webkit-user-select:none;
+  -webkit-tap-highlight-color:transparent;
+}
+
+#upBtn{grid-column:2;grid-row:1;}
+#leftBtn{grid-column:1;grid-row:2;}
+#hitBtn{grid-column:2;grid-row:2;}
+#rightBtn{grid-column:3;grid-row:2;}
+#downBtn{grid-column:2;grid-row:3;}
+
+.move-btn{background:#224499 !important;}
+.hit-btn{background:#228844 !important;}
+
+.score-board{
+  width:270px;
+  background:rgba(10,20,35,0.95);
+  border:1px solid #66ccff;
+  border-radius:14px;
+  padding:14px;
+  text-align:left;
+  box-shadow:0 0 15px rgba(0,255,255,0.2);
+}
+
+.score-board h2{
+  text-align:center;
+  color:#66ccff;
+  margin:4px 0 12px;
+}
+
+.info-line{
+  margin-bottom:10px;
+  font-size:14px;
+  color:#eee;
+}
+
+.info-line strong{color:#66ccff;}
+
+.score-board ol{
+  padding-left:24px;
+}
+
+.score-board li{
+  margin-bottom:8px;
+  color:#eee;
+  font-size:14px;
+}
+
+.score-note{
+  margin-top:12px;
+  font-size:12px;
+  color:#aaa;
+  text-align:center;
+  line-height:1.6;
+}
+
+@media(max-width:900px){
+  .game-layout{
+    flex-direction:column;
+    align-items:center;
+  }
+
+  .score-board{
+    width:96vw;
+    max-width:720px;
+  }
+
+  .controls button{
+    font-size:16px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<h1>TOY CYBER TENNIS</h1>
+
+<p>PC：↑↓←→で移動 / Spaceで打つ / ←+打つでロング / H上部でスマッシュ</p>
+
+<div class="top-buttons">
+  <button id="startBtn" class="start-btn">START</button>
+  <button id="resetBtn" class="reset-btn">RESET</button>
+  <a href="index.html" class="back-btn">← ホームへ戻る</a>
+</div>
+
+<div class="game-layout">
+
+  <div class="game-wrap">
+
+    <canvas id="game" width="720" height="480"></canvas>
+
+    <div class="controls">
+      <button id="upBtn" class="move-btn">↑</button>
+      <button id="leftBtn" class="move-btn">←</button>
+      <button id="hitBtn" class="hit-btn">HIT</button>
+      <button id="rightBtn" class="move-btn">→</button>
+      <button id="downBtn" class="move-btn">↓</button>
+    </div>
+
+  </div>
+
+  <div class="score-board">
+    <h2>Status</h2>
+    <div class="info-line">LEVEL：<strong id="levelInfo">1</strong></div>
+    <div class="info-line">PLAYER：<strong id="playerScoreInfo">0</strong></div>
+    <div class="info-line">BOT：<strong id="botScoreInfo">0</strong></div>
+    <div class="info-line">RALLY：<strong id="rallyInfo">0</strong></div>
+    <div class="info-line">SHOT：<strong id="shotInfo">NORMAL</strong></div>
+
+    <h2>High Scores</h2>
+    <ol id="highScores"></ol>
+
+    <div class="score-note">
+      5点先取でレベルアップ<br>
+      BOTが5点取るとGAME OVER<br>
+      H上部で打つとスマッシュ
+    </div>
+  </div>
+
+</div>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+const startBtn = document.getElementById("startBtn");
+const resetBtn = document.getElementById("resetBtn");
+
+const upBtn = document.getElementById("upBtn");
+const downBtn = document.getElementById("downBtn");
+const leftBtn = document.getElementById("leftBtn");
+const rightBtn = document.getElementById("rightBtn");
+const hitBtn = document.getElementById("hitBtn");
+
+const levelInfo = document.getElementById("levelInfo");
+const playerScoreInfo = document.getElementById("playerScoreInfo");
+const botScoreInfo = document.getElementById("botScoreInfo");
+const rallyInfo = document.getElementById("rallyInfo");
+const shotInfo = document.getElementById("shotInfo");
+const highScoresList = document.getElementById("highScores");
+
+const SCORE_KEY = "toyCyberTennisHighScoresV2";
+
+const hZones = {
+  top:{
+    x:46,
+    y:58,
+    width:235,
+    height:88
+  },
+  middle:{
+    x:128,
+    y:58,
+    width:72,
+    height:364
+  },
+  bottom:{
+    x:46,
+    y:334,
+    width:235,
+    height:88
+  }
+};
+
+let keys = {};
+let gameStarted = false;
+let gameOver = false;
+
+let level = 1;
+let playerScore = 0;
+let botScore = 0;
+let rally = 0;
+let maxLevelReached = 1;
+
+let pointMessage = "";
+let pointMessageTimer = 0;
+
+let player;
+let bot;
+let ball;
+
+let hitPressed = false;
+let hitCooldown = 0;
+
+let lastShotName = "NORMAL";
+
+function resetGame(){
+  level = 1;
+  playerScore = 0;
+  botScore = 0;
+  rally = 0;
+  maxLevelReached = 1;
+
+  gameStarted = false;
+  gameOver = false;
+
+  pointMessage = "";
+  pointMessageTimer = 0;
+
+  hitPressed = false;
+  hitCooldown = 0;
+
+  lastShotName = "NORMAL";
+
+  player = {
+    x:120,
+    y:205,
+    width:24,
+    height:74,
+    speed:6.2
+  };
+
+  bot = {
+    x:626,
+    y:190,
+    width:24,
+    height:96,
+    speed:4.2
+  };
+
+  resetBall(1);
+  updateInfo();
+}
+
+function startGame(){
+  if(gameOver){
+    return;
+  }
+
+  gameStarted = true;
+}
+
+function resetBall(direction){
+  ball = {
+    x:canvas.width / 2,
+    y:canvas.height / 2,
+    radius:10,
+    vx:direction * (5.2 + level * 0.25),
+    vy:Math.random() * 4 - 2,
+    speedLimit:13 + level * 0.48
+  };
+
+  rally = 0;
+}
+
+function botStats(){
+  return {
+    speed:4.0 + level * 0.45,
+    error:Math.max(5,42 - level * 3.1),
+    reaction:Math.max(0.055,0.22 - level * 0.012),
+    hitPower:1.01 + level * 0.012
+  };
+}
+
+function update(){
+  if(!gameStarted || gameOver){
+    return;
+  }
+
+  updatePlayer();
+  updateBot();
+  updateBall();
+  updateTimers();
+  updateInfo();
+}
+
+function updatePlayer(){
+  let nextX = player.x;
+  let nextY = player.y;
+
+  if(keys["ArrowUp"]){
+    nextY -= player.speed;
+  }
+
+  if(keys["ArrowDown"]){
+    nextY += player.speed;
+  }
+
+  if(keys["ArrowLeft"]){
+    nextX -= player.speed;
+  }
+
+  if(keys["ArrowRight"]){
+    nextX += player.speed;
+  }
+
+  if(canPlayerMoveTo(nextX,player.y)){
+    player.x = nextX;
+  }
+
+  if(canPlayerMoveTo(player.x,nextY)){
+    player.y = nextY;
+  }
+
+  if(hitCooldown > 0){
+    hitCooldown--;
+  }
+}
+
+function canPlayerMoveTo(x,y){
+  const centerX = x + player.width / 2;
+  const centerY = y + player.height / 2;
+
+  return isPointInHZone(centerX,centerY);
+}
+
+function isPointInHZone(x,y){
+  return (
+    pointInRect(x,y,hZones.top) ||
+    pointInRect(x,y,hZones.middle) ||
+    pointInRect(x,y,hZones.bottom)
+  );
+}
+
+function pointInRect(x,y,r){
+  return (
+    x >= r.x &&
+    x <= r.x + r.width &&
+    y >= r.y &&
+    y <= r.y + r.height
+  );
+}
+
+function isPlayerInTopH(){
+  const centerX = player.x + player.width / 2;
+  const centerY = player.y + player.height / 2;
+
+  return pointInRect(centerX,centerY,hZones.top);
+}
+
+function updateBot(){
+  const stats = botStats();
+
+  let targetY = ball.y - bot.height / 2;
+
+  if(ball.vx < 0){
+    targetY = canvas.height / 2 - bot.height / 2;
+  }else{
+    targetY += Math.sin(Date.now() * 0.004) * stats.error;
+  }
+
+  bot.y += (targetY - bot.y) * stats.reaction;
+
+  if(bot.y < targetY){
+    bot.y += Math.min(stats.speed,targetY - bot.y);
+  }
+
+  if(bot.y > targetY){
+    bot.y -= Math.min(stats.speed,bot.y - targetY);
+  }
+
+  bot.y = clamp(bot.y,48,canvas.height - bot.height - 48);
+}
+
+function updateBall(){
+  ball.x += ball.vx;
+  ball.y += ball.vy;
+
+  if(ball.y - ball.radius <= 28){
+    ball.y = 28 + ball.radius;
+    ball.vy *= -1;
+  }
+
+  if(ball.y + ball.radius >= canvas.height - 28){
+    ball.y = canvas.height - 28 - ball.radius;
+    ball.vy *= -1;
+  }
+
+  checkPlayerHit();
+  checkBotHit();
+
+  if(ball.x < -40){
+    botScore++;
+    pointMessage = "BOT POINT";
+    pointMessageTimer = 70;
+    checkScore();
+    resetBall(1);
+  }
+
+  if(ball.x > canvas.width + 40){
+    playerScore++;
+    pointMessage = "PLAYER POINT";
+    pointMessageTimer = 70;
+    checkScore();
+    resetBall(-1);
+  }
+}
+
+function checkPlayerHit(){
+  const paddle = {
+    x:player.x,
+    y:player.y,
+    width:player.width,
+    height:player.height
+  };
+
+  const b = {
+    x:ball.x - ball.radius,
+    y:ball.y - ball.radius,
+    width:ball.radius * 2,
+    height:ball.radius * 2
+  };
+
+  if(!rectHit(paddle,b)){
+    return;
+  }
+
+  if(ball.vx >= 0){
+    return;
+  }
+
+  const hitPos =
+    (ball.y - (player.y + player.height / 2)) /
+    (player.height / 2);
+
+  const manualHit = hitPressed && hitCooldown <= 0;
+  const backShot = keys["ArrowLeft"] && manualHit;
+  const rightAim = keys["ArrowRight"] && manualHit;
+  const leftAim = keys["ArrowLeft"] && manualHit;
+  const smash = isPlayerInTopH() && manualHit && !backShot;
+
+  let vxPower = 1.08;
+  let baseSpeedAdd = 0.25;
+  let vyPower = 6.2 + level * 0.18;
+
+  lastShotName = "NORMAL";
+
+  if(manualHit){
+    vxPower = 1.18;
+    baseSpeedAdd = 0.55;
+    lastShotName = "HIT";
+    hitCooldown = 20;
+  }
+
+  if(backShot){
+    vxPower = 0.72;
+    baseSpeedAdd = 0.08;
+    vyPower = 3.2;
+    lastShotName = "LONG SLOW";
+  }
+
+  if(smash){
+    vxPower = 1.55;
+    baseSpeedAdd = 1.2;
+    vyPower = 8.0 + level * 0.24;
+    lastShotName = "SMASH";
+  }
+
+  let aim = hitPos * vyPower;
+
+  if(rightAim){
+    aim += 4.2;
+    if(lastShotName === "HIT"){
+      lastShotName = "RIGHT SHOT";
+    }
+  }
+
+  if(leftAim){
+    aim -= 4.2;
+    if(lastShotName === "HIT"){
+      lastShotName = "LEFT SHOT";
+    }
+  }
+
+  ball.x = player.x + player.width + ball.radius;
+
+  ball.vx = Math.min(
+    Math.abs(ball.vx) * vxPower + baseSpeedAdd,
+    ball.speedLimit
+  );
+
+  ball.vy = clamp(aim,-10.5,10.5);
+
+  rally++;
+}
+
+function checkBotHit(){
+  const paddle = {
+    x:bot.x,
+    y:bot.y,
+    width:bot.width,
+    height:bot.height
+  };
+
+  const b = {
+    x:ball.x - ball.radius,
+    y:ball.y - ball.radius,
+    width:ball.radius * 2,
+    height:ball.radius * 2
+  };
+
+  if(!rectHit(paddle,b)){
+    return;
+  }
+
+  if(ball.vx <= 0){
+    return;
+  }
+
+  const stats = botStats();
+
+  const hitPos =
+    (ball.y - (bot.y + bot.height / 2)) /
+    (bot.height / 2);
+
+  const mistake =
+    (Math.random() - 0.5) * (stats.error / 12);
+
+  ball.x = bot.x - ball.radius;
+
+  ball.vx = -Math.min(
+    Math.abs(ball.vx) * stats.hitPower + 0.18,
+    ball.speedLimit
+  );
+
+  ball.vy =
+    (hitPos + mistake) *
+    (5.8 + level * 0.22);
+
+  rally++;
+}
+
+function checkScore(){
+  if(playerScore >= 5){
+    level++;
+    maxLevelReached = Math.max(maxLevelReached,level);
+
+    playerScore = 0;
+    botScore = 0;
+
+    pointMessage = "LEVEL UP!";
+    pointMessageTimer = 100;
+  }
+
+  if(botScore >= 5){
+    gameOver = true;
+    saveHighScore(maxLevelReached);
+  }
+}
+
+function updateTimers(){
+  if(pointMessageTimer > 0){
+    pointMessageTimer--;
+  }
+}
+
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  drawCourt();
+  drawHZone();
+  drawPaddle(player,"#66ccff");
+  drawPaddle(bot,"#ff5577");
+  drawBall();
+  drawHud();
+
+  if(!gameStarted){
+    drawStartScreen();
+  }
+
+  if(gameOver){
+    drawGameOver();
+  }
+}
+
+function drawCourt(){
+  ctx.fillStyle = "rgba(0,255,255,0.05)";
+
+  for(let y = 0; y < canvas.height; y += 40){
+    ctx.fillRect(0,y,canvas.width,1);
+  }
+
+  for(let x = 0; x < canvas.width; x += 40){
+    ctx.fillRect(x,0,1,canvas.height);
+  }
+
+  ctx.strokeStyle = "rgba(102,204,255,0.75)";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(28,28,canvas.width - 56,canvas.height - 56);
+
+  ctx.setLineDash([10,10]);
+  ctx.beginPath();
+  ctx.moveTo(canvas.width / 2,28);
+  ctx.lineTo(canvas.width / 2,canvas.height - 28);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.fillStyle = "rgba(255,255,255,0.08)";
+  ctx.fillRect(canvas.width / 2 - 2,0,4,canvas.height);
+}
+
+function drawHZone(){
+  drawZoneRect(hZones.top,"rgba(102,204,255,0.16)");
+  drawZoneRect(hZones.middle,"rgba(102,204,255,0.10)");
+  drawZoneRect(hZones.bottom,"rgba(102,204,255,0.10)");
+
+  ctx.strokeStyle = "rgba(102,204,255,0.65)";
+  ctx.lineWidth = 2;
+
+  Object.values(hZones).forEach(r=>{
+    ctx.strokeRect(r.x,r.y,r.width,r.height);
+  });
+
+  ctx.fillStyle = "#66ccff";
+  ctx.font = "13px sans-serif";
+  ctx.fillText("SMASH ZONE",hZones.top.x + 68,hZones.top.y + 26);
+}
+
+function drawZoneRect(r,color){
+  ctx.fillStyle = color;
+  ctx.fillRect(r.x,r.y,r.width,r.height);
+}
+
+function drawPaddle(p,color){
+  ctx.save();
+
+  ctx.shadowColor = color;
+  ctx.shadowBlur = 16;
+
+  ctx.fillStyle = color;
+  ctx.fillRect(p.x,p.y,p.width,p.height);
+
+  ctx.fillStyle = "rgba(255,255,255,0.45)";
+  ctx.fillRect(p.x + 5,p.y + 10,p.width - 10,p.height - 20);
+
+  ctx.restore();
+}
+
+function drawBall(){
+  ctx.save();
+
+  ctx.shadowColor = "#ffffff";
+  ctx.shadowBlur = 18;
+
+  ctx.fillStyle = "#ffffff";
+
+  ctx.beginPath();
+  ctx.arc(ball.x,ball.y,ball.radius,0,Math.PI * 2);
+  ctx.fill();
+
+  ctx.restore();
+}
+
+function drawHud(){
+  ctx.fillStyle = "white";
+  ctx.font = "26px sans-serif";
+
+  ctx.fillText(playerScore,canvas.width / 2 - 70,48);
+  ctx.fillText(botScore,canvas.width / 2 + 58,48);
+
+  ctx.font = "18px sans-serif";
+  ctx.fillStyle = "#66ccff";
+  ctx.fillText("LEVEL " + level,canvas.width / 2 - 40,82);
+
+  ctx.font = "14px sans-serif";
+  ctx.fillStyle = "#ddd";
+  ctx.fillText("RALLY " + rally,canvas.width / 2 - 35,105);
+
+  ctx.fillStyle = "#ffffff";
+  ctx.fillText("SHOT " + lastShotName,canvas.width / 2 - 55,128);
+
+  if(pointMessageTimer > 0){
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "36px sans-serif";
+
+    ctx.fillText(
+      pointMessage,
+      canvas.width / 2 - ctx.measureText(pointMessage).width / 2,
+      canvas.height / 2 - 20
+    );
+  }
+}
+
+function drawStartScreen(){
+  ctx.fillStyle = "rgba(0,0,0,0.78)";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  ctx.fillStyle = "#66ccff";
+  ctx.font = "54px sans-serif";
+  ctx.fillText("TOY CYBER",185,160);
+  ctx.fillText("TENNIS",250,225);
+
+  ctx.fillStyle = "white";
+  ctx.font = "24px sans-serif";
+  ctx.fillText("Enter または STARTで開始",205,315);
+
+  ctx.font = "17px sans-serif";
+  ctx.fillText("↑↓←→でHエリア内を移動",245,355);
+  ctx.fillText("Spaceで打つ / H上部ならスマッシュ",210,382);
+  ctx.fillText("←+Spaceで遅いロング / ←→+Spaceで打ち分け",160,409);
+}
+
+function drawGameOver(){
+  ctx.fillStyle = "rgba(0,0,0,0.76)";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  ctx.fillStyle = "#ff3355";
+  ctx.font = "58px sans-serif";
+  ctx.fillText("GAME OVER",175,210);
+
+  ctx.fillStyle = "white";
+  ctx.font = "26px sans-serif";
+  ctx.fillText("到達LEVEL : " + maxLevelReached,260,275);
+
+  ctx.font = "20px sans-serif";
+  ctx.fillText("RESETで再挑戦",292,330);
+}
+
+function updateInfo(){
+  levelInfo.textContent = level;
+  playerScoreInfo.textContent = playerScore;
+  botScoreInfo.textContent = botScore;
+  rallyInfo.textContent = rally;
+  shotInfo.textContent = lastShotName;
+}
+
+function loop(){
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+function clamp(value,min,max){
+  return Math.max(min,Math.min(max,value));
+}
+
+function rectHit(a,b){
+  return (
+    a.x < b.x + b.width &&
+    a.x + a.width > b.x &&
+    a.y < b.y + b.height &&
+    a.y + a.height > b.y
+  );
+}
+
+function getHighScores(){
+  const data = localStorage.getItem(SCORE_KEY);
+
+  if(!data){
+    return [];
+  }
+
+  try{
+    const parsed = JSON.parse(data);
+    return Array.isArray(parsed) ? parsed : [];
+  }catch(e){
+    return [];
+  }
+}
+
+function saveHighScore(score){
+  let scores = getHighScores();
+
+  scores.push(score);
+  scores.sort((a,b)=>b-a);
+  scores = scores.slice(0,10);
+
+  localStorage.setItem(SCORE_KEY,JSON.stringify(scores));
+  showHighScores();
+}
+
+function showHighScores(){
+  const scores = getHighScores();
+
+  highScoresList.innerHTML = "";
+
+  for(let i = 0; i < 10; i++){
+    const li = document.createElement("li");
+
+    if(scores[i] !== undefined){
+      li.textContent = "LEVEL " + scores[i];
+    }else{
+      li.textContent = "-";
+    }
+
+    highScoresList.appendChild(li);
+  }
+}
+
+document.addEventListener("keydown",e=>{
+  keys[e.code] = true;
+
+  if(e.code === "Enter"){
+    startGame();
+  }
+
+  if(e.code === "Space"){
+    e.preventDefault();
+    hitPressed = true;
+  }
+
+  if(e.code === "KeyR"){
+    resetGame();
+    gameStarted = true;
+  }
+});
+
+document.addEventListener("keyup",e=>{
+  keys[e.code] = false;
+
+  if(e.code === "Space"){
+    hitPressed = false;
+  }
+});
+
+function holdButton(button,code){
+  button.addEventListener("touchstart",e=>{
+    e.preventDefault();
+    keys[code] = true;
+  },{passive:false});
+
+  button.addEventListener("touchend",e=>{
+    e.preventDefault();
+    keys[code] = false;
+  },{passive:false});
+
+  button.addEventListener("touchcancel",e=>{
+    e.preventDefault();
+    keys[code] = false;
+  },{passive:false});
+
+  button.addEventListener("mousedown",()=>{
+    keys[code] = true;
+  });
+
+  button.addEventListener("mouseup",()=>{
+    keys[code] = false;
+  });
+
+  button.addEventListener("mouseleave",()=>{
+    keys[code] = false;
+  });
+}
+
+function holdHitButton(button){
+  button.addEventListener("touchstart",e=>{
+    e.preventDefault();
+    hitPressed = true;
+  },{passive:false});
+
+  button.addEventListener("touchend",e=>{
+    e.preventDefault();
+    hitPressed = false;
+  },{passive:false});
+
+  button.addEventListener("touchcancel",e=>{
+    e.preventDefault();
+    hitPressed = false;
+  },{passive:false});
+
+  button.addEventListener("mousedown",()=>{
+    hitPressed = true;
+  });
+
+  button.addEventListener("mouseup",()=>{
+    hitPressed = false;
+  });
+
+  button.addEventListener("mouseleave",()=>{
+    hitPressed = false;
+  });
+}
+
+holdButton(upBtn,"ArrowUp");
+holdButton(downBtn,"ArrowDown");
+holdButton(leftBtn,"ArrowLeft");
+holdButton(rightBtn,"ArrowRight");
+holdHitButton(hitBtn);
+
+startBtn.addEventListener("click",()=>{
+  startGame();
+});
+
+startBtn.addEventListener("touchstart",e=>{
+  e.preventDefault();
+  startGame();
+},{passive:false});
+
+resetBtn.addEventListener("click",()=>{
+  resetGame();
+  gameStarted = true;
+});
+
+resetBtn.addEventListener("touchstart",e=>{
+  e.preventDefault();
+  resetGame();
+  gameStarted = true;
+},{passive:false});
+
+resetGame();
+showHighScores();
+loop();
+</script>
+
+</body>
+</html>
