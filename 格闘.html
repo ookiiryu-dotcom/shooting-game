@@ -5,7 +5,7 @@
 <meta name="viewport"
 content="width=device-width, initial-scale=1.0">
 
-<title>Cyber Hero Battle</title>
+<title>AI Fighting Battle DX</title>
 
 <style>
 
@@ -16,9 +16,7 @@ content="width=device-width, initial-scale=1.0">
 body{
   margin:0;
   background:
-  radial-gradient(circle at top,
-  #1a1a4a,#050510 70%);
-
+  radial-gradient(circle at top,#1d0d2d,#050510 70%);
   color:white;
   font-family:sans-serif;
   text-align:center;
@@ -27,10 +25,8 @@ body{
 
 h1{
   margin:18px 0 8px;
-  color:#00ffff;
-
-  text-shadow:
-  0 0 10px #00ffff;
+  color:#66ccff;
+  text-shadow:0 0 18px #66ccff;
 }
 
 p{
@@ -49,19 +45,14 @@ p{
 
 .top-buttons button,
 .top-buttons a{
-
-  width:140px;
-  height:42px;
-
-  line-height:42px;
-
+  width:150px;
+  height:44px;
+  line-height:44px;
   border:none;
-  border-radius:10px;
-
+  border-radius:12px;
   color:white;
   font-size:15px;
   font-weight:bold;
-
   text-decoration:none;
 }
 
@@ -71,7 +62,7 @@ p{
 
 .back-btn{
   background:#333;
-  border:1px solid #555;
+  border:1px solid #666;
 }
 
 .game-layout{
@@ -79,7 +70,6 @@ p{
   justify-content:center;
   align-items:flex-start;
   gap:18px;
-
   padding:0 12px 24px;
 }
 
@@ -90,79 +80,59 @@ p{
 }
 
 canvas{
-
   background:
-  linear-gradient(
-    to bottom,
-    #091020,
-    #050510
-  );
-
-  border:2px solid #00ffff;
+  linear-gradient(to bottom,#0b1025,#050510);
+  border:2px solid #66ccff;
 
   box-shadow:
-    0 0 20px #00ffff,
-    0 0 40px #00ffff;
+    0 0 25px #66ccff,
+    0 0 50px rgba(102,204,255,0.4);
 
-  width:700px;
+  width:720px;
   max-width:96vw;
   height:auto;
 }
 
 .controls{
-
-  width:700px;
+  width:720px;
   max-width:96vw;
 
   display:grid;
-
-  grid-template-columns:
-  repeat(2,1fr);
-
+  grid-template-columns:1fr 1fr;
   gap:10px;
 
   margin-top:14px;
 }
 
 .controls button{
-
-  height:58px;
-
+  height:60px;
   border:none;
-  border-radius:12px;
-
-  background:#222;
-
+  border-radius:14px;
   color:white;
-
-  font-size:18px;
+  font-size:17px;
   font-weight:bold;
+  background:#222;
+  border:1px solid #66ccff;
 
-  border:1px solid #00ffff;
+  box-shadow:
+    0 0 10px rgba(102,204,255,0.3);
 }
 
 .score-board{
+  width:230px;
+  background:rgba(10,20,35,0.92);
 
-  width:220px;
+  border:1px solid #66ccff;
+  border-radius:14px;
 
-  background:
-  rgba(10,10,30,0.9);
-
-  border:1px solid #00ffff;
-
-  border-radius:12px;
-
-  padding:12px;
-
+  padding:14px;
   text-align:left;
 }
 
 .score-board h2{
   margin:0 0 10px;
-
   text-align:center;
-
-  color:#00ffff;
+  color:#66ccff;
 }
 
 .score-board ol{
@@ -171,10 +141,10 @@ canvas{
 }
 
 .score-board li{
-  margin-bottom:6px;
+  margin-bottom:7px;
 }
 
-@media(max-width:850px){
+@media(max-width:900px){
 
   .game-layout{
     flex-direction:column;
@@ -183,7 +153,7 @@ canvas{
 
   .score-board{
     width:96vw;
-    max-width:700px;
+    max-width:720px;
   }
 
 }
@@ -193,12 +163,14 @@ canvas{
 
 <body>
 
-<h1>Cyber Hero Battle</h1>
+<h1>AI Fighting Battle DX</h1>
 
 <p>
 ← → 移動 /
-Spaceでジャンプ /
-Enterで開始
+ジャンプ /
+攻撃 /
+バリア /
+ダッシュ
 </p>
 
 <div class="top-buttons">
@@ -206,15 +178,13 @@ Enterで開始
   <button
   id="resetBtn"
   class="reset-btn">
-  RESET
+    RESET
   </button>
 
   <a
   href="index.html"
   class="back-btn">
-
-  ← ホームへ戻る
-
+    ← ホームへ戻る
   </a>
 
 </div>
@@ -225,18 +195,34 @@ Enterで開始
 
     <canvas
     id="game"
-    width="700"
-    height="450">
+    width="720"
+    height="480">
     </canvas>
 
     <div class="controls">
 
-      <button id="leftBtn">
-      ← 移動
+      <button id="jumpBtn">
+        ジャンプ
       </button>
 
-      <button id="jumpBtn">
-      ジャンプ
+      <button id="attackBtn">
+        攻撃
+      </button>
+
+      <button id="meleeBarrierBtn">
+        近距離バリア
+      </button>
+
+      <button id="rangeAttackBtn">
+        遠距離攻撃
+      </button>
+
+      <button id="rangeBarrierBtn">
+        遠距離バリア
+      </button>
+
+      <button id="dashBtn">
+        近距離ダッシュ
       </button>
 
     </div>
@@ -255,110 +241,124 @@ Enterで開始
 
 <script>
 
-// ========================
-// 基本取得
-// ========================
-
 const canvas =
 document.getElementById("game");
 
 const ctx =
 canvas.getContext("2d");
 
+const jumpBtn =
+document.getElementById("jumpBtn");
+
+const attackBtn =
+document.getElementById("attackBtn");
+
+const meleeBarrierBtn =
+document.getElementById("meleeBarrierBtn");
+
+const rangeAttackBtn =
+document.getElementById("rangeAttackBtn");
+
+const rangeBarrierBtn =
+document.getElementById("rangeBarrierBtn");
+
+const dashBtn =
+document.getElementById("dashBtn");
+
+const resetBtn =
+document.getElementById("resetBtn");
+
 const highScoresList =
 document.getElementById("highScores");
-
-// ========================
-// 拡張システム
-// ========================
-
-const extraUpdates = [];
-const extraDraws = [];
-
-// ========================
-// 状態
-// ========================
 
 let keys = {};
 
 let gameStarted = false;
 let gameOver = false;
-
 let scoreSaved = false;
-
-let gravity = 0.8;
 
 let level = 1;
 
-// ========================
-// プレイヤー
-// ========================
+let player;
+let enemy;
 
-let player = {
-
-  x:120,
-  y:260,
-
-  width:70,
-  height:110,
-
-  hp:100,
-  maxHp:100,
-
-  speed:6,
-
-  vy:0,
-
-  jumping:false
-};
-
-// ========================
-// 敵
-// ========================
-
-let enemy = {
-
-  x:520,
-  y:260,
-
-  width:70,
-  height:110,
-
-  hp:100,
-  maxHp:100,
-
-  speed:2
-};
-
-// ========================
-// リセット
-// ========================
+let projectiles = [];
+let enemyProjectiles = [];
 
 function resetGame(){
 
-  player.hp = 100;
+  player = {
 
-  player.x = 120;
-  player.y = 260;
+    x:120,
+    y:320,
 
-  player.vy = 0;
+    width:60,
+    height:90,
 
-  player.jumping = false;
+    hp:100,
 
-  enemy.hp = 100;
+    speed:6,
 
-  enemy.x = 520;
+    vy:0,
+
+    jumping:false,
+
+    meleeBarrier:false,
+    rangeBarrier:false,
+
+    dashTimer:0
+  };
+
+  spawnEnemy();
 
   level = 1;
 
   gameOver = false;
 
   scoreSaved = false;
+
+  projectiles = [];
+  enemyProjectiles = [];
 }
 
-// ========================
-// スタート
-// ========================
+function spawnEnemy(){
+
+  const colors = [
+    "#55ff55",
+    "#ffee55",
+    "#ff8844",
+    "#ff4444",
+    "#bb44ff",
+    "#00ffff"
+  ];
+
+  const color =
+  colors[
+    Math.min(
+      colors.length-1,
+      Math.floor(level/2)
+    )
+  ];
+
+  enemy = {
+
+    x:560,
+    y:320,
+
+    width:70,
+    height:70,
+
+    hp:50 + level*25,
+
+    attack:4 + level,
+
+    speed:2 + level*0.25,
+
+    color:color,
+
+    shootTimer:0
+  };
+}
 
 function startGame(){
 
@@ -370,49 +370,11 @@ function startGame(){
   }
 }
 
-// ========================
-// ジャンプ
-// ========================
-
-function jump(){
-
-  if(player.jumping) return;
-
-  player.vy = -16;
-
-  player.jumping = true;
-}
-
-// ========================
-// 敵色
-// ========================
-
-function getEnemyColor(){
-
-  if(level < 3){
-    return "#00ff66";
-  }
-
-  if(level < 5){
-    return "#ffee00";
-  }
-
-  if(level < 8){
-    return "#ff4444";
-  }
-
-  return "#bb66ff";
-}
-
-// ========================
-// ランキング
-// ========================
-
 function getHighScores(){
 
   const data =
   localStorage.getItem(
-    "cyberHeroScores"
+    "fightDXScores"
   );
 
   return data
@@ -435,7 +397,7 @@ function saveHighScore(){
   scores.slice(0,10);
 
   localStorage.setItem(
-    "cyberHeroScores",
+    "fightDXScores",
     JSON.stringify(scores)
   );
 
@@ -449,7 +411,7 @@ function showHighScores(){
   const scores =
   getHighScores();
 
-  highScoresList.innerHTML = "";
+  highScoresList.innerHTML="";
 
   for(let i=0;i<10;i++){
 
@@ -458,33 +420,151 @@ function showHighScores(){
 
     li.textContent =
     scores[i] !== undefined
-    ? "Lv " + Math.floor(scores[i])
+    ? "Lv " + scores[i]
     : "-";
 
     highScoresList.appendChild(li);
   }
 }
 
-// ========================
-// キー
-// ========================
+function meleeAttack(){
+
+  if(!gameStarted){
+    startGame();
+    return;
+  }
+
+  const distance =
+  Math.abs(player.x-enemy.x);
+
+  if(distance < 110){
+
+    enemy.hp -= 14;
+
+    if(enemy.hp <= 0){
+
+      level++;
+
+      player.hp =
+      Math.min(
+        100,
+        player.hp + 20
+      );
+
+      spawnEnemy();
+    }
+  }
+}
+
+function rangeAttack(){
+
+  projectiles.push({
+
+    x:
+    player.x + 50,
+
+    y:
+    player.y + 35,
+
+    width:18,
+    height:8,
+
+    speed:10
+  });
+}
+
+function jump(){
+
+  if(!player.jumping){
+
+    player.vy = -18;
+
+    player.jumping = true;
+  }
+}
+
+function dash(){
+
+  if(player.dashTimer <= 0){
+
+    player.x += 100;
+
+    player.dashTimer = 40;
+  }
+}
+
+function activateMeleeBarrier(){
+
+  player.meleeBarrier = true;
+
+  setTimeout(()=>{
+
+    player.meleeBarrier = false;
+
+  },2000);
+}
+
+function activateRangeBarrier(){
+
+  player.rangeBarrier = true;
+
+  setTimeout(()=>{
+
+    player.rangeBarrier = false;
+
+  },2000);
+}
+
+function enemyShoot(){
+
+  enemyProjectiles.push({
+
+    x:enemy.x,
+
+    y:enemy.y + 30,
+
+    width:16,
+    height:8,
+
+    speed:7
+  });
+}
 
 document.addEventListener(
 "keydown",
 e=>{
 
-  keys[e.code] = true;
+  keys[e.code]=true;
 
   if(
     !gameStarted &&
     e.code==="Enter"
   ){
-
     startGame();
+  }
+
+  if(e.code==="KeyZ"){
+    meleeAttack();
+  }
+
+  if(e.code==="KeyX"){
+    rangeAttack();
   }
 
   if(e.code==="Space"){
     jump();
+  }
+
+  if(e.code==="KeyC"){
+    dash();
+  }
+
+  if(e.code==="KeyA"){
+    activateMeleeBarrier();
+  }
+
+  if(e.code==="KeyS"){
+    activateRangeBarrier();
   }
 
   if(e.code==="KeyR"){
@@ -499,12 +579,20 @@ e=>{
 document.addEventListener(
 "keyup",
 e=>{
-  keys[e.code] = false;
+  keys[e.code]=false;
 });
 
-// ========================
-// 更新
-// ========================
+function collision(a,b){
+
+  return (
+
+    a.x < b.x+b.width &&
+    a.x+a.width > b.x &&
+
+    a.y < b.y+b.height &&
+    a.y+a.height > b.y
+  );
+}
 
 function update(){
 
@@ -512,255 +600,270 @@ function update(){
 
   if(gameOver) return;
 
-  // 左右移動
   if(keys["ArrowLeft"]){
-
     player.x -= player.speed;
   }
 
   if(keys["ArrowRight"]){
-
     player.x += player.speed;
   }
 
-  // 重力
+  player.vy += 1;
+
   player.y += player.vy;
 
-  player.vy += gravity;
+  if(player.y >= 320){
 
-  if(player.y >= 260){
-
-    player.y = 260;
+    player.y = 320;
 
     player.vy = 0;
 
     player.jumping = false;
   }
 
-  // 敵追尾
-  if(enemy.x > player.x + 80){
+  player.x = Math.max(
+    0,
+    Math.min(
+      canvas.width-player.width,
+      player.x
+    )
+  );
 
+  if(player.dashTimer > 0){
+    player.dashTimer--;
+  }
+
+  if(enemy.x > player.x + 90){
     enemy.x -= enemy.speed;
   }
 
-  if(enemy.x < player.x - 80){
-
+  if(enemy.x < player.x - 90){
     enemy.x += enemy.speed;
   }
 
-  // 接触判定
-  const distance =
-  Math.abs(player.x - enemy.x);
+  enemy.shootTimer++;
 
-  if(distance < 90){
+  if(enemy.shootTimer > 90){
 
-    if(Math.random() < 0.02){
+    enemyShoot();
 
-      player.hp -= 3;
+    enemy.shootTimer = 0;
+  }
 
-      if(player.hp <= 0){
+  projectiles.forEach(p=>{
+    p.x += p.speed;
+  });
 
-        player.hp = 0;
+  enemyProjectiles.forEach(p=>{
+    p.x -= p.speed;
+  });
 
-        gameOver = true;
+  projectiles.forEach(p=>{
 
-        saveHighScore();
+    if(collision(
+      p,
+      {
+        x:enemy.x,
+        y:enemy.y,
+        width:enemy.width,
+        height:enemy.height
       }
+    )){
+
+      enemy.hp -= 10;
+
+      p.hit = true;
+
+      if(enemy.hp <= 0){
+
+        level++;
+
+        spawnEnemy();
+      }
+    }
+
+  });
+
+  enemyProjectiles.forEach(p=>{
+
+    if(collision(
+      p,
+      {
+        x:player.x,
+        y:player.y,
+        width:player.width,
+        height:player.height
+      }
+    )){
+
+      if(!player.rangeBarrier){
+
+        player.hp -= enemy.attack;
+      }
+
+      p.hit = true;
+    }
+
+  });
+
+  const distance =
+  Math.abs(player.x-enemy.x);
+
+  if(
+    distance < 80 &&
+    Math.random() < 0.02
+  ){
+
+    if(!player.meleeBarrier){
+
+      player.hp -= enemy.attack;
     }
   }
 
-  // レベル上昇
-  level += 0.002;
+  if(player.hp <= 0){
 
-  // 拡張更新
-  extraUpdates.forEach(fn=>{
-    fn();
-  });
-}
+    player.hp = 0;
 
-// ========================
-// HPバー
-// ========================
+    gameOver = true;
 
-function drawHpBar(
-x,
-y,
-hp,
-maxHp,
-color
-){
+    saveHighScore();
+  }
 
-  ctx.fillStyle="#333";
-
-  ctx.fillRect(x,y,220,20);
-
-  ctx.fillStyle=color;
-
-  ctx.fillRect(
-    x,
-    y,
-    (hp/maxHp)*220,
-    20
+  projectiles =
+  projectiles.filter(
+    p=>!p.hit && p.x < canvas.width
   );
 
-  ctx.strokeStyle="white";
-
-  ctx.strokeRect(x,y,220,20);
+  enemyProjectiles =
+  enemyProjectiles.filter(
+    p=>!p.hit && p.x > -50
+  );
 }
 
-// ========================
-// プレイヤー描画
-// ========================
-
-function drawPlayer(){
-
-  const x = player.x;
-  const y = player.y;
+function drawVirus(){
 
   ctx.save();
 
-  ctx.shadowColor="#00ffff";
-  ctx.shadowBlur=25;
-
-  // マント
-  ctx.fillStyle="#004477";
-
-  ctx.beginPath();
-
-  ctx.moveTo(x+20,y+35);
-  ctx.lineTo(x-10,y+90);
-  ctx.lineTo(x+30,y+100);
-
-  ctx.fill();
-
-  // 体
-  ctx.fillStyle="#66ccff";
-
-  ctx.fillRect(
-    x+10,
-    y+20,
-    40,
-    60
-  );
-
-  // 頭
-  ctx.fillStyle="#d9f7ff";
+  ctx.fillStyle =
+  enemy.color;
 
   ctx.beginPath();
 
   ctx.arc(
-    x+30,
-    y,
-    20,
+    enemy.x + 35,
+    enemy.y + 35,
+    30,
     0,
     Math.PI*2
   );
 
   ctx.fill();
-
-  ctx.restore();
-}
-
-// ========================
-// 敵描画
-// ========================
-
-function drawEnemy(){
-
-  const x = enemy.x;
-  const y = enemy.y;
-
-  const color =
-  getEnemyColor();
-
-  ctx.save();
-
-  ctx.shadowColor=color;
-  ctx.shadowBlur=20;
 
   for(let i=0;i<10;i++){
 
     const angle =
     (Math.PI*2/10)*i;
 
-    const tx =
-    x+35+
-    Math.cos(angle)*45;
+    const sx =
+    enemy.x + 35 +
+    Math.cos(angle)*42;
 
-    const ty =
-    y+35+
-    Math.sin(angle)*45;
-
-    ctx.strokeStyle=color;
-
-    ctx.lineWidth=6;
+    const sy =
+    enemy.y + 35 +
+    Math.sin(angle)*42;
 
     ctx.beginPath();
 
-    ctx.moveTo(x+35,y+35);
+    ctx.arc(
+      sx,
+      sy,
+      6,
+      0,
+      Math.PI*2
+    );
 
-    ctx.lineTo(tx,ty);
-
-    ctx.stroke();
+    ctx.fill();
   }
-
-  ctx.fillStyle=color;
-
-  ctx.beginPath();
-
-  ctx.arc(
-    x+35,
-    y+35,
-    38,
-    0,
-    Math.PI*2
-  );
-
-  ctx.fill();
 
   ctx.restore();
 }
 
-// ========================
-// スタート画面
-// ========================
+function drawHero(){
 
-function drawStartScreen(){
+  ctx.save();
 
-  ctx.fillStyle=
-  "rgba(0,0,0,0.75)";
+  ctx.fillStyle =
+  "#66ccff";
 
   ctx.fillRect(
-    0,
-    0,
-    canvas.width,
-    canvas.height
+    player.x,
+    player.y,
+    player.width,
+    player.height
   );
 
-  ctx.fillStyle="#00ffff";
+  ctx.fillStyle =
+  "#ffffff";
 
-  ctx.font="52px sans-serif";
-
-  ctx.fillText(
-    "CYBER HERO",
-    170,
-    170
+  ctx.fillRect(
+    player.x + 12,
+    player.y + 10,
+    36,
+    12
   );
 
-  ctx.fillStyle="white";
+  ctx.fillStyle =
+  "#00ffff";
 
-  ctx.font="28px sans-serif";
-
-  ctx.fillText(
-    "スタートしますか？",
-    220,
-    250
+  ctx.fillRect(
+    player.x + 18,
+    player.y + 38,
+    24,
+    40
   );
+
+  if(player.meleeBarrier){
+
+    ctx.strokeStyle =
+    "#ffee55";
+
+    ctx.lineWidth = 5;
+
+    ctx.beginPath();
+
+    ctx.arc(
+      player.x + 30,
+      player.y + 45,
+      55,
+      0,
+      Math.PI*2
+    );
+
+    ctx.stroke();
+  }
+
+  if(player.rangeBarrier){
+
+    ctx.strokeStyle =
+    "#ff55ff";
+
+    ctx.lineWidth = 5;
+
+    ctx.beginPath();
+
+    ctx.arc(
+      player.x + 30,
+      player.y + 45,
+      70,
+      0,
+      Math.PI*2
+    );
+
+    ctx.stroke();
+  }
+
+  ctx.restore();
 }
-
-// ========================
-// 描画
-// ========================
 
 function draw(){
 
@@ -771,61 +874,152 @@ function draw(){
     canvas.height
   );
 
-  ctx.fillStyle="#111a33";
+  ctx.fillStyle =
+  "#111933";
 
   ctx.fillRect(
     0,
-    380,
+    410,
     canvas.width,
     70
   );
 
   if(!gameStarted){
 
-    drawStartScreen();
+    ctx.fillStyle =
+    "rgba(0,0,0,0.8)";
+
+    ctx.fillRect(
+      0,
+      0,
+      canvas.width,
+      canvas.height
+    );
+
+    ctx.fillStyle =
+    "#66ccff";
+
+    ctx.font =
+    "52px sans-serif";
+
+    ctx.fillText(
+      "AI BATTLE DX",
+      180,
+      180
+    );
+
+    ctx.fillStyle =
+    "white";
+
+    ctx.font =
+    "30px sans-serif";
+
+    ctx.fillText(
+      "スタートしますか？",
+      210,
+      270
+    );
+
+    ctx.font =
+    "22px sans-serif";
+
+    ctx.fillText(
+      "ENTERで開始",
+      255,
+      330
+    );
 
     return;
   }
 
-  drawPlayer();
+  drawHero();
 
-  drawEnemy();
+  drawVirus();
 
-  drawHpBar(
+  ctx.fillStyle =
+  "#00ffff";
+
+  projectiles.forEach(p=>{
+
+    ctx.fillRect(
+      p.x,
+      p.y,
+      p.width,
+      p.height
+    );
+  });
+
+  ctx.fillStyle =
+  "#ff4444";
+
+  enemyProjectiles.forEach(p=>{
+
+    ctx.fillRect(
+      p.x,
+      p.y,
+      p.width,
+      p.height
+    );
+  });
+
+  ctx.fillStyle =
+  "#333";
+
+  ctx.fillRect(
     20,
     20,
-    player.hp,
-    player.maxHp,
-    "#00ccff"
+    220,
+    20
   );
 
-  drawHpBar(
-    460,
+  ctx.fillStyle =
+  "#00ccff";
+
+  ctx.fillRect(
     20,
-    enemy.hp,
-    enemy.maxHp,
-    getEnemyColor()
+    20,
+    player.hp * 2.2,
+    20
   );
 
-  ctx.fillStyle="white";
+  ctx.fillStyle =
+  "#333";
 
-  ctx.font="24px sans-serif";
+  ctx.fillRect(
+    480,
+    20,
+    220,
+    20
+  );
+
+  ctx.fillStyle =
+  enemy.color;
+
+  ctx.fillRect(
+    480,
+    20,
+    (
+      enemy.hp /
+      (50 + level*25)
+    ) * 220,
+    20
+  );
+
+  ctx.fillStyle =
+  "white";
+
+  ctx.font =
+  "24px sans-serif";
 
   ctx.fillText(
-    "LEVEL : " +
-    Math.floor(level),
-    280,
-    60
+    "LEVEL : " + level,
+    300,
+    40
   );
-
-  // 拡張描画
-  extraDraws.forEach(fn=>{
-    fn();
-  });
 
   if(gameOver){
 
-    ctx.fillStyle=
+    ctx.fillStyle =
     "rgba(0,0,0,0.7)";
 
     ctx.fillRect(
@@ -835,21 +1029,32 @@ function draw(){
       canvas.height
     );
 
-    ctx.fillStyle="#ff3355";
+    ctx.fillStyle =
+    "#ff3355";
 
-    ctx.font="58px sans-serif";
+    ctx.font =
+    "56px sans-serif";
 
     ctx.fillText(
       "GAME OVER",
-      170,
+      180,
       180
     );
+
+    ctx.fillStyle =
+    "white";
+
+    ctx.font =
+    "28px sans-serif";
+
+    ctx.fillText(
+      "到達レベル : " + level,
+      240,
+      260
+    );
+
   }
 }
-
-// ========================
-// ループ
-// ========================
 
 function loop(){
 
@@ -860,71 +1065,67 @@ function loop(){
   requestAnimationFrame(loop);
 }
 
-// ========================
-// ボタン
-// ========================
-
-function pressKey(code){
-  keys[code] = true;
-}
-
-function releaseKey(code){
-  keys[code] = false;
-}
-
-function addHoldButton(
+function addButtonAction(
 button,
-code
+action
 ){
 
   button.addEventListener(
     "touchstart",
     e=>{
       e.preventDefault();
-      pressKey(code);
+      action();
     }
   );
 
   button.addEventListener(
-    "touchend",
-    e=>{
-      e.preventDefault();
-      releaseKey(code);
-    }
+    "click",
+    action
   );
 }
 
-addHoldButton(
-document.getElementById("leftBtn"),
-"ArrowLeft"
+addButtonAction(
+jumpBtn,
+jump
 );
 
-document
-.getElementById("jumpBtn")
-.addEventListener(
-"click",
-()=>{
-  jump();
-}
+addButtonAction(
+attackBtn,
+meleeAttack
 );
 
-document
-.getElementById("resetBtn")
-.addEventListener(
+addButtonAction(
+rangeAttackBtn,
+rangeAttack
+);
+
+addButtonAction(
+meleeBarrierBtn,
+activateMeleeBarrier
+);
+
+addButtonAction(
+rangeBarrierBtn,
+activateRangeBarrier
+);
+
+addButtonAction(
+dashBtn,
+dash
+);
+
+resetBtn.addEventListener(
 "click",
 ()=>{
 
   gameStarted = true;
 
   resetGame();
-}
-);
-
-// ========================
-// 開始
-// ========================
+});
 
 showHighScores();
+
+resetGame();
 
 loop();
 
@@ -932,286 +1133,3 @@ loop();
 
 </body>
 </html>
-
-<script>
-
-// ========================
-// 第2回追加機能
-// ========================
-
-// 攻撃ボタン取得
-const attackBtn =
-document.getElementById("attackBtn");
-
-const shotBtn =
-document.getElementById("shotBtn");
-
-// 電子弾
-let shots = [];
-
-// 攻撃エフェクト
-let hitEffects = [];
-
-// プレイヤー状態追加
-player.attacking = false;
-
-// ========================
-// 近距離攻撃
-// ========================
-
-function attack(){
-
-  if(gameOver) return;
-
-  player.attacking = true;
-
-  setTimeout(()=>{
-    player.attacking = false;
-  },200);
-
-  const distance =
-  Math.abs(player.x - enemy.x);
-
-  if(distance < 120){
-
-    enemy.hp -= 10;
-
-    createHitEffect(
-      enemy.x + 30,
-      enemy.y + 30
-    );
-
-    if(enemy.hp <= 0){
-
-      level++;
-
-      enemy.hp =
-      100 + level * 20;
-
-      enemy.maxHp =
-      enemy.hp;
-
-      enemy.speed =
-      2 + level * 0.3;
-
-      enemy.x = 520;
-    }
-  }
-}
-
-// ========================
-// 遠距離攻撃
-// ========================
-
-function shootBullet(){
-
-  if(gameOver) return;
-
-  shots.push({
-
-    x:player.x + 60,
-    y:player.y + 40,
-
-    width:22,
-    height:8,
-
-    speed:12
-  });
-}
-
-// ========================
-// ヒット演出
-// ========================
-
-function createHitEffect(x,y){
-
-  hitEffects.push({
-
-    x:x,
-    y:y,
-
-    life:20
-  });
-}
-
-// ========================
-// 更新追加
-// ========================
-
-extraUpdates.push(function(){
-
-  // 電子弾移動
-  shots.forEach(shot=>{
-
-    shot.x += shot.speed;
-
-    // 命中
-    if(
-
-      shot.x <
-      enemy.x + enemy.width &&
-
-      shot.x + shot.width >
-      enemy.x &&
-
-      shot.y <
-      enemy.y + enemy.height &&
-
-      shot.y + shot.height >
-      enemy.y
-
-    ){
-
-      enemy.hp -= 6;
-
-      createHitEffect(
-        enemy.x + 30,
-        enemy.y + 30
-      );
-
-      shot.hit = true;
-
-      if(enemy.hp <= 0){
-
-        level++;
-
-        enemy.hp =
-        100 + level * 20;
-
-        enemy.maxHp =
-        enemy.hp;
-
-        enemy.speed =
-        2 + level * 0.3;
-
-        enemy.x = 520;
-      }
-    }
-
-  });
-
-  // 消去
-  shots =
-  shots.filter(shot=>
-    shot.x < canvas.width + 100 &&
-    !shot.hit
-  );
-
-  // エフェクト寿命
-  hitEffects.forEach(effect=>{
-    effect.life--;
-  });
-
-  hitEffects =
-  hitEffects.filter(
-    effect=>effect.life > 0
-  );
-
-});
-
-// ========================
-// 描画追加
-// ========================
-
-extraDraws.push(function(){
-
-  // 近距離攻撃エフェクト
-  if(player.attacking){
-
-    ctx.fillStyle =
-    "rgba(0,255,255,0.4)";
-
-    ctx.fillRect(
-      player.x + 60,
-      player.y + 10,
-      60,
-      70
-    );
-  }
-
-  // 電子弾
-  shots.forEach(shot=>{
-
-    ctx.save();
-
-    ctx.shadowColor="#00ffff";
-    ctx.shadowBlur=20;
-
-    ctx.fillStyle="#66ffff";
-
-    ctx.fillRect(
-      shot.x,
-      shot.y,
-      shot.width,
-      shot.height
-    );
-
-    ctx.restore();
-  });
-
-  // ヒット演出
-  hitEffects.forEach(effect=>{
-
-    ctx.save();
-
-    ctx.globalAlpha =
-    effect.life / 20;
-
-    ctx.strokeStyle="#ffffff";
-
-    ctx.lineWidth=4;
-
-    ctx.beginPath();
-
-    ctx.arc(
-      effect.x,
-      effect.y,
-      40-effect.life,
-      0,
-      Math.PI*2
-    );
-
-    ctx.stroke();
-
-    ctx.restore();
-  });
-
-});
-
-// ========================
-// ボタン
-// ========================
-
-attackBtn.addEventListener(
-"click",
-()=>{
-  attack();
-}
-);
-
-shotBtn.addEventListener(
-"click",
-()=>{
-  shootBullet();
-}
-);
-
-// ========================
-// キーボード
-// ========================
-
-document.addEventListener(
-"keydown",
-e=>{
-
-  if(e.code==="KeyZ"){
-    attack();
-  }
-
-  if(e.code==="KeyX"){
-    shootBullet();
-  }
-
-});
-
-</script>
