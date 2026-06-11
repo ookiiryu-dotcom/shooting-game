@@ -128,32 +128,33 @@ canvas{
   -webkit-tap-highlight-color:transparent;
 }
 
-#redGuardBtn{
+/* 攻撃を左、防御を右に変更 */
+#redAttackBtn{
   grid-column:1;
   grid-row:1;
 }
 
-#redAttackBtn{
+#redGuardBtn{
   grid-column:2;
   grid-row:1;
-}
-
-#blueGuardBtn{
-  grid-column:1;
-  grid-row:2;
 }
 
 #blueAttackBtn{
+  grid-column:1;
+  grid-row:2;
+}
+
+#blueGuardBtn{
   grid-column:2;
   grid-row:2;
 }
 
-#greenGuardBtn{
+#greenAttackBtn{
   grid-column:1;
   grid-row:3;
 }
 
-#greenAttackBtn{
+#greenGuardBtn{
   grid-column:2;
   grid-row:3;
 }
@@ -260,14 +261,14 @@ canvas{
 
     <div class="controls">
 
-      <button id="redGuardBtn" class="red">赤防御 A</button>
       <button id="redAttackBtn" class="red">赤攻撃 Z</button>
+      <button id="redGuardBtn" class="red">赤防御 A</button>
 
-      <button id="blueGuardBtn" class="blue">青防御 S</button>
       <button id="blueAttackBtn" class="blue">青攻撃 X</button>
+      <button id="blueGuardBtn" class="blue">青防御 S</button>
 
-      <button id="greenGuardBtn" class="green">緑防御 D</button>
       <button id="greenAttackBtn" class="green">緑攻撃 C</button>
+      <button id="greenGuardBtn" class="green">緑防御 D</button>
 
       <div class="move-panel">
         <button id="upBtn" class="move vertical-btn">↑</button>
