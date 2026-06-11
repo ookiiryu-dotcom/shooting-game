@@ -3,14 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>Cyber Cat Runner</title>
-
 <style>
 * {
   box-sizing: border-box;
 }
-
 body {
   margin: 0;
   min-height: 100vh;
@@ -20,20 +17,17 @@ body {
   text-align: center;
   overflow-x: hidden;
 }
-
 h1 {
   margin: 18px 0 8px;
   font-size: 26px;
   color: #00ffff;
   text-shadow: 0 0 12px #00ffff;
 }
-
 p {
   margin: 0 0 10px;
   font-size: 14px;
   color: #ddd;
 }
-
 .top-buttons {
   display: flex;
   justify-content: center;
@@ -41,7 +35,6 @@ p {
   margin-bottom: 14px;
   flex-wrap: wrap;
 }
-
 .top-buttons button,
 .top-buttons a {
   display: inline-block;
@@ -55,20 +48,16 @@ p {
   font-weight: bold;
   text-decoration: none;
 }
-
 .reset-btn {
   background: #1f5fbf;
 }
-
 .start-btn {
   background: #b22222;
 }
-
 .back-btn {
   background: #333;
   border: 1px solid #555;
 }
-
 .game-layout {
   display: flex;
   justify-content: center;
@@ -76,13 +65,11 @@ p {
   gap: 18px;
   padding: 0 12px 24px;
 }
-
 .game-wrap {
   display: flex;
   flex-direction: column;
   align-items: center;
 }
-
 canvas {
   border: 2px solid #00ffff;
   box-shadow:
@@ -93,7 +80,6 @@ canvas {
   max-width: 96vw;
   height: auto;
 }
-
 .controls {
   display: flex;
   justify-content: center;
@@ -102,7 +88,6 @@ canvas {
   max-width: 96vw;
   margin: 14px 0 24px;
 }
-
 .controls button {
   flex: 1;
   height: 56px;
@@ -115,11 +100,9 @@ canvas {
   border: 1px solid #00ffff;
   box-shadow: 0 0 10px rgba(0,255,255,0.4);
 }
-
 .controls .start-btn {
   background: #b22222;
 }
-
 .score-board {
   width: 190px;
   background: rgba(10, 10, 30, 0.9);
@@ -129,39 +112,32 @@ canvas {
   padding: 12px;
   text-align: left;
 }
-
 .score-board h2 {
   margin: 0 0 10px;
   color: #00ffff;
   font-size: 18px;
   text-align: center;
 }
-
 .score-board ol {
   margin: 0;
   padding-left: 24px;
 }
-
 .score-board li {
   margin-bottom: 6px;
   font-size: 15px;
 }
-
 @media (max-width: 760px) {
   h1 {
     font-size: 22px;
   }
-
   .top-buttons button,
   .top-buttons a {
     width: 130px;
   }
-
   .game-layout {
     flex-direction: column;
     align-items: center;
   }
-
   .score-board {
     width: 96vw;
     max-width: 500px;
@@ -169,49 +145,35 @@ canvas {
 }
 </style>
 </head>
-
 <body>
-
 <h1>Cyber Cat Runner</h1>
-
 <p>PC：← → で移動 / Enterで開始 / Rでリセット</p>
-
 <div class="top-buttons">
   <button id="resetBtn" class="reset-btn">RESET</button>
   <a href="index.html" class="back-btn">← ホームへ戻る</a>
 </div>
-
 <div class="game-layout">
-
   <div class="game-wrap">
-
     <canvas id="game" width="500" height="700"></canvas>
-
     <div class="controls">
       <button id="leftBtn">←</button>
       <button id="startBtn" class="start-btn">START</button>
       <button id="rightBtn">→</button>
     </div>
-
   </div>
-
   <div class="score-board">
     <h2>High Scores</h2>
     <ol id="highScores"></ol>
   </div>
-
 </div>
-
 <script>
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
-
 const leftBtn = document.getElementById("leftBtn");
 const rightBtn = document.getElementById("rightBtn");
 const startBtn = document.getElementById("startBtn");
 const resetBtn = document.getElementById("resetBtn");
 const highScoresList = document.getElementById("highScores");
-
 let player;
 let enemies;
 let score;
@@ -222,7 +184,6 @@ let gameStartTime;
 let enemyBaseSpeed;
 let gameStarted = false;
 let scoreSaved = false;
-
 function resetGame() {
   player = {
     x: 230,
@@ -230,103 +191,122 @@ function resetGame() {
     size: 50,
     speed: 8
   };
-
   enemies = [];
   score = 0;
   gameOver = false;
   keys = {};
-  enemyBaseSpeed = 3;
+  // 最初から少し速め
+  enemyBaseSpeed = 4.5;
   gameStartTime = Date.now();
   scoreSaved = false;
-
   clearInterval(enemyTimer);
-
   enemyTimer = setInterval(function() {
     if (gameStarted && !gameOver) {
+      // 基本スポーン
       spawnEnemy();
+      // 20秒以降たまに追加
+      const elapsedSeconds =
+      Math.floor((Date.now() - gameStartTime) / 1000);
+      if (
+        elapsedSeconds > 20 &&
+        Math.random() < 0.25
+      ) {
+        spawnEnemy();
+      }
+      // 45秒以降さらに少し追加
+      if (
+        elapsedSeconds > 45 &&
+        Math.random() < 0.18
+      ) {
+        spawnEnemy();
+      }
     }
   }, 700);
 }
-
 function startGame() {
   if (!gameStarted) {
     gameStarted = true;
     resetGame();
   }
 }
-
 function getHighScores() {
-  const data = localStorage.getItem("catRunnerHighScores");
+  const data =
+  localStorage.getItem("catRunnerHighScores");
   return data ? JSON.parse(data) : [];
 }
-
 function saveHighScore() {
   if (scoreSaved) return;
-
   let scores = getHighScores();
-
   scores.push(score);
   scores.sort(function(a, b) {
     return b - a;
   });
-
   scores = scores.slice(0, 10);
-
-  localStorage.setItem("catRunnerHighScores", JSON.stringify(scores));
-
+  localStorage.setItem(
+    "catRunnerHighScores",
+    JSON.stringify(scores)
+  );
   scoreSaved = true;
-
   showHighScores();
 }
-
 function showHighScores() {
   const scores = getHighScores();
-
   highScoresList.innerHTML = "";
-
   for (let i = 0; i < 10; i++) {
-    const li = document.createElement("li");
-
+    const li =
+    document.createElement("li");
     if (scores[i] !== undefined) {
-      li.textContent = scores[i] + " 点";
+      li.textContent =
+      scores[i] + " 点";
     } else {
       li.textContent = "-";
     }
-
     highScoresList.appendChild(li);
   }
 }
-
 function spawnEnemy() {
-  const elapsed = Math.floor((Date.now() - gameStartTime) / 10000);
-
-  enemyBaseSpeed = 3 + elapsed * 0.5;
-
+  const elapsed =
+  Math.floor(
+    (Date.now() - gameStartTime) / 10000
+  );
+  // 徐々に速度アップ
+  enemyBaseSpeed =
+  4.5 + elapsed * 0.35;
   enemies.push({
-    x: Math.random() * (canvas.width - 50),
+    x: Math.random() *
+       (canvas.width - 50),
     y: -60,
     size: 50,
-    speed: enemyBaseSpeed + Math.random() * 3
+    speed:
+      enemyBaseSpeed +
+      Math.random() * 2.5
   });
 }
-
-document.addEventListener("keydown", function(e) {
-  keys[e.key] = true;
-
-  if (!gameStarted && e.key === "Enter") {
-    startGame();
+document.addEventListener(
+  "keydown",
+  function(e) {
+    keys[e.key] = true;
+    if (
+      !gameStarted &&
+      e.key === "Enter"
+    ) {
+      startGame();
+    }
+    if (
+      e.key === "r" ||
+      e.key === "R"
+    ) {
+      gameStarted = true;
+      resetGame();
+    }
   }
-
-  if (e.key === "r" || e.key === "R") {
-    gameStarted = true;
-    resetGame();
+);
+document.addEventListener(
+  "keyup",
+  function(e) {
+    keys[e.key] = false;
   }
-});
-
-document.addEventListener("keyup", function(e) {
-  keys[e.key] = false;
-});
-
+);
 function collision(a, b) {
   return (
     a.x < b.x + b.size &&
@@ -335,265 +315,351 @@ function collision(a, b) {
     a.y + a.size > b.y
   );
 }
-
 function update() {
   if (!gameStarted) return;
-
   if (gameOver) return;
-
   if (keys["ArrowLeft"]) {
     player.x -= player.speed;
   }
-
   if (keys["ArrowRight"]) {
     player.x += player.speed;
   }
-
   player.x = Math.max(
     0,
-    Math.min(canvas.width - player.size, player.x)
+    Math.min(
+      canvas.width - player.size,
+      player.x
+    )
   );
-
   enemies.forEach(function(enemy) {
     enemy.y += enemy.speed;
-
     if (collision(player, enemy)) {
       gameOver = true;
       saveHighScore();
     }
   });
-
-  enemies = enemies.filter(function(enemy) {
-    return enemy.y < canvas.height + 100;
-  });
-
+  enemies = enemies.filter(
+    function(enemy) {
+      return enemy.y <
+      canvas.height + 100;
+    }
+  );
   score++;
 }
-
 function drawGrid() {
-  ctx.strokeStyle = "rgba(0,255,255,0.1)";
-
-  for (let i = 0; i < canvas.width; i += 40) {
+  ctx.strokeStyle =
+  "rgba(0,255,255,0.1)";
+  for (
+    let i = 0;
+    i < canvas.width;
+    i += 40
+  ) {
     ctx.beginPath();
     ctx.moveTo(i, 0);
     ctx.lineTo(i, canvas.height);
     ctx.stroke();
   }
-
-  for (let i = 0; i < canvas.height; i += 40) {
+  for (
+    let i = 0;
+    i < canvas.height;
+    i += 40
+  ) {
     ctx.beginPath();
     ctx.moveTo(0, i);
     ctx.lineTo(canvas.width, i);
     ctx.stroke();
   }
 }
-
 function drawCat() {
   const x = player.x;
   const y = player.y;
-
   ctx.save();
-
   ctx.shadowColor = "#ff66ff";
   ctx.shadowBlur = 20;
-
   ctx.fillStyle = "#ffd4f7";
   ctx.beginPath();
-  ctx.arc(x + 25, y + 25, 22, 0, Math.PI * 2);
+  ctx.arc(
+    x + 25,
+    y + 25,
+    22,
+    0,
+    Math.PI * 2
+  );
   ctx.fill();
-
   ctx.fillStyle = "#ffb3ec";
-
   ctx.beginPath();
   ctx.moveTo(x + 8, y + 8);
   ctx.lineTo(x + 18, y - 12);
   ctx.lineTo(x + 25, y + 10);
   ctx.fill();
-
   ctx.beginPath();
   ctx.moveTo(x + 42, y + 8);
   ctx.lineTo(x + 32, y - 12);
   ctx.lineTo(x + 25, y + 10);
   ctx.fill();
-
   ctx.fillStyle = "#000";
   ctx.beginPath();
-  ctx.arc(x + 18, y + 24, 3, 0, Math.PI * 2);
-  ctx.arc(x + 32, y + 24, 3, 0, Math.PI * 2);
+  ctx.arc(
+    x + 18,
+    y + 24,
+    3,
+    0,
+    Math.PI * 2
+  );
+  ctx.arc(
+    x + 32,
+    y + 24,
+    3,
+    0,
+    Math.PI * 2
+  );
   ctx.fill();
-
   ctx.strokeStyle = "#000";
   ctx.beginPath();
   ctx.moveTo(x + 25, y + 28);
   ctx.lineTo(x + 25, y + 34);
   ctx.stroke();
-
   ctx.restore();
 }
-
 function drawMonster(enemy) {
   const x = enemy.x;
   const y = enemy.y;
-
   ctx.save();
-
   ctx.shadowColor = "#00ff66";
   ctx.shadowBlur = 15;
-
   ctx.fillStyle = "#58ff58";
   ctx.beginPath();
-  ctx.arc(x + 25, y + 25, 22, 0, Math.PI * 2);
+  ctx.arc(
+    x + 25,
+    y + 25,
+    22,
+    0,
+    Math.PI * 2
+  );
   ctx.fill();
-
   ctx.fillStyle = "white";
   ctx.beginPath();
-  ctx.arc(x + 18, y + 20, 8, 0, Math.PI * 2);
-  ctx.arc(x + 33, y + 28, 8, 0, Math.PI * 2);
+  ctx.arc(
+    x + 18,
+    y + 20,
+    8,
+    0,
+    Math.PI * 2
+  );
+  ctx.arc(
+    x + 33,
+    y + 28,
+    8,
+    0,
+    Math.PI * 2
+  );
   ctx.fill();
-
   ctx.fillStyle = "black";
   ctx.beginPath();
-  ctx.arc(x + 18, y + 20, 3, 0, Math.PI * 2);
-  ctx.arc(x + 33, y + 28, 3, 0, Math.PI * 2);
+  ctx.arc(
+    x + 18,
+    y + 20,
+    3,
+    0,
+    Math.PI * 2
+  );
+  ctx.arc(
+    x + 33,
+    y + 28,
+    3,
+    0,
+    Math.PI * 2
+  );
   ctx.fill();
-
   ctx.strokeStyle = "#111";
   ctx.lineWidth = 3;
   ctx.beginPath();
   ctx.moveTo(x + 10, y + 40);
   ctx.lineTo(x + 40, y + 38);
   ctx.stroke();
-
   for (let i = 0; i < 6; i++) {
     ctx.beginPath();
-    ctx.moveTo(x + 12 + i * 5, y + 38);
-    ctx.lineTo(x + 12 + i * 5, y + 45);
+    ctx.moveTo(
+      x + 12 + i * 5,
+      y + 38
+    );
+    ctx.lineTo(
+      x + 12 + i * 5,
+      y + 45
+    );
     ctx.stroke();
   }
-
   ctx.restore();
 }
-
 function drawStartScreen() {
-  ctx.fillStyle = "rgba(0,0,0,0.75)";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
+  ctx.fillStyle =
+  "rgba(0,0,0,0.75)";
+  ctx.fillRect(
+    0,
+    0,
+    canvas.width,
+    canvas.height
+  );
   ctx.fillStyle = "#00ffff";
   ctx.font = "42px Arial";
-  ctx.fillText("CYBER CAT", 120, 270);
-
+  ctx.fillText(
+    "CYBER CAT",
+    120,
+    270
+  );
   ctx.fillStyle = "white";
   ctx.font = "26px Arial";
-  ctx.fillText("スタートしますか？", 130, 340);
-
+  ctx.fillText(
+    "スタートしますか？",
+    130,
+    340
+  );
   ctx.font = "20px Arial";
-  ctx.fillText("ENTER または START", 135, 390);
+  ctx.fillText(
+    "ENTER または START",
+    135,
+    390
+  );
 }
-
 function draw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
+  ctx.clearRect(
+    0,
+    0,
+    canvas.width,
+    canvas.height
+  );
   drawGrid();
   drawCat();
-
   enemies.forEach(function(enemy) {
     drawMonster(enemy);
   });
-
   ctx.fillStyle = "#00ffff";
   ctx.font = "24px Arial";
-  ctx.fillText("SCORE : " + score, 15, 35);
-
+  ctx.fillText(
+    "SCORE : " + score,
+    15,
+    35
+  );
   ctx.font = "18px Arial";
-  ctx.fillText("SPEED : " + enemyBaseSpeed.toFixed(1), 15, 62);
-
+  ctx.fillText(
+    "THREAT : " +
+    enemyBaseSpeed.toFixed(1),
+    15,
+    62
+  );
   if (!gameStarted) {
     drawStartScreen();
     return;
   }
-
   if (gameOver) {
-    ctx.fillStyle = "rgba(0,0,0,0.65)";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
+    ctx.fillStyle =
+    "rgba(0,0,0,0.65)";
+    ctx.fillRect(
+      0,
+      0,
+      canvas.width,
+      canvas.height
+    );
     ctx.fillStyle = "#ff0055";
     ctx.font = "50px Arial";
-    ctx.fillText("GAME OVER", 70, 320);
-
+    ctx.fillText(
+      "GAME OVER",
+      70,
+      320
+    );
     ctx.fillStyle = "white";
     ctx.font = "28px Arial";
-    ctx.fillText("Final Score : " + score, 140, 370);
-
+    ctx.fillText(
+      "Final Score : " + score,
+      140,
+      370
+    );
     ctx.font = "22px Arial";
-    ctx.fillText("RESETで再開", 185, 420);
+    ctx.fillText(
+      "RESETで再開",
+      185,
+      420
+    );
   }
 }
-
 function loop() {
   update();
   draw();
   requestAnimationFrame(loop);
 }
-
 function pressKey(code) {
   keys[code] = true;
 }
-
 function releaseKey(code) {
   keys[code] = false;
 }
-
 function addHoldButton(button, code) {
-  button.addEventListener("touchstart", function(e) {
-    e.preventDefault();
-    pressKey(code);
-  });
-
-  button.addEventListener("touchend", function(e) {
-    e.preventDefault();
-    releaseKey(code);
-  });
-
-  button.addEventListener("mousedown", function() {
-    pressKey(code);
-  });
-
-  button.addEventListener("mouseup", function() {
-    releaseKey(code);
-  });
-
-  button.addEventListener("mouseleave", function() {
-    releaseKey(code);
-  });
+  button.addEventListener(
+    "touchstart",
+    function(e) {
+      e.preventDefault();
+      pressKey(code);
+    }
+  );
+  button.addEventListener(
+    "touchend",
+    function(e) {
+      e.preventDefault();
+      releaseKey(code);
+    }
+  );
+  button.addEventListener(
+    "mousedown",
+    function() {
+      pressKey(code);
+    }
+  );
+  button.addEventListener(
+    "mouseup",
+    function() {
+      releaseKey(code);
+    }
+  );
+  button.addEventListener(
+    "mouseleave",
+    function() {
+      releaseKey(code);
+    }
+  );
 }
-
 addHoldButton(leftBtn, "ArrowLeft");
 addHoldButton(rightBtn, "ArrowRight");
-
-startBtn.addEventListener("touchstart", function(e) {
-  e.preventDefault();
-  startGame();
-});
-
-startBtn.addEventListener("click", function() {
-  startGame();
-});
-
-resetBtn.addEventListener("touchstart", function(e) {
-  e.preventDefault();
-  gameStarted = true;
-  resetGame();
-});
-
-resetBtn.addEventListener("click", function() {
-  gameStarted = true;
-  resetGame();
-});
-
+startBtn.addEventListener(
+  "touchstart",
+  function(e) {
+    e.preventDefault();
+    startGame();
+  }
+);
+startBtn.addEventListener(
+  "click",
+  function() {
+    startGame();
+  }
+);
+resetBtn.addEventListener(
+  "touchstart",
+  function(e) {
+    e.preventDefault();
+    gameStarted = true;
+    resetGame();
+  }
+);
+resetBtn.addEventListener(
+  "click",
+  function() {
+    gameStarted = true;
+    resetGame();
+  }
+);
 showHighScores();
 resetGame();
 loop();
 </script>
-
 </body>
 </html>
