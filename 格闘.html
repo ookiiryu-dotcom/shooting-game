@@ -1,3 +1,49 @@
+<!-- ========================= -->
+<!-- 変更点まとめ -->
+<!-- ========================= -->
+
+<!--
+■ ゲーム性変更
+
+・左右移動 → 縦移動のみ
+・ジャンプ削除
+・ダッシュ削除
+・近距離攻撃削除
+・遠距離攻撃のみ
+
+■ 色属性追加
+
+赤攻撃
+青攻撃
+緑攻撃
+
+赤防御
+青防御
+緑防御
+
+→ 同じ色だけ防げる
+→ 別色は貫通
+
+■ 防御仕様
+
+・3秒で消滅
+・1回受けると消滅
+
+■ 敵AI強化
+
+・上下ランダム移動
+・ランダム攻撃
+・ランダム防御
+・高レベルほど反応精度上昇
+
+■ ボタン配置
+
+        赤防御 赤攻撃
+上      青防御 青攻撃      下
+        緑防御 緑攻撃
+
+-->
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -5,7 +51,7 @@
 <meta name="viewport"
 content="width=device-width, initial-scale=1.0">
 
-<title>AI Fighting Battle DX</title>
+<title>COLOR BATTLE AI</title>
 
 <style>
 
@@ -16,7 +62,7 @@ content="width=device-width, initial-scale=1.0">
 body{
   margin:0;
   background:
-  radial-gradient(circle at top,#1d0d2d,#050510 70%);
+  radial-gradient(circle at top,#101830,#050510 70%);
   color:white;
   font-family:sans-serif;
   text-align:center;
@@ -26,7 +72,7 @@ body{
 h1{
   margin:18px 0 8px;
   color:#66ccff;
-  text-shadow:0 0 18px #66ccff;
+  text-shadow:0 0 16px #66ccff;
 }
 
 p{
@@ -86,8 +132,7 @@ canvas{
   border:2px solid #66ccff;
 
   box-shadow:
-    0 0 25px #66ccff,
-    0 0 50px rgba(102,204,255,0.4);
+    0 0 25px #66ccff;
 
   width:720px;
   max-width:96vw;
@@ -95,38 +140,63 @@ canvas{
 }
 
 .controls{
+
   width:720px;
   max-width:96vw;
 
   display:grid;
-  grid-template-columns:1fr 1fr;
+
+  grid-template-columns:
+  1fr 1fr 1fr 1fr;
+
   gap:10px;
 
   margin-top:14px;
 }
 
 .controls button{
-  height:60px;
+
+  height:58px;
+
   border:none;
   border-radius:14px;
-  color:white;
-  font-size:17px;
-  font-weight:bold;
-  background:#222;
-  border:1px solid #66ccff;
 
-  box-shadow:
-    0 0 10px rgba(102,204,255,0.3);
+  color:white;
+  font-size:15px;
+  font-weight:bold;
+
+  background:#222;
+
+  border:1px solid #66ccff;
+}
+
+.red{
+  background:#992222 !important;
+}
+
+.blue{
+  background:#224499 !important;
+}
+
+.green{
+  background:#228844 !important;
+}
+
+.move{
+  background:#444 !important;
 }
 
 .score-board{
   width:230px;
+
   background:rgba(10,20,35,0.92);
 
   border:1px solid #66ccff;
+
   border-radius:14px;
 
   padding:14px;
+
   text-align:left;
 }
 
@@ -164,16 +234,12 @@ canvas{
 
 <body>
 
-<h1>AI Fighting Battle DX</h1>
+<h1>COLOR BATTLE AI</h1>
 
 <p>
-← → 移動 /
-Spaceジャンプ /
-Z近距離 /
-X遠距離 /
-A近距離バリア /
-S遠距離バリア /
-Cダッシュ
+↑ ↓ 移動 /
+色攻撃 /
+色防御
 </p>
 
 <div class="top-buttons">
@@ -204,29 +270,45 @@ Cダッシュ
 
     <div class="controls">
 
-      <button id="jumpBtn">
-        ジャンプ
+      <button id="upBtn" class="move">
+        ↑
       </button>
 
-      <button id="attackBtn">
-        攻撃
+      <button id="redGuardBtn" class="red">
+        赤防御
       </button>
 
-      <button id="meleeBarrierBtn">
-        近距離バリア
+      <button id="redAttackBtn" class="red">
+        赤攻撃
       </button>
 
-      <button id="rangeAttackBtn">
-        遠距離攻撃
+      <button id="downBtn" class="move">
+        ↓
       </button>
 
-      <button id="rangeBarrierBtn">
-        遠距離バリア
+      <button style="opacity:0"></button>
+
+      <button id="blueGuardBtn" class="blue">
+        青防御
       </button>
 
-      <button id="dashBtn">
-        ダッシュ
+      <button id="blueAttackBtn" class="blue">
+        青攻撃
       </button>
+
+      <button style="opacity:0"></button>
+
+      <button style="opacity:0"></button>
+
+      <button id="greenGuardBtn" class="green">
+        緑防御
+      </button>
+
+      <button id="greenAttackBtn" class="green">
+        緑攻撃
+      </button>
+
+      <button style="opacity:0"></button>
 
     </div>
 
@@ -250,727 +332,381 @@ document.getElementById("game");
 const ctx =
 canvas.getContext("2d");
 
-const jumpBtn =
-document.getElementById("jumpBtn");
-
-const attackBtn =
-document.getElementById("attackBtn");
-
-const meleeBarrierBtn =
-document.getElementById("meleeBarrierBtn");
-
-const rangeAttackBtn =
-document.getElementById("rangeAttackBtn");
-
-const rangeBarrierBtn =
-document.getElementById("rangeBarrierBtn");
-
-const dashBtn =
-document.getElementById("dashBtn");
-
-const resetBtn =
-document.getElementById("resetBtn");
-
 const highScoresList =
 document.getElementById("highScores");
 
 let keys = {};
 
-let gameStarted = false;
-let gameOver = false;
-let scoreSaved = false;
-
 let level = 1;
+
+let gameStarted = true;
+let gameOver = false;
 
 let player;
 let enemy;
 
-let projectiles = [];
-let enemyProjectiles = [];
+let playerShots = [];
+let enemyShots = [];
 
 function resetGame(){
 
   player = {
 
-    x:120,
-    y:320,
+    x:80,
+    y:200,
 
     width:60,
-    height:90,
+    height:60,
 
     hp:100,
 
-    speed:6,
+    speed:7,
 
-    attackPower:10,
+    barrier:null,
 
-    vy:0,
-
-    jumping:false,
-
-    meleeBarrier:false,
-    rangeBarrier:false,
-
-    dashTimer:0,
-
-    attackEffect:0
+    barrierTimer:0
   };
-
-  level = 1;
 
   spawnEnemy();
 
+  level = 1;
+
+  playerShots = [];
+  enemyShots = [];
+
   gameOver = false;
-
-  scoreSaved = false;
-
-  projectiles = [];
-  enemyProjectiles = [];
 }
 
 function spawnEnemy(){
 
-  const colors = [
-    "#55ff55",
-    "#ffee55",
-    "#ff8844",
-    "#ff4444",
-    "#bb44ff",
-    "#00ffff"
-  ];
-
-  const color =
-  colors[
-    Math.min(
-      colors.length-1,
-      Math.floor(level/2)
-    )
-  ];
-
   enemy = {
 
-    x:560,
-    y:320,
+    x:580,
+    y:200,
 
-    width:70,
-    height:70,
+    width:60,
+    height:60,
 
-    hp:50 + level*25,
+    hp:100 + level*20,
 
-    attackPower:10 + level,
+    speed:4 + level*0.2,
 
-    speed:2 + level*0.25,
+    barrier:null,
 
-    color:color,
+    barrierTimer:0,
 
-    shootTimer:0,
+    aiLevel:
+    0.3 + level*0.08,
 
-    moveTimer:0,
-
-    moveDirection:1,
-
-    aiLevel:1 + level*0.15,
-
-    hitEffect:0
+    thinkTimer:0
   };
 }
 
-function startGame(){
+function shoot(color){
 
-  if(!gameStarted){
+  playerShots.push({
 
-    gameStarted = true;
+    x:player.x + 50,
 
-    resetGame();
-  }
-}
+    y:player.y + 25,
 
-function getHighScores(){
+    width:20,
+    height:12,
 
-  const data =
-  localStorage.getItem(
-    "fightDXScores"
-  );
+    speed:10,
 
-  return data
-  ? JSON.parse(data)
-  : [];
-}
-
-function saveHighScore(){
-
-  if(scoreSaved) return;
-
-  let scores =
-  getHighScores();
-
-  scores.push(level);
-
-  scores.sort((a,b)=>b-a);
-
-  scores =
-  scores.slice(0,10);
-
-  localStorage.setItem(
-    "fightDXScores",
-    JSON.stringify(scores)
-  );
-
-  scoreSaved = true;
-
-  showHighScores();
-}
-
-function showHighScores(){
-
-  const scores =
-  getHighScores();
-
-  highScoresList.innerHTML="";
-
-  for(let i=0;i<10;i++){
-
-    const li =
-    document.createElement("li");
-
-    li.textContent =
-    scores[i] !== undefined
-    ? "Lv " + scores[i]
-    : "-";
-
-    highScoresList.appendChild(li);
-  }
-}
-
-function meleeAttack(){
-
-  if(!gameStarted){
-    startGame();
-    return;
-  }
-
-  const distance =
-  Math.abs(player.x-enemy.x);
-
-  if(distance < 110){
-
-    enemy.hp -=
-    player.attackPower;
-
-    player.attackEffect = 10;
-
-    enemy.hitEffect = 10;
-
-    if(enemy.hp <= 0){
-
-      level++;
-
-      player.hp =
-      Math.min(
-        100,
-        player.hp + 20
-      );
-
-      spawnEnemy();
-    }
-  }
-}
-
-function rangeAttack(){
-
-  projectiles.push({
-
-    x:
-    player.x + 50,
-
-    y:
-    player.y + 35,
-
-    width:18,
-    height:8,
-
-    speed:10
+    color:color
   });
 }
 
-function jump(){
+function activateBarrier(color){
 
-  if(!player.jumping){
+  player.barrier = color;
 
-    player.vy = -18;
-
-    player.jumping = true;
-  }
+  player.barrierTimer = 180;
 }
 
-function dash(){
+function enemyShoot(color){
 
-  if(player.dashTimer <= 0){
-
-    player.x += 100;
-
-    player.dashTimer = 40;
-  }
-}
-
-function activateMeleeBarrier(){
-
-  player.meleeBarrier = true;
-
-  setTimeout(()=>{
-
-    player.meleeBarrier = false;
-
-  },2000);
-}
-
-function activateRangeBarrier(){
-
-  player.rangeBarrier = true;
-
-  setTimeout(()=>{
-
-    player.rangeBarrier = false;
-
-  },2000);
-}
-
-function enemyShoot(){
-
-  enemyProjectiles.push({
+  enemyShots.push({
 
     x:enemy.x,
 
-    y:enemy.y + 30,
+    y:enemy.y + 25,
 
-    width:16,
-    height:8,
+    width:20,
+    height:12,
 
-    speed:7
+    speed:9,
+
+    color:color
   });
 }
 
-document.addEventListener(
-"keydown",
-e=>{
+function enemyBarrier(color){
 
-  keys[e.code]=true;
+  enemy.barrier = color;
 
-  if(
-    !gameStarted &&
-    e.code==="Enter"
-  ){
-    startGame();
-  }
+  enemy.barrierTimer = 180;
+}
 
-  if(e.code==="KeyZ"){
-    meleeAttack();
-  }
+function randomColor(){
 
-  if(e.code==="KeyX"){
-    rangeAttack();
-  }
+  const colors =
+  ["red","blue","green"];
 
-  if(e.code==="Space"){
-    jump();
-  }
-
-  if(e.code==="KeyC"){
-    dash();
-  }
-
-  if(e.code==="KeyA"){
-    activateMeleeBarrier();
-  }
-
-  if(e.code==="KeyS"){
-    activateRangeBarrier();
-  }
-
-  if(e.code==="KeyR"){
-
-    gameStarted = true;
-
-    resetGame();
-  }
-
-});
-
-document.addEventListener(
-"keyup",
-e=>{
-  keys[e.code]=false;
-});
-
-function collision(a,b){
-
-  return (
-
-    a.x < b.x+b.width &&
-    a.x+a.width > b.x &&
-
-    a.y < b.y+b.height &&
-    a.y+a.height > b.y
-  );
+  return colors[
+    Math.floor(Math.random()*3)
+  ];
 }
 
 function update(){
 
-  if(!gameStarted) return;
-
   if(gameOver) return;
 
-  if(keys["ArrowLeft"]){
-    player.x -= player.speed;
+  if(keys["ArrowUp"]){
+    player.y -= player.speed;
   }
 
-  if(keys["ArrowRight"]){
-    player.x += player.speed;
+  if(keys["ArrowDown"]){
+    player.y += player.speed;
   }
 
-  player.vy += 1;
-
-  player.y += player.vy;
-
-  if(player.y >= 320){
-
-    player.y = 320;
-
-    player.vy = 0;
-
-    player.jumping = false;
-  }
-
-  player.x = Math.max(
+  player.y = Math.max(
     0,
     Math.min(
-      canvas.width-player.width,
-      player.x
+      canvas.height-player.height,
+      player.y
     )
   );
 
-  if(player.dashTimer > 0){
-    player.dashTimer--;
-  }
+  enemy.thinkTimer--;
 
-  enemy.moveTimer--;
+  if(enemy.thinkTimer <= 0){
 
-  if(enemy.moveTimer <= 0){
-
-    enemy.moveDirection =
+    const move =
     Math.random() < 0.5
     ? -1
     : 1;
 
-    enemy.moveTimer =
-    30 + Math.random()*50;
+    enemy.y +=
+    move *
+    enemy.speed *
+    (4 + Math.random()*4);
+
+    enemy.thinkTimer =
+    8 + Math.random()*15;
+
+    if(Math.random() <
+       enemy.aiLevel){
+
+      enemyShoot(
+        randomColor()
+      );
+    }
+
+    if(Math.random() <
+       enemy.aiLevel * 0.7){
+
+      enemyBarrier(
+        randomColor()
+      );
+    }
   }
 
-  enemy.x +=
-  enemy.moveDirection *
-  enemy.speed;
+  enemy.y = Math.max(
+    0,
+    Math.min(
+      canvas.height-enemy.height,
+      enemy.y
+    )
+  );
 
-  if(enemy.x < 350){
+  playerShots.forEach(s=>{
+    s.x += s.speed;
+  });
 
-    enemy.moveDirection = 1;
-  }
+  enemyShots.forEach(s=>{
+    s.x -= s.speed;
+  });
 
-  if(enemy.x > 620){
-
-    enemy.moveDirection = -1;
-  }
-
-  projectiles.forEach(p=>{
-
-    const dx =
-    Math.abs(p.x - enemy.x);
-
-    const dy =
-    Math.abs(p.y - enemy.y);
+  playerShots.forEach(s=>{
 
     if(
-      dx < 120 &&
-      dy < 60 &&
-      Math.random() <
-      enemy.aiLevel * 0.08
+      s.x <
+      enemy.x + enemy.width &&
+
+      s.x + s.width >
+      enemy.x &&
+
+      s.y <
+      enemy.y + enemy.height &&
+
+      s.y + s.height >
+      enemy.y
     ){
 
-      enemy.x +=
-      Math.random() < 0.5
-      ? -30
-      : 30;
+      if(enemy.barrier === s.color){
+
+        enemy.barrier = null;
+
+      }else{
+
+        enemy.hp -= 12;
+      }
+
+      s.hit = true;
     }
 
   });
 
-  enemy.shootTimer++;
+  enemyShots.forEach(s=>{
 
-  if(
-    enemy.shootTimer >
-    Math.max(
-      25,
-      90 - level * 4
-    )
-  ){
+    if(
+      s.x <
+      player.x + player.width &&
 
-    enemyShoot();
+      s.x + s.width >
+      player.x &&
 
-    enemy.shootTimer = 0;
+      s.y <
+      player.y + player.height &&
+
+      s.y + s.height >
+      player.y
+    ){
+
+      if(player.barrier === s.color){
+
+        player.barrier = null;
+
+      }else{
+
+        player.hp -= 12;
+      }
+
+      s.hit = true;
+    }
+
+  });
+
+  playerShots =
+  playerShots.filter(
+    s=>!s.hit && s.x < canvas.width
+  );
+
+  enemyShots =
+  enemyShots.filter(
+    s=>!s.hit && s.x > -40
+  );
+
+  if(player.barrierTimer > 0){
+
+    player.barrierTimer--;
+
+    if(player.barrierTimer <= 0){
+
+      player.barrier = null;
+    }
   }
 
-  projectiles.forEach(p=>{
-    p.x += p.speed;
-  });
+  if(enemy.barrierTimer > 0){
 
-  enemyProjectiles.forEach(p=>{
-    p.x -= p.speed;
-  });
+    enemy.barrierTimer--;
 
-  projectiles.forEach(p=>{
+    if(enemy.barrierTimer <= 0){
 
-    if(collision(
-      p,
-      {
-        x:enemy.x,
-        y:enemy.y,
-        width:enemy.width,
-        height:enemy.height
-      }
-    )){
-
-      enemy.hp -=
-      player.attackPower;
-
-      enemy.hitEffect = 10;
-
-      p.hit = true;
-
-      if(enemy.hp <= 0){
-
-        level++;
-
-        spawnEnemy();
-      }
+      enemy.barrier = null;
     }
+  }
 
-  });
+  if(enemy.hp <= 0){
 
-  enemyProjectiles.forEach(p=>{
+    level++;
 
-    if(collision(
-      p,
-      {
-        x:player.x,
-        y:player.y,
-        width:player.width,
-        height:player.height
-      }
-    )){
-
-      if(!player.rangeBarrier){
-
-        player.hp -=
-        enemy.attackPower;
-      }
-
-      p.hit = true;
-    }
-
-  });
-
-  const distance =
-  Math.abs(player.x-enemy.x);
-
-  if(
-    distance < 80 &&
-    Math.random() < 0.02
-  ){
-
-    if(!player.meleeBarrier){
-
-      player.hp -=
-      enemy.attackPower;
-    }
+    spawnEnemy();
   }
 
   if(player.hp <= 0){
 
-    player.hp = 0;
-
     gameOver = true;
-
-    saveHighScore();
   }
-
-  projectiles =
-  projectiles.filter(
-    p=>!p.hit && p.x < canvas.width
-  );
-
-  enemyProjectiles =
-  enemyProjectiles.filter(
-    p=>!p.hit && p.x > -50
-  );
 }
 
-function drawVirus(){
-
-  ctx.save();
+function drawCharacter(obj,isPlayer){
 
   ctx.fillStyle =
-  enemy.color;
+  isPlayer
+  ? "#66ccff"
+  : "#ff4444";
 
-  ctx.beginPath();
+  ctx.fillRect(
+    obj.x,
+    obj.y,
+    obj.width,
+    obj.height
+  );
 
-  ctx.arc(
-    enemy.x + 35,
-    enemy.y + 35,
+  ctx.fillStyle =
+  "white";
+
+  ctx.fillRect(
+    obj.x + 15,
+    obj.y + 15,
     30,
-    0,
-    Math.PI*2
+    10
   );
 
-  ctx.fill();
+  if(obj.barrier){
 
-  for(let i=0;i<10;i++){
+    ctx.lineWidth = 6;
 
-    const angle =
-    (Math.PI*2/10)*i;
+    if(obj.barrier==="red"){
+      ctx.strokeStyle="#ff4444";
+    }
 
-    const sx =
-    enemy.x + 35 +
-    Math.cos(angle)*42;
+    if(obj.barrier==="blue"){
+      ctx.strokeStyle="#4488ff";
+    }
 
-    const sy =
-    enemy.y + 35 +
-    Math.sin(angle)*42;
-
-    ctx.beginPath();
-
-    ctx.arc(
-      sx,
-      sy,
-      6,
-      0,
-      Math.PI*2
-    );
-
-    ctx.fill();
-  }
-
-  if(enemy.hitEffect > 0){
-
-    ctx.fillStyle =
-    "rgba(255,255,255,0.5)";
+    if(obj.barrier==="green"){
+      ctx.strokeStyle="#44ff88";
+    }
 
     ctx.beginPath();
 
     ctx.arc(
-      enemy.x + 35,
-      enemy.y + 35,
-      45,
+      obj.x + 30,
+      obj.y + 30,
+      48,
       0,
       Math.PI*2
     );
 
-    ctx.fill();
-
-    enemy.hitEffect--;
+    ctx.stroke();
   }
-
-  ctx.restore();
 }
 
-function drawHero(){
+function drawShot(s){
 
-  ctx.save();
-
-  ctx.fillStyle =
-  "#66ccff";
-
-  ctx.fillRect(
-    player.x,
-    player.y,
-    player.width,
-    player.height
-  );
-
-  ctx.fillStyle =
-  "#ffffff";
-
-  ctx.fillRect(
-    player.x + 12,
-    player.y + 10,
-    36,
-    12
-  );
-
-  ctx.fillStyle =
-  "#00ffff";
-
-  ctx.fillRect(
-    player.x + 18,
-    player.y + 38,
-    24,
-    40
-  );
-
-  if(player.meleeBarrier){
-
-    ctx.strokeStyle =
-    "#ffee55";
-
-    ctx.lineWidth = 5;
-
-    ctx.beginPath();
-
-    ctx.arc(
-      player.x + 30,
-      player.y + 45,
-      55,
-      0,
-      Math.PI*2
-    );
-
-    ctx.stroke();
+  if(s.color==="red"){
+    ctx.fillStyle="#ff4444";
   }
 
-  if(player.rangeBarrier){
-
-    ctx.strokeStyle =
-    "#ff55ff";
-
-    ctx.lineWidth = 5;
-
-    ctx.beginPath();
-
-    ctx.arc(
-      player.x + 30,
-      player.y + 45,
-      70,
-      0,
-      Math.PI*2
-    );
-
-    ctx.stroke();
+  if(s.color==="blue"){
+    ctx.fillStyle="#4488ff";
   }
 
-  if(player.attackEffect > 0){
-
-    ctx.fillStyle =
-    "rgba(255,255,255,0.7)";
-
-    ctx.fillRect(
-      player.x + 55,
-      player.y + 20,
-      40,
-      18
-    );
-
-    player.attackEffect--;
+  if(s.color==="green"){
+    ctx.fillStyle="#44ff88";
   }
 
-  ctx.restore();
+  ctx.fillRect(
+    s.x,
+    s.y,
+    s.width,
+    s.height
+  );
 }
 
 function draw(){
@@ -982,106 +718,19 @@ function draw(){
     canvas.height
   );
 
-  ctx.fillStyle =
-  "#111933";
+  drawCharacter(player,true);
 
-  ctx.fillRect(
-    0,
-    410,
-    canvas.width,
-    70
-  );
+  drawCharacter(enemy,false);
 
-  if(!gameStarted){
+  playerShots.forEach(drawShot);
 
-    ctx.fillStyle =
-    "rgba(0,0,0,0.8)";
+  enemyShots.forEach(drawShot);
 
-    ctx.fillRect(
-      0,
-      0,
-      canvas.width,
-      canvas.height
-    );
+  ctx.fillStyle="#333";
 
-    ctx.fillStyle =
-    "#66ccff";
+  ctx.fillRect(20,20,220,20);
 
-    ctx.font =
-    "52px sans-serif";
-
-    ctx.fillText(
-      "AI BATTLE DX",
-      180,
-      180
-    );
-
-    ctx.fillStyle =
-    "white";
-
-    ctx.font =
-    "30px sans-serif";
-
-    ctx.fillText(
-      "スタートしますか？",
-      210,
-      270
-    );
-
-    ctx.font =
-    "22px sans-serif";
-
-    ctx.fillText(
-      "ENTERで開始",
-      255,
-      330
-    );
-
-    return;
-  }
-
-  drawHero();
-
-  drawVirus();
-
-  ctx.fillStyle =
-  "#00ffff";
-
-  projectiles.forEach(p=>{
-
-    ctx.fillRect(
-      p.x,
-      p.y,
-      p.width,
-      p.height
-    );
-  });
-
-  ctx.fillStyle =
-  "#ff4444";
-
-  enemyProjectiles.forEach(p=>{
-
-    ctx.fillRect(
-      p.x,
-      p.y,
-      p.width,
-      p.height
-    );
-  });
-
-  ctx.fillStyle =
-  "#333";
-
-  ctx.fillRect(
-    20,
-    20,
-    220,
-    20
-  );
-
-  ctx.fillStyle =
-  "#00ccff";
+  ctx.fillStyle="#66ccff";
 
   ctx.fillRect(
     20,
@@ -1090,34 +739,22 @@ function draw(){
     20
   );
 
-  ctx.fillStyle =
-  "#333";
+  ctx.fillStyle="#333";
+
+  ctx.fillRect(480,20,220,20);
+
+  ctx.fillStyle="#ff4444";
 
   ctx.fillRect(
     480,
     20,
-    220,
+    enemy.hp * 1.5,
     20
   );
 
-  ctx.fillStyle =
-  enemy.color;
+  ctx.fillStyle="white";
 
-  ctx.fillRect(
-    480,
-    20,
-    (
-      enemy.hp /
-      (50 + level*25)
-    ) * 220,
-    20
-  );
-
-  ctx.fillStyle =
-  "white";
-
-  ctx.font =
-  "24px sans-serif";
+  ctx.font="24px sans-serif";
 
   ctx.fillText(
     "LEVEL : " + level,
@@ -1148,19 +785,6 @@ function draw(){
       180,
       180
     );
-
-    ctx.fillStyle =
-    "white";
-
-    ctx.font =
-    "28px sans-serif";
-
-    ctx.fillText(
-      "到達レベル : " + level,
-      240,
-      260
-    );
-
   }
 }
 
@@ -1173,12 +797,12 @@ function loop(){
   requestAnimationFrame(loop);
 }
 
-function addButtonAction(
-button,
-action
-){
+function addButton(id,action){
 
-  button.addEventListener(
+  const btn =
+  document.getElementById(id);
+
+  btn.addEventListener(
     "touchstart",
     e=>{
       e.preventDefault();
@@ -1186,52 +810,96 @@ action
     }
   );
 
-  button.addEventListener(
+  btn.addEventListener(
     "click",
     action
   );
 }
 
-addButtonAction(
-jumpBtn,
-jump
-);
+document.addEventListener(
+"keydown",
+e=>{
 
-addButtonAction(
-attackBtn,
-meleeAttack
-);
+  keys[e.code]=true;
 
-addButtonAction(
-rangeAttackBtn,
-rangeAttack
-);
+  if(e.code==="KeyZ"){
+    shoot("red");
+  }
 
-addButtonAction(
-meleeBarrierBtn,
-activateMeleeBarrier
-);
+  if(e.code==="KeyX"){
+    shoot("blue");
+  }
 
-addButtonAction(
-rangeBarrierBtn,
-activateRangeBarrier
-);
+  if(e.code==="KeyC"){
+    shoot("green");
+  }
 
-addButtonAction(
-dashBtn,
-dash
-);
+  if(e.code==="KeyA"){
+    activateBarrier("red");
+  }
 
-resetBtn.addEventListener(
-"click",
-()=>{
+  if(e.code==="KeyS"){
+    activateBarrier("blue");
+  }
 
-  gameStarted = true;
+  if(e.code==="KeyD"){
+    activateBarrier("green");
+  }
 
-  resetGame();
 });
 
-showHighScores();
+document.addEventListener(
+"keyup",
+e=>{
+  keys[e.code]=false;
+});
+
+addButton(
+"redAttackBtn",
+()=>shoot("red")
+);
+
+addButton(
+"blueAttackBtn",
+()=>shoot("blue")
+);
+
+addButton(
+"greenAttackBtn",
+()=>shoot("green")
+);
+
+addButton(
+"redGuardBtn",
+()=>activateBarrier("red")
+);
+
+addButton(
+"blueGuardBtn",
+()=>activateBarrier("blue")
+);
+
+addButton(
+"greenGuardBtn",
+()=>activateBarrier("green")
+);
+
+addButton(
+"upBtn",
+()=>player.y -= 40
+);
+
+addButton(
+"downBtn",
+()=>player.y += 40
+);
+
+document.getElementById(
+"resetBtn"
+).addEventListener(
+"click",
+resetGame
+);
 
 resetGame();
 
