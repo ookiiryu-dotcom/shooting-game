@@ -310,7 +310,7 @@ canvas{
 
 <h1>CYBER TENNIS BOT BATTLE</h1>
 
-<p>PC：↑↓←→で移動 / A=LEFT SHOT / D=RIGHT SHOT / <br>Enter=開始 / R=リセット</p>
+<p>PC：↑↓←→で移動 / A=LEFT SHOT / D=RIGHT SHOT /<br> Enter=開始 / R=リセット
 
 <div class="top-buttons">
   <button id="startBtn" class="start-btn">START</button>
@@ -519,7 +519,7 @@ function launchPlayerServe(){
 
 function botStats(){
   return {
-    speed:1.7 + level * 0.22,
+    speed:0.5 + level * 0.15,
     error:Math.max(12,58 - level * 3.0),
     reaction:Math.min(0.19,0.075 + level * 0.012),
     hitPower:0.92 + level * 0.014
@@ -595,8 +595,8 @@ function updateBot(){
     targetX += Math.sin(Date.now() * 0.006) * stats.error;
     targetY += Math.cos(Date.now() * 0.005) * stats.error;
   }else{
-    targetX = botArea.x + botArea.width / 2 - bot.width / 2;
-    targetY = botArea.y + botArea.height / 2 - bot.height / 2;
+  targetX = botArea.x + botArea.width / 2 - bot.width / 2;
+  targetY = botArea.y + 28;
   }
 
   bot.x += (targetX - bot.x) * stats.reaction;
@@ -831,7 +831,7 @@ function getRacketHitBox(obj,isPlayer){
     offsetY = isPlayer ? -22 + swingProgress * 28 : obj.height - 6 - swingProgress * 24;
   }
 
-  const racketSize = isPlayer ? 69 : 46;
+  const racketSize = isPlayer ? 80 : 46;
 
   return {
     x:obj.x + obj.width / 2 + offsetX - racketSize / 2,
