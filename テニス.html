@@ -125,11 +125,62 @@ canvas{
   align-items:stretch;
 }
 
-.move-pad{
-  display:grid;
-  grid-template-columns:1fr 1fr 1fr;
-  grid-template-rows:58px 58px 58px;
-  gap:10px;
+.stick-area{
+  min-height:174px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.stick-base{
+  width:154px;
+  height:154px;
+  border-radius:50%;
+  position:relative;
+  background:
+    radial-gradient(circle at center,rgba(111,252,255,0.16),rgba(9,18,36,0.96) 68%),
+    rgba(9,18,36,0.94);
+  border:2px solid rgba(111,252,255,0.78);
+  box-shadow:
+    0 0 18px rgba(111,252,255,0.35),
+    inset 0 0 22px rgba(111,252,255,0.14);
+  touch-action:none;
+}
+
+.stick-base::before,
+.stick-base::after{
+  content:"";
+  position:absolute;
+  background:rgba(111,252,255,0.24);
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+}
+
+.stick-base::before{
+  width:112px;
+  height:2px;
+}
+
+.stick-base::after{
+  width:2px;
+  height:112px;
+}
+
+.stick-knob{
+  width:64px;
+  height:64px;
+  border-radius:50%;
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  background:linear-gradient(135deg,#123d82,#0b8ee8);
+  border:1px solid rgba(255,255,255,0.78);
+  box-shadow:
+    0 0 18px rgba(111,252,255,0.7),
+    inset 0 0 12px rgba(255,255,255,0.14);
+  z-index:2;
 }
 
 .shot-pad{
@@ -137,6 +188,7 @@ canvas{
   grid-template-columns:1fr;
   grid-template-rows:1fr 1fr;
   gap:10px;
+  min-height:174px;
 }
 
 .controls button{
@@ -152,15 +204,6 @@ canvas{
   user-select:none;
   -webkit-user-select:none;
   -webkit-tap-highlight-color:transparent;
-}
-
-#upBtn{ grid-column:2; grid-row:1; }
-#leftBtn{ grid-column:1; grid-row:2; }
-#rightBtn{ grid-column:3; grid-row:2; }
-#downBtn{ grid-column:2; grid-row:3; }
-
-.move-btn{
-  background:linear-gradient(135deg,#123d82,#0b8ee8) !important;
 }
 
 .aim-btn{
@@ -228,9 +271,27 @@ canvas{
     gap:8px;
   }
 
-  .move-pad{
-    grid-template-rows:54px 54px 54px;
-    gap:7px;
+  .stick-area,
+  .shot-pad{
+    min-height:160px;
+  }
+
+  .stick-base{
+    width:140px;
+    height:140px;
+  }
+
+  .stick-base::before{
+    width:100px;
+  }
+
+  .stick-base::after{
+    height:100px;
+  }
+
+  .stick-knob{
+    width:58px;
+    height:58px;
   }
 
   .shot-pad{
@@ -249,7 +310,7 @@ canvas{
 
 <h1>CYBER TENNIS BOT BATTLE</h1>
 
-<p>PC：↑↓←→で移動 / A=LEFT SHOT / D=RIGHT SHOT / Enter=開始 / R=リセット</p>
+<p>PC：↑↓←→で移動 / A=LEFT SHOT / D=RIGHT SHOT / Enter=開始 / R=リセット<br>スマホ：左スティックで移動 / LEFT・RIGHT SHOTでサーブ＆打ち分け</p>
 
 <div class="top-buttons">
   <button id="startBtn" class="start-btn">START</button>
@@ -264,11 +325,10 @@ canvas{
     <canvas id="game" width="720" height="520"></canvas>
 
     <div class="controls">
-      <div class="move-pad" aria-label="移動ボタン">
-        <button id="upBtn" class="move-btn">↑</button>
-        <button id="leftBtn" class="move-btn">←</button>
-        <button id="rightBtn" class="move-btn">→</button>
-        <button id="downBtn" class="move-btn">↓</button>
+      <div class="stick-area" id="stickArea" aria-label="移動スティック">
+        <div class="stick-base">
+          <div class="stick-knob" id="stickKnob"></div>
+        </div>
       </div>
 
       <div class="shot-pad" aria-label="ショットボタン">
@@ -307,10 +367,8 @@ const ctx = canvas.getContext("2d");
 const startBtn = document.getElementById("startBtn");
 const resetBtn = document.getElementById("resetBtn");
 
-const upBtn = document.getElementById("upBtn");
-const downBtn = document.getElementById("downBtn");
-const leftBtn = document.getElementById("leftBtn");
-const rightBtn = document.getElementById("rightBtn");
+const stickArea = document.getElementById("stickArea");
+const stickKnob = document.getElementById("stickKnob");
 const leftHitBtn = document.getElementById("leftHitBtn");
 const rightHitBtn = document.getElementById("rightHitBtn");
 
@@ -343,6 +401,8 @@ let ball;
 let hitCooldown = 0;
 let lastShotName = "READY";
 let waitingServe = true;
+let queuedAim = 0;
+let stickActive = false;
 
 const court = {
   x:70,
@@ -457,10 +517,10 @@ function launchPlayerServe(){
 
 function botStats(){
   return {
-    speed:2.0 + level * 0.25,
-    error:Math.max(5,42 - level * 3.1),
-    reaction:Math.max(0.055,0.22 - level * 0.012),
-    hitPower:1.01 + level * 0.012
+    speed:1.7 + level * 0.22,
+    error:Math.max(12,58 - level * 3.0),
+    reaction:Math.min(0.19,0.075 + level * 0.012),
+    hitPower:0.92 + level * 0.014
   };
 }
 
@@ -1094,12 +1154,12 @@ function drawStartScreen(){
 
   ctx.fillStyle = "white";
   ctx.font = "24px sans-serif";
-  ctx.fillText("Enter または STARTで開始",205,260);
+  ctx.fillText("START後、LEFT/RIGHT SHOTでサーブ",170,260);
 
   ctx.font = "17px sans-serif";
-  ctx.fillText("サーブはプレイヤー側から開始",236,305);
-  ctx.fillText("A=左打ち / D=右打ち",192,335);
-  ctx.fillText("上エリアでSMASH / ↓を押しながらSLOW LONG",165,365);
+  ctx.fillText("スマホは左スティックで移動",247,305);
+  ctx.fillText("A=左打ち / D=右打ち",257,335);
+  ctx.fillText("上エリアでSMASH / ↓入力でSLOW LONG",182,365);
 }
 
 function drawGameOver(){
@@ -1229,6 +1289,88 @@ function holdButton(button,code){
   });
 }
 
+function resetStick(){
+  keys["ArrowUp"] = false;
+  keys["ArrowDown"] = false;
+  keys["ArrowLeft"] = false;
+  keys["ArrowRight"] = false;
+
+  stickKnob.style.left = "50%";
+  stickKnob.style.top = "50%";
+}
+
+function updateStick(clientX,clientY){
+  const rect = stickArea.getBoundingClientRect();
+  const centerX = rect.left + rect.width / 2;
+  const centerY = rect.top + rect.height / 2;
+
+  let dx = clientX - centerX;
+  let dy = clientY - centerY;
+
+  const maxMove = Math.min(rect.width,rect.height) * 0.30;
+  const distance = Math.sqrt(dx * dx + dy * dy);
+
+  if(distance > maxMove){
+    dx = dx / distance * maxMove;
+    dy = dy / distance * maxMove;
+  }
+
+  stickKnob.style.left = `calc(50% + ${dx}px)`;
+  stickKnob.style.top = `calc(50% + ${dy}px)`;
+
+  const deadZone = Math.min(rect.width,rect.height) * 0.09;
+
+  keys["ArrowLeft"] = dx < -deadZone;
+  keys["ArrowRight"] = dx > deadZone;
+  keys["ArrowUp"] = dy < -deadZone;
+  keys["ArrowDown"] = dy > deadZone;
+}
+
+function setupStick(){
+  stickArea.addEventListener("touchstart",e=>{
+    e.preventDefault();
+    stickActive = true;
+    updateStick(e.touches[0].clientX,e.touches[0].clientY);
+  },{passive:false});
+
+  stickArea.addEventListener("touchmove",e=>{
+    e.preventDefault();
+    if(stickActive){
+      updateStick(e.touches[0].clientX,e.touches[0].clientY);
+    }
+  },{passive:false});
+
+  stickArea.addEventListener("touchend",e=>{
+    e.preventDefault();
+    stickActive = false;
+    resetStick();
+  },{passive:false});
+
+  stickArea.addEventListener("touchcancel",e=>{
+    e.preventDefault();
+    stickActive = false;
+    resetStick();
+  },{passive:false});
+
+  stickArea.addEventListener("mousedown",e=>{
+    stickActive = true;
+    updateStick(e.clientX,e.clientY);
+  });
+
+  document.addEventListener("mousemove",e=>{
+    if(stickActive){
+      updateStick(e.clientX,e.clientY);
+    }
+  });
+
+  document.addEventListener("mouseup",()=>{
+    if(stickActive){
+      stickActive = false;
+      resetStick();
+    }
+  });
+}
+
 function tapHitButton(button,aim){
   button.addEventListener("touchstart",e=>{
     e.preventDefault();
@@ -1240,10 +1382,7 @@ function tapHitButton(button,aim){
   });
 }
 
-holdButton(upBtn,"ArrowUp");
-holdButton(downBtn,"ArrowDown");
-holdButton(leftBtn,"ArrowLeft");
-holdButton(rightBtn,"ArrowRight");
+setupStick();
 tapHitButton(leftHitBtn,-1);
 tapHitButton(rightHitBtn,1);
 
