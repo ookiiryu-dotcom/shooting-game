@@ -402,6 +402,7 @@ let hitCooldown = 0;
 let lastShotName = "READY";
 let waitingServe = true;
 let queuedAim = 0;
+let visualAim = 0;
 let stickActive = false;
 
 const court = {
@@ -450,6 +451,7 @@ function resetGame(){
  lastShotName = "READY";
  waitingServe = true;
   queuedAim = 0;
+  visualAim = 0;
 
   player = {
     x:330,
@@ -574,6 +576,8 @@ function updatePlayer(){
 
   if(player.swingTimer > 0){
     player.swingTimer--;
+  }else{
+    visualAim = 0;
   }
 
   if(player.swingHitFrame > 0){
@@ -674,6 +678,7 @@ function startPlayerSwing(aim){
   }
 
   queuedAim = aim || 0;
+  visualAim = aim || 0;
   player.swingTimer = 18;
   player.swingHitFrame = 9;
   hitCooldown = 22;
@@ -720,8 +725,8 @@ function checkPlayerHit(){
   const slowLong = keys["ArrowDown"];
 
   let xAim = 0;
-  let yPower = 1.16;
-  let addSpeed = 0.5;
+  let yPower = 1.03;
+  let addSpeed = 0.15;
 
   lastShotName = "SHOT";
 
@@ -1037,11 +1042,16 @@ function drawCyberPlayer(obj,color,isPlayer){
 
   const swing = obj.swingTimer > 0;
   const swingRate = swing ? obj.swingTimer / 18 : 0;
+  const isLeftSwing = isPlayer && visualAim < 0;
 
   let armAngle;
 
   if(isPlayer){
-    armAngle = swing ? -2.25 + swingRate * 2.15 : -0.65;
+    if(isLeftSwing){
+      armAngle = swing ? -0.90 - swingRate * 1.95 : -2.35;
+    }else{
+      armAngle = swing ? -2.25 + swingRate * 2.15 : -0.65;
+    }
   }else{
     armAngle = swing ? 2.25 - swingRate * 2.15 : 0.65;
   }
@@ -1052,6 +1062,7 @@ function drawCyberPlayer(obj,color,isPlayer){
 
   const racketX = shoulderX + Math.cos(armAngle) * armLen;
   const racketY = shoulderY + Math.sin(armAngle) * armLen;
+  const racketSide = isLeftSwing ? -8 : 8;
 
   ctx.strokeStyle = "rgba(255,255,255,0.9)";
   ctx.lineWidth = 5;
@@ -1063,35 +1074,50 @@ function drawCyberPlayer(obj,color,isPlayer){
   ctx.strokeStyle = color;
   ctx.lineWidth = 4;
   ctx.beginPath();
-  ctx.ellipse(racketX + 8,racketY,12,18,armAngle,0,Math.PI * 2);
+  ctx.ellipse(racketX + racketSide,racketY,12,18,armAngle,0,Math.PI * 2);
   ctx.stroke();
 
   ctx.strokeStyle = "rgba(255,255,255,0.45)";
   ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.moveTo(racketX - 3,racketY - 12);
-  ctx.lineTo(racketX + 17,racketY + 12);
-  ctx.moveTo(racketX + 17,racketY - 12);
-  ctx.lineTo(racketX - 3,racketY + 12);
+  ctx.moveTo(racketX + racketSide - 11,racketY - 12);
+  ctx.lineTo(racketX + racketSide + 9,racketY + 12);
+  ctx.moveTo(racketX + racketSide + 9,racketY - 12);
+  ctx.lineTo(racketX + racketSide - 11,racketY + 12);
   ctx.stroke();
 
   if(swing){
     ctx.strokeStyle = color;
     ctx.lineWidth = 4;
     ctx.beginPath();
-    ctx.arc(shoulderX,shoulderY,58,isPlayer ? -2.2 : -0.8,isPlayer ? -0.4 : 1.0);
+
+    if(isLeftSwing){
+      ctx.arc(shoulderX,shoulderY,58,-2.85,-1.05);
+    }else if(isPlayer){
+      ctx.arc(shoulderX,shoulderY,58,-2.2,-0.4);
+    }else{
+      ctx.arc(shoulderX,shoulderY,58,-0.8,1.0);
+    }
+
     ctx.stroke();
 
     ctx.strokeStyle = "rgba(255,255,255,0.28)";
     ctx.lineWidth = 10;
     ctx.beginPath();
-    ctx.arc(shoulderX,shoulderY,58,isPlayer ? -2.0 : -0.6,isPlayer ? -0.5 : 0.9);
+
+    if(isLeftSwing){
+      ctx.arc(shoulderX,shoulderY,58,-2.75,-1.15);
+    }else if(isPlayer){
+      ctx.arc(shoulderX,shoulderY,58,-2.0,-0.5);
+    }else{
+      ctx.arc(shoulderX,shoulderY,58,-0.6,0.9);
+    }
+
     ctx.stroke();
   }
 
   ctx.restore();
 }
-
 function roundedRect(x,y,w,h,r,fill,stroke){
   ctx.beginPath();
   ctx.moveTo(x + r,y);
