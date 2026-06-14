@@ -458,7 +458,7 @@ function resetGame(){
     y:390,
     width:36,
     height:58,
-    speed:13.95,
+    speed:8.5,
     swingTimer:0,
     swingHitFrame:0,
     facing:-1
@@ -1344,7 +1344,7 @@ function updateStick(clientX,clientY){
   stickKnob.style.left = `calc(50% + ${dx}px)`;
   stickKnob.style.top = `calc(50% + ${dy}px)`;
 
-  const deadZone = Math.min(rect.width,rect.height) * 0.09;
+  const deadZone = Math.min(rect.width,rect.height) * 0.18;
 
   keys["ArrowLeft"] = dx < -deadZone;
   keys["ArrowRight"] = dx > deadZone;
