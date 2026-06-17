@@ -1,2 +1,2 @@
-# shooting-game
-スマホ対応のシューティングゲーム
+# game-library
+スマホ対応のゲーム図書館
