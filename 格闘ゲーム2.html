@@ -1,0 +1,3775 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>サイバークアッカファイター EX8</title>
+
+<style>
+*{box-sizing:border-box;}
+html{touch-action:manipulation;}
+body{
+  margin:0;
+  min-height:100vh;
+  background:
+    radial-gradient(circle at top,#15243a,#03060d 72%),
+    linear-gradient(180deg,#050914,#020409);
+  color:white;
+  font-family:Arial,"Yu Gothic",sans-serif;
+  text-align:center;
+  overflow-x:hidden;
+}
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  background:
+    linear-gradient(rgba(0,255,255,.035) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,255,255,.035) 1px,transparent 1px);
+  background-size:42px 42px;
+  pointer-events:none;
+}
+h1{
+  max-width:96vw;
+  margin:18px auto 6px;
+  padding:0 10px;
+  color:#66ccff;
+  letter-spacing:0;
+  line-height:1.18;
+  text-wrap:balance;
+  word-break:keep-all;
+  overflow-wrap:normal;
+  text-shadow:0 0 10px #66ccff,0 0 28px rgba(102,204,255,.8);
+}
+.title-main,
+.title-version{
+  display:inline-block;
+  white-space:nowrap;
+}
+p{
+  margin:6px 12px 14px;
+  color:#d9ecff;
+  line-height:1.6;
+}
+.command-help{
+  display:flex;
+  justify-content:center;
+  flex-wrap:wrap;
+  gap:4px 10px;
+  max-width:760px;
+  margin:6px auto 14px;
+  padding:0 12px;
+  text-wrap:pretty;
+}
+.command-help span{
+  white-space:nowrap;
+}
+.top-buttons{
+  display:flex;
+  justify-content:center;
+  gap:10px;
+  margin-bottom:14px;
+  flex-wrap:wrap;
+}
+.top-buttons button,
+.top-buttons a{
+  width:160px;
+  height:46px;
+  border:none;
+  border-radius:12px;
+  font-size:15px;
+  font-weight:bold;
+  color:white;
+  text-decoration:none;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+}
+.reset-btn{background:#1f5fbf;}
+.pause-btn{
+  background:#0c7a68;
+  border:1px solid #66ffcc!important;
+}
+.pause-btn.paused{
+  background:#9a6b12;
+  border-color:#ffcc66!important;
+}
+.back-btn{
+  background:#222;
+  border:1px solid #66ccff;
+}
+.game-layout{
+  display:flex;
+  justify-content:center;
+  align-items:flex-start;
+  gap:18px;
+  padding:0 12px 24px;
+}
+.game-wrap{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+}
+canvas{
+  width:760px;
+  max-width:96vw;
+  height:auto;
+  background:linear-gradient(to bottom,#09111f,#02040a);
+  border:2px solid #66ccff;
+  box-shadow:0 0 22px rgba(102,204,255,.9),inset 0 0 24px rgba(0,255,255,.10);
+}
+.controls{
+  width:760px;
+  max-width:96vw;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:14px;
+  margin-top:14px;
+}
+.control-side{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  grid-template-rows:68px 68px;
+  gap:10px;
+}
+#specialBtn{grid-column:1/3;}
+.controls button{
+  border:none;
+  border-radius:15px;
+  color:white;
+  font-size:15px;
+  font-weight:bold;
+  background:#1a1a1a;
+  border:1px solid #66ccff;
+  box-shadow:0 0 10px rgba(0,255,255,.28);
+  cursor:pointer;
+  user-select:none;
+  -webkit-user-select:none;
+  -webkit-tap-highlight-color:transparent;
+  transition:transform .08s ease,filter .08s ease,box-shadow .08s ease;
+}
+.controls button:active,
+.top-buttons button:active,
+.top-buttons a:active{
+  transform:translateY(1px) scale(.99);
+  filter:brightness(1.18);
+}
+.move{background:#2a2a2a!important;}
+.attack{background:#992222!important;}
+.guard{background:#224499!important;}
+.special{background:#7d2cff!important;}
+.score-board{
+  width:340px;
+  background:rgba(10,20,35,.95);
+  border:1px solid #66ccff;
+  border-radius:14px;
+  padding:14px;
+  text-align:left;
+  box-shadow:0 0 15px rgba(0,255,255,.2);
+}
+.score-board h2{
+  text-align:center;
+  color:#66ccff;
+  margin-top:4px;
+}
+.score-board ol{padding-left:24px;}
+.score-board li{
+  margin-bottom:8px;
+  color:#eee;
+  font-size:14px;
+}
+.score-note{
+  font-size:12px;
+  color:#aaa;
+  text-align:center;
+  line-height:1.6;
+}
+.match-setup{
+  margin-bottom:16px;
+  padding-bottom:14px;
+  border-bottom:1px solid rgba(102,204,255,.35);
+}
+.match-setup h2{
+  margin-bottom:12px;
+}
+.setup-field{
+  display:block;
+  margin-bottom:10px;
+  color:#d9ecff;
+  font-size:12px;
+  font-weight:bold;
+  letter-spacing:0;
+}
+.setup-field select,
+.setup-field input{
+  width:100%;
+  height:38px;
+  margin-top:5px;
+  border:1px solid rgba(102,204,255,.7);
+  border-radius:8px;
+  background:#071120;
+  color:white;
+  font-size:14px;
+  padding:0 9px;
+  outline:none;
+}
+.setup-field input{appearance:textfield;}
+.match-start-btn{
+  width:100%;
+  height:42px;
+  border:none;
+  border-radius:10px;
+  background:#7d2cff;
+  color:white;
+  font-weight:bold;
+  cursor:pointer;
+  box-shadow:0 0 12px rgba(125,44,255,.35);
+}
+.matchup-info{
+  min-height:48px;
+  margin-top:10px;
+  padding:10px;
+  border:1px solid rgba(102,204,255,.25);
+  border-radius:8px;
+  background:rgba(0,0,0,.22);
+  color:#eaf6ff;
+  font-size:12px;
+  line-height:1.55;
+  text-align:left;
+  line-break:strict;
+  word-break:normal;
+  overflow-wrap:break-word;
+  text-wrap:pretty;
+}
+.matchup-info strong{color:#66ffcc;}
+.match-title{
+  text-align:center;
+  color:#66ffcc;
+  font-weight:bold;
+  margin-bottom:7px;
+}
+.match-names{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-wrap:wrap;
+  gap:5px 7px;
+  margin-bottom:10px;
+}
+.match-name,
+.match-level,
+.versus,
+.stat-chip{
+  white-space:nowrap;
+}
+.match-name{
+  color:white;
+  font-weight:bold;
+}
+.versus{color:#ffcc66;}
+.match-level{color:#d9ecff;}
+.spec-block{
+  margin-top:9px;
+  padding:9px;
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:8px;
+  background:rgba(255,255,255,.035);
+}
+.spec-title{
+  color:#ffcc66;
+  font-weight:bold;
+  margin-bottom:5px;
+  line-height:1.35;
+  text-wrap:balance;
+}
+.spec-desc{
+  margin:4px 0 7px;
+  color:#eaf6ff;
+  line-height:1.55;
+}
+.special-note{
+  margin:6px 0 0;
+  color:#d7efff;
+}
+.spec-row{
+  display:grid;
+  grid-template-columns:64px minmax(0,1fr);
+  gap:6px;
+  align-items:start;
+  margin-top:5px;
+}
+.spec-label{
+  color:#9edfff;
+  font-weight:bold;
+  white-space:nowrap;
+}
+.stat-list{
+  display:flex;
+  flex-wrap:wrap;
+  gap:4px 6px;
+}
+.stat-chip{
+  display:inline-block;
+  padding:1px 6px;
+  border:1px solid rgba(102,204,255,.22);
+  border-radius:7px;
+  background:rgba(102,204,255,.08);
+}
+.command-list{
+  margin-top:14px;
+  border-top:1px solid rgba(102,204,255,.35);
+  padding-top:12px;
+  font-size:13px;
+  line-height:1.7;
+  color:#dcecff;
+}
+
+@media(max-width:920px){
+  .game-layout{
+    flex-direction:column;
+    align-items:center;
+  }
+  .score-board{
+    width:96vw;
+    max-width:760px;
+  }
+  .controls{
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+  }
+  .control-side{
+    grid-template-rows:62px 62px;
+    gap:8px;
+  }
+  .controls button{
+    font-size:13px;
+    border-radius:13px;
+  }
+}
+
+@media(max-width:520px){
+  body{padding-bottom:18px;}
+  h1{
+    font-size:23px;
+    letter-spacing:0;
+    margin-top:14px;
+  }
+  p{
+    font-size:12px;
+    line-height:1.45;
+    margin:4px 12px 10px;
+  }
+  .command-help{
+    gap:3px 8px;
+    margin-bottom:10px;
+  }
+  .top-buttons{
+    gap:8px;
+    margin-bottom:10px;
+  }
+  .top-buttons button,
+  .top-buttons a{
+    width:46vw;
+    max-width:190px;
+    height:48px;
+    font-size:15px;
+    border-radius:16px;
+  }
+  .game-layout{
+    padding:0 8px 18px;
+    gap:12px;
+  }
+  canvas{
+    width:96vw;
+    max-width:96vw;
+  }
+  .controls{
+    width:96vw;
+    max-width:96vw;
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr;
+    grid-template-rows:56px 56px 62px;
+    gap:8px;
+    margin-top:10px;
+  }
+  .control-side{display:contents;}
+  #leftBtn{grid-column:1;grid-row:1;}
+  #rightBtn{grid-column:2;grid-row:1;}
+  #attackBtn{grid-column:3;grid-row:1;}
+  #jumpBtn{grid-column:1;grid-row:2;}
+  #dashBtn{grid-column:2;grid-row:2;}
+  #guardBtn{grid-column:3;grid-row:2;}
+  #specialBtn{grid-column:1/4;grid-row:3;}
+  .controls button{
+    min-height:0;
+    height:100%;
+    font-size:13px;
+    border-radius:14px;
+    padding:0 4px;
+  }
+  .score-board{
+    margin-top:0;
+    padding:12px;
+  }
+  .matchup-info{
+    font-size:12px;
+    padding:9px;
+  }
+  .score-board h2{font-size:28px;}
+  .command-list{display:none;}
+}
+
+@media(max-width:380px){
+  h1{font-size:20px;}
+  .controls{
+    grid-template-rows:52px 52px 58px;
+    gap:7px;
+  }
+  .controls button{font-size:12px;}
+  .top-buttons button,
+  .top-buttons a{
+    height:44px;
+    font-size:14px;
+  }
+  .spec-row{
+    grid-template-columns:1fr;
+    gap:2px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<h1><span class="title-main">サイバークアッカファイター</span> <span class="title-version">EX8</span></h1>
+<p class="command-help"><span>← → 移動</span><span>↑ ジャンプ</span><span>Z 攻撃</span><span>X ガード</span><span>Z+X 投げ</span><span>C 必殺技</span><span>Shift 回避</span></p>
+
+<div class="top-buttons">
+  <button id="resetBtn" class="reset-btn">リセット</button>
+  <a href="index.html" class="back-btn">← ホームへ戻る</a>
+  <button id="pauseBtn" class="pause-btn">一時停止</button>
+</div>
+
+<div class="game-layout">
+  <div class="game-wrap">
+    <canvas id="game" width="760" height="460"></canvas>
+
+    <div class="controls">
+      <div class="control-side move-side">
+        <button id="leftBtn" class="move">← 左</button>
+        <button id="rightBtn" class="move">右 →</button>
+        <button id="jumpBtn" class="move">ジャンプ ↑</button>
+        <button id="dashBtn" class="move">回避</button>
+      </div>
+
+      <div class="control-side attack-side">
+        <button id="attackBtn" class="attack">攻撃 Z</button>
+        <button id="guardBtn" class="guard">防御 X</button>
+        <button id="specialBtn" class="special">必殺技 C</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="score-board">
+    <div class="match-setup">
+      <h2>対戦設定</h2>
+      <label class="setup-field">
+        プレイヤー
+        <select id="playerSelect"></select>
+      </label>
+      <label class="setup-field">
+        敵キャラクター
+        <select id="enemySelect"></select>
+      </label>
+      <label class="setup-field">
+        敵レベル
+        <input id="enemyLevelInput" type="number" min="1" max="30" value="1">
+      </label>
+      <button id="applyMatchBtn" class="match-start-btn">この条件で開始</button>
+      <div id="matchupInfo" class="matchup-info"></div>
+    </div>
+
+    <h2>ハイスコア</h2>
+    <ol id="highScores"></ol>
+    <div class="score-note">
+      勝利した最高レベルを保存します
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   CYBER QUOKKA FIGHTER EX8 REFACTORED
+   - Canvas single-file fighting game
+   - Refactor policy:
+     1. Keep gameplay behavior compatible with EX7.1
+     2. Remove unused legacy renderer code
+     3. Group systems by responsibility
+     4. Keep all code in one HTML file for easy GitHub Pages use
+   ========================================================= */
+
+const canvas=document.getElementById("game");
+const ctx=canvas.getContext("2d");
+
+const FLOOR_Y=372;
+const PLAYER_START_X=120;
+const ENEMY_START_X=590;
+const GRAVITY=.72;
+const SCORE_KEY="cyberQuokkaFighterEX8RefactoredHighScores";
+
+const SKILL_CONFIG={
+  input:{
+    throwWindow:4
+  },
+  normal:{
+    playerDamage:12,
+    enemyBaseDamage:10,
+    enemyLevelScale:0
+  },
+  special:{
+    playerDamage:34,
+    enemyBaseDamage:24,
+    enemyLevelScale:0,
+    cost:60
+  },
+  throw:{
+    timer:24,
+    hitFrame:11,
+    range:56,
+    height:58,
+    offsetY:24,
+    playerDamage:18,
+    enemyBaseDamage:14,
+    enemyLevelScale:0,
+    knockbackX:10,
+    knockbackY:-3.6,
+    lockout:18,
+    grabbedFreeze:12,
+    knockdown:46,
+    throwInvuln:45,
+    afterWakeInvuln:60
+  },
+  parry:{
+    window:5,
+    attackerStun:15,
+    hitStop:8,
+    energyGain:18
+  }
+};
+
+const PLAYER_ROSTER=[
+  {
+    id:"quokka",
+    name:"サイバークアッカ",
+    tag:"標準型。長射程レーザーで中距離を制圧する",
+    colors:{base:"#66ccff",core:"#ffffff",inner:"#bdf5ff",visor:"#7dffff"},
+    motif:"visor",
+    size:{width:54,height:86},
+    stats:{hp:100,guard:100,speed:1,jump:1,dash:1,energyRegen:1},
+    normal:{damage:12,range:58,height:44,offsetY:20,hitFrame:9,timer:18,knockX:5,groundY:-2.2,airY:-5.2},
+    special:{kind:"laser",name:"フォトンレーザー",desc:"一直線のレーザー。射程が長いが発生と硬直は重め",damage:28,range:265,height:30,offsetY:24,hitFrame:20,timer:46,cooldown:155,cost:64,knockX:6.4,knockY:-3.2,color:"#66ccff"}
+  },
+  {
+    id:"volt",
+    name:"ボルトホッパー",
+    tag:"高速型。超加速で一気に距離を詰めて攻める",
+    colors:{base:"#66ff88",core:"#eaffd6",inner:"#ccffdd",visor:"#ffff66"},
+    motif:"antenna",
+    size:{width:50,height:82},
+    stats:{hp:92,guard:88,speed:1.14,jump:1.08,dash:1.15,energyRegen:1.1},
+    normal:{damage:10,range:64,height:40,offsetY:18,hitFrame:8,timer:16,knockX:4.6,groundY:-1.7,airY:-4.8},
+    special:{kind:"speedBoost",name:"オーバークロック",desc:"約4秒間、移動・ダッシュ・通常攻撃力が強化される。攻め切るほど強い",damage:0,range:0,height:0,offsetY:0,hitFrame:10,timer:22,cooldown:230,cost:56,duration:240,speedBoost:1.48,dashBoost:1.32,jumpBoost:1.08,damageBoost:1.28,color:"#ffff66"}
+  },
+  {
+    id:"iron",
+    name:"アイアンワラビー",
+    tag:"重装型。遅いが巨大パンチを飛ばして強く押し込む",
+    colors:{base:"#ffcc33",core:"#fff2aa",inner:"#ffe8b0",visor:"#66ccff"},
+    motif:"armor",
+    size:{width:62,height:94},
+    stats:{hp:118,guard:126,speed:.86,jump:.92,dash:.82,energyRegen:.9},
+    normal:{damage:15,range:52,height:50,offsetY:24,hitFrame:10,timer:22,knockX:6.8,groundY:-1.8,airY:-4.2},
+    special:{kind:"projectile",name:"ロケットナックル",desc:"巨大パンチを前方に飛ばす。遅めだが高威力で押し返す",damage:31,range:0,height:0,offsetY:0,hitFrame:16,timer:42,cooldown:170,cost:62,projectileSpeed:8.2,projectileWidth:58,projectileHeight:34,projectileLife:72,knockX:10.5,knockY:-5.4,color:"#ffcc33",projectileType:"fist"}
+  },
+  {
+    id:"nova",
+    name:"ノヴァクアッカ",
+    tag:"防御反撃型。完全ガードで攻撃を無効化して反撃の起点を作る",
+    colors:{base:"#ff55cc",core:"#ffd6f2",inner:"#ffd6f2",visor:"#44ffd5"},
+    motif:"star",
+    size:{width:54,height:88},
+    stats:{hp:96,guard:94,speed:1.02,jump:1,dash:1.02,energyRegen:1.16},
+    normal:{damage:11,range:58,height:46,offsetY:20,hitFrame:9,timer:18,knockX:5,groundY:-2.5,airY:-5.5},
+    special:{kind:"perfectGuard",name:"ノヴァシールド",desc:"約2.5秒間、攻撃と削りを完全無効化する。直接ダメージはない",damage:0,range:0,height:0,offsetY:0,hitFrame:8,timer:24,cooldown:245,cost:72,duration:150,counterStun:10,color:"#ff55cc"}
+  }
+];
+
+const ENEMY_ARCHETYPES=[
+  {
+    id:"striker",
+    name:"ネオンストライカー",
+    tag:"近距離ラッシュ型。接近して連続攻撃を狙う",
+    colors:{base:"#ff6688",core:"#ffe1e8",inner:"#ffd1de",visor:"#ffdd66"},
+    motif:"blade",
+    size:{width:58,height:92},
+    stats:{hpScale:1,guardScale:1,speed:1,dash:1,energyRegen:1},
+    normal:{damage:10,range:58,height:44,offsetY:22,hitFrame:9,timer:18,knockX:5,groundY:-1.8,airY:-4.8},
+    special:{kind:"rush",name:"ネオンラッシュ",desc:"高速突進斬り。近距離で強いが空振り時は隙が大きい",damage:24,range:112,height:64,offsetY:12,hitFrame:17,timer:36,cooldown:120,cost:58,rushSpeed:8.4,knockX:8.8,knockY:-6.6,color:"#ff6688"},
+    ai:{preferredRange:82,minRange:40,aggressionBias:.08,specialBias:0,guardBias:0,throwBias:0,dashBias:.02,jumpBias:0,reactionAdjust:0}
+  },
+  {
+    id:"lancer",
+    name:"レールランサー",
+    tag:"長射程型。距離を取りながらビームで差し込む",
+    colors:{base:"#44ffd5",core:"#c9fff4",inner:"#c9fff4",visor:"#66ccff"},
+    motif:"rail",
+    size:{width:56,height:90},
+    stats:{hpScale:.95,guardScale:.96,speed:.94,dash:1,energyRegen:1.06},
+    normal:{damage:9,range:82,height:36,offsetY:20,hitFrame:11,timer:22,knockX:4.4,groundY:-1.2,airY:-3.8},
+    special:{kind:"laser",name:"レールビーム",desc:"細長いビーム。遠距離から差し込むが威力は控えめ",damage:21,range:285,height:24,offsetY:22,hitFrame:21,timer:44,cooldown:128,cost:58,knockX:6.8,knockY:-3.5,color:"#44ffd5"},
+    ai:{preferredRange:128,minRange:62,aggressionBias:-.03,specialBias:.15,guardBias:.03,throwBias:-.03,dashBias:.02,jumpBias:-.001,reactionAdjust:2,keepAway:.18}
+  },
+  {
+    id:"bulwark",
+    name:"重装ブルワーク",
+    tag:"防御型。硬く、ガードと投げで崩してくる",
+    colors:{base:"#ffcc33",core:"#fff2aa",inner:"#ffe0cc",visor:"#ff8844"},
+    motif:"shield",
+    size:{width:66,height:98},
+    stats:{hpScale:1.24,guardScale:1.38,speed:.78,dash:.78,energyRegen:.94},
+    normal:{damage:12,range:50,height:56,offsetY:22,hitFrame:11,timer:23,knockX:6.2,groundY:-1.5,airY:-3.8},
+    special:{kind:"perfectGuard",name:"ブレイカーウォール",desc:"短時間の完全ガード。守ってから投げや重い一撃に繋げる",damage:0,range:0,height:0,offsetY:0,hitFrame:8,timer:26,cooldown:180,cost:60,duration:125,counterStun:8,color:"#ffcc33"},
+    ai:{preferredRange:68,minRange:34,aggressionBias:-.02,specialBias:.04,guardBias:.24,throwBias:.09,dashBias:-.02,jumpBias:-.002,reactionAdjust:4}
+  },
+  {
+    id:"trickster",
+    name:"フェイズトリックスター",
+    tag:"攪乱型。高速移動とジャンプで翻弄する",
+    colors:{base:"#9955ff",core:"#ead8ff",inner:"#ead8ff",visor:"#ff55cc"},
+    motif:"phase",
+    size:{width:52,height:88},
+    stats:{hpScale:.88,guardScale:.9,speed:1.22,dash:1.26,energyRegen:1.12},
+    normal:{damage:8,range:64,height:42,offsetY:19,hitFrame:8,timer:16,knockX:4.2,groundY:-2.5,airY:-5.8},
+    special:{kind:"speedBoost",name:"フェイズアクセル",desc:"約3秒間、機動力をさらに上げて翻弄する",damage:0,range:0,height:0,offsetY:0,hitFrame:8,timer:20,cooldown:150,cost:52,duration:180,speedBoost:1.35,dashBoost:1.28,jumpBoost:1.05,damageBoost:1.1,color:"#9955ff"},
+    ai:{preferredRange:96,minRange:38,aggressionBias:.05,specialBias:.06,guardBias:-.06,throwBias:-.02,dashBias:.18,jumpBias:.018,reactionAdjust:-4,keepAway:.12}
+  },
+  {
+    id:"overdrive",
+    name:"オーバードライブボス",
+    tag:"ボス型。攻撃・防御・移動を高水準で使う",
+    colors:{base:"#ff55cc",core:"#ffffff",inner:"#ffd6f2",visor:"#44ffd5"},
+    motif:"crown",
+    rainbow:true,
+    size:{width:64,height:100},
+    stats:{hpScale:1.18,guardScale:1.14,speed:1.07,dash:1.06,energyRegen:1.18},
+    normal:{damage:11,range:70,height:50,offsetY:20,hitFrame:9,timer:18,knockX:5.6,groundY:-2.2,airY:-5.4},
+    special:{kind:"projectile",name:"プリズムコメット",desc:"虹色の大型弾。中速で飛び、当たると大きく吹き飛ばす",damage:28,range:0,height:0,offsetY:0,hitFrame:16,timer:40,cooldown:125,cost:58,projectileSpeed:9.4,projectileWidth:48,projectileHeight:48,projectileLife:82,knockX:9.5,knockY:-8.4,color:"#ff55cc",projectileType:"orb"},
+    ai:{preferredRange:104,minRange:44,aggressionBias:.1,specialBias:.12,guardBias:.08,throwBias:.04,dashBias:.08,jumpBias:.006,reactionAdjust:-2,keepAway:.08}
+  }
+];
+
+let selectedPlayerId=PLAYER_ROSTER[0].id;
+let selectedEnemyId=ENEMY_ARCHETYPES[0].id;
+let selectedStartLevel=1;
+
+let keys={};
+let player;
+let enemy;
+let effects=[];
+let particles=[];
+let bursts=[];
+let projectiles=[];
+let hitStop=0;
+let screenShake=0;
+let screenFlash=0;
+let finishTimer=0;
+let finishText="";
+let roundBanner={text:"",subText:"",timer:0,maxTimer:0,color:"#66ccff"};
+let level=1;
+let defeatedLevel=0;
+let gameStarted=false;
+let gamePaused=false;
+let gameOver=false;
+let scoreSaved=false;
+let highScores=loadHighScores();
+
+let frameCount=0;
+let lastAttackPressFrame=-999;
+let lastGuardPressFrame=-999;
+let pendingAttackTimer=0;
+let pendingGuardTimer=0;
+let attackTouchHeld=false;
+let guardTouchHeld=false;
+let throwInputLock=false;
+
+let combo={
+  count:0,
+  timer:0,
+  owner:null,
+  max:0
+};
+
+
+/* ===================== STORAGE ===================== */
+function loadHighScores(){
+  const data=localStorage.getItem(SCORE_KEY);
+  if(!data)return [];
+  try{
+    const parsed=JSON.parse(data);
+    return Array.isArray(parsed)?parsed.filter(v=>Number.isFinite(v)).slice(0,10):[];
+  }catch(e){
+    return [];
+  }
+}
+
+function saveHighScores(){
+  localStorage.setItem(SCORE_KEY,JSON.stringify(highScores));
+}
+
+function addHighScore(score){
+  if(score<=0){
+    displayHighScores();
+    return;
+  }
+  highScores.push(score);
+  highScores.sort((a,b)=>b-a);
+  highScores=highScores.slice(0,10);
+  saveHighScores();
+  displayHighScores();
+}
+
+function displayHighScores(){
+  const list=document.getElementById("highScores");
+  list.innerHTML="";
+  if(highScores.length===0){
+    const li=document.createElement("li");
+    li.textContent="まだスコアなし";
+    list.appendChild(li);
+    return;
+  }
+  highScores.forEach((score,index)=>{
+    const li=document.createElement("li");
+    li.textContent=(index+1)+"位：レベル "+score+" まで勝利";
+    list.appendChild(li);
+  });
+}
+
+function findById(list,id){
+  return list.find(item=>item.id===id)||list[0];
+}
+
+function getPlayerProfile(){
+  return findById(PLAYER_ROSTER,selectedPlayerId);
+}
+
+function getEnemyProfile(){
+  return findById(ENEMY_ARCHETYPES,selectedEnemyId);
+}
+
+function valueOr(value,fallback){
+  return typeof value==="number"?value:fallback;
+}
+
+function getNormalData(f){
+  return f.normal||{};
+}
+
+function getSpecialData(f){
+  return f.special||{};
+}
+
+function getSpecialCost(f){
+  return valueOr(getSpecialData(f).cost,SKILL_CONFIG.special.cost);
+}
+
+function getFighterStat(f,name,fallback){
+  let value=f.stats&&typeof f.stats[name]==="number"?f.stats[name]:fallback;
+
+  if(f.boostTimer>0){
+    const special=getSpecialData(f);
+    if(name==="speed")value*=valueOr(special.speedBoost,1);
+    if(name==="dash")value*=valueOr(special.dashBoost,1);
+    if(name==="jump")value*=valueOr(special.jumpBoost,1);
+  }
+
+  return value;
+}
+
+function getAttackDamageMultiplier(f){
+  if(f.boostTimer>0){
+    return valueOr(getSpecialData(f).damageBoost,1);
+  }
+  return 1;
+}
+
+function specialKind(f){
+  return getSpecialData(f).kind||"strike";
+}
+
+function shortName(name){
+  return name.length>13?name.slice(0,13):name;
+}
+
+
+/* ===================== FIGHTER FACTORY ===================== */
+function makeFighter(x,y,w,h,face,isPlayer,profile){
+  const size=profile.size||{width:w,height:h};
+  const stats=profile.stats||{};
+  const maxHp=isPlayer
+    ? valueOr(stats.hp,100)
+    : Math.ceil((115+level*22)*valueOr(stats.hpScale,1)+valueOr(stats.hpBonus,0));
+  const maxGuard=isPlayer
+    ? valueOr(stats.guard,100)
+    : Math.ceil((92+level*3)*valueOr(stats.guardScale,1)+valueOr(stats.guardBonus,0));
+
+  return{
+    x:x,
+    y:y,
+    vx:0,
+    vy:0,
+    width:size.width,
+    height:size.height,
+    face:face,
+    hp:maxHp,
+    maxHp:maxHp,
+    energy:0,
+    maxEnergy:100,
+    guardGauge:maxGuard,
+    maxGuardGauge:maxGuard,
+    guardBreakTimer:0,
+    guardRegenDelay:0,
+    guardHoldTimer:0,
+    boostTimer:0,
+    perfectGuardTimer:0,
+    parryTimer:0,
+    onGround:true,
+    attackTimer:0,
+    attackHitDone:false,
+    throwTimer:0,
+    throwHitDone:false,
+    guard:false,
+    dashTimer:0,
+    dashCooldown:0,
+    specialTimer:0,
+    specialCooldown:isPlayer?0:90,
+    hurtTimer:0,
+    airComboCount:0,
+    wallBounce:false,
+    thrownFreezeTimer:0,
+    throwSpin:0,
+    knockdownTimer:0,
+    knockdownAngle:0,
+    throwInvulnTimer:0,
+    throwLockout:0,
+    pendingThrowKnockbackX:0,
+    pendingThrowKnockbackY:0,
+    inputBuffer:null,
+    aiTimer:0,
+    jumpChance:valueOr(profile.ai&&profile.ai.jumpChance,.004)+level*.0007,
+    displayName:profile.name,
+    tag:profile.tag,
+    colors:profile.colors,
+    motif:profile.motif,
+    rainbow:!!profile.rainbow,
+    archetypeId:profile.id,
+    normal:profile.normal,
+    special:profile.special,
+    stats:stats,
+    aiProfile:profile.ai||{},
+    isPlayer:isPlayer
+  };
+}
+
+function resetFighterForNeutralStart(f,x,face){
+  f.x=x;
+  f.y=FLOOR_Y-f.height;
+  f.vx=0;
+  f.vy=0;
+  f.face=face;
+  f.onGround=true;
+  f.guard=false;
+  f.attackTimer=0;
+  f.attackHitDone=false;
+  f.throwTimer=0;
+  f.throwHitDone=false;
+  f.specialTimer=0;
+  f.hurtTimer=0;
+  f.guardBreakTimer=0;
+  f.boostTimer=0;
+  f.perfectGuardTimer=0;
+  f.parryTimer=0;
+  f.dashTimer=0;
+  f.airComboCount=0;
+  f.wallBounce=false;
+  f.thrownFreezeTimer=0;
+  f.throwSpin=0;
+  f.knockdownTimer=0;
+  f.knockdownAngle=0;
+  f.throwInvulnTimer=0;
+  f.throwLockout=0;
+  f.pendingThrowKnockbackX=0;
+  f.pendingThrowKnockbackY=0;
+  f.inputBuffer=null;
+}
+
+function resetRoundPositions(){
+  resetFighterForNeutralStart(player,PLAYER_START_X,1);
+  resetFighterForNeutralStart(enemy,ENEMY_START_X,-1);
+  updateFacing();
+}
+
+function resetGame(){
+  const playerProfile=getPlayerProfile();
+  const playerHeight=playerProfile.size?playerProfile.size.height:86;
+  player=makeFighter(PLAYER_START_X,FLOOR_Y-playerHeight,54,86,1,true,playerProfile);
+  level=selectedStartLevel;
+  defeatedLevel=0;
+  spawnEnemy();
+
+  effects=[];
+  particles=[];
+  bursts=[];
+  projectiles=[];
+  hitStop=0;
+  screenShake=0;
+  screenFlash=0;
+  finishTimer=0;
+  finishText="";
+  roundBanner={text:"",subText:"",timer:0,maxTimer:0,color:"#66ccff"};
+  combo={count:0,timer:0,owner:null,max:0};
+
+  gameStarted=false;
+  gamePaused=false;
+  updatePauseButton();
+  gameOver=false;
+  scoreSaved=false;
+  keys={};
+  frameCount=0;
+  lastAttackPressFrame=-999;
+  lastGuardPressFrame=-999;
+  pendingAttackTimer=0;
+  pendingGuardTimer=0;
+  attackTouchHeld=false;
+  guardTouchHeld=false;
+  throwInputLock=false;
+}
+
+function spawnEnemy(){
+  const enemyProfile=getEnemyProfile();
+  const enemyHeight=enemyProfile.size?enemyProfile.size.height:92;
+  enemy=makeFighter(ENEMY_START_X,FLOOR_Y-enemyHeight,58,92,-1,false,enemyProfile);
+}
+
+
+/* ===================== BASIC UTILITIES ===================== */
+function updatePauseButton(){
+  const btn=document.getElementById("pauseBtn");
+  if(!btn)return;
+
+  btn.textContent=gamePaused?"再開":"一時停止";
+  btn.classList.toggle("paused",gamePaused);
+}
+
+function setPaused(paused){
+  if(!gameStarted||gameOver){
+    gamePaused=false;
+    updatePauseButton();
+    return;
+  }
+
+  gamePaused=paused;
+
+  if(gamePaused){
+    pendingAttackTimer=0;
+    pendingGuardTimer=0;
+    throwInputLock=false;
+    attackTouchHeld=false;
+    guardTouchHeld=false;
+    player.guard=false;
+    player.inputBuffer=null;
+  }
+
+  updatePauseButton();
+}
+
+function togglePause(){
+  setPaused(!gamePaused);
+}
+
+function startGame(){
+  if(gameOver)return;
+
+  if(!gameStarted){
+    gameStarted=true;
+    gamePaused=false;
+    updatePauseButton();
+    showBanner("開始","レベル "+level,"#66ffcc",54);
+  }
+}
+
+function showBanner(text,subText,color,life=70){
+  roundBanner={
+    text:text,
+    subText:subText||"",
+    timer:life,
+    maxTimer:life,
+    color:color||"#66ccff"
+  };
+}
+
+function clamp(v,min,max){
+  return Math.max(min,Math.min(max,v));
+}
+
+function centerX(f){
+  return f.x+f.width/2;
+}
+
+function rectsHit(a,b){
+  return a.x<b.x+b.width&&
+         a.x+a.width>b.x&&
+         a.y<b.y+b.height&&
+         a.y+a.height>b.y;
+}
+
+function updateFacing(){
+  if(player.onGround&&player.attackTimer<=0&&player.specialTimer<=0&&player.hurtTimer<=0&&player.dashTimer<=0){
+    player.face=centerX(enemy)<centerX(player)?-1:1;
+  }
+  if(enemy.onGround&&enemy.attackTimer<=0&&enemy.specialTimer<=0&&enemy.hurtTimer<=0&&enemy.dashTimer<=0){
+    enemy.face=centerX(player)<centerX(enemy)?-1:1;
+  }
+}
+
+function faceOpponent(f){
+  if(f===player){
+    f.face=centerX(enemy)<centerX(player)?-1:1;
+  }else{
+    f.face=centerX(player)<centerX(enemy)?-1:1;
+  }
+}
+
+
+/* ===================== INPUT BUFFER / ACTION GATES ===================== */
+function canAct(f){
+  return f.attackTimer<=0&&
+         f.specialTimer<=0&&
+         f.throwTimer<=0&&
+         f.hurtTimer<=0&&
+         f.guardBreakTimer<=0;
+}
+
+function bufferInput(action){
+  player.inputBuffer={
+    action:action,
+    timer:5
+  };
+}
+
+function consumeInputBuffer(){
+  if(!player.inputBuffer)return;
+
+  player.inputBuffer.timer--;
+
+  if(player.inputBuffer.timer<=0){
+    player.inputBuffer=null;
+    return;
+  }
+
+  if(!canAct(player))return;
+
+  const action=player.inputBuffer.action;
+  player.inputBuffer=null;
+
+  if(action==="attack")normalAttack(player,false);
+  if(action==="special")specialAttack(player,false);
+  if(action==="throw")throwAttack(player,false);
+  if(action==="jump")jump(player,false);
+  if(action==="dash")dash(player,false);
+}
+
+
+/* ===================== THROW INPUT SYSTEM ===================== */
+function trySimultaneousThrow(){
+  if(gamePaused){
+    return false;
+  }
+
+  if(throwInputLock){
+    return false;
+  }
+
+  if(!canAct(player)||!player.onGround||player.throwLockout>0){
+    return false;
+  }
+
+  const keyboardClose=
+    Math.abs(lastAttackPressFrame-lastGuardPressFrame)<=SKILL_CONFIG.input.throwWindow;
+
+  const touchClose=attackTouchHeld&&guardTouchHeld;
+
+  if(keyboardClose||touchClose){
+    throwInputLock=true;
+    pendingAttackTimer=0;
+    pendingGuardTimer=0;
+    player.guard=false;
+    player.vx=0;
+    player.vy=0;
+    throwAttack(player);
+    lastAttackPressFrame=-999;
+    lastGuardPressFrame=-999;
+    return true;
+  }
+
+  return false;
+}
+
+function processPendingInputs(){
+  if(pendingAttackTimer>0){
+    pendingAttackTimer--;
+
+    if(trySimultaneousThrow()){
+      return;
+    }
+
+    if(pendingAttackTimer<=0){
+      normalAttack(player,false);
+    }
+  }
+
+  if(pendingGuardTimer>0){
+    pendingGuardTimer--;
+
+    if(trySimultaneousThrow()){
+      return;
+    }
+
+    if(pendingGuardTimer<=0&&keys["KeyX"]){
+      startGame();
+
+      if(canAct(player)&&player.onGround){
+        player.parryTimer=SKILL_CONFIG.parry.window;
+      }
+    }
+  }
+}
+
+function throwAttack(f,allowBuffer=true){
+  if(gamePaused)return;
+
+  if(!canAct(f)||f.throwLockout>0){
+    if(f===player&&allowBuffer){
+      bufferInput("throw");
+    }
+    return;
+  }
+
+  if(!f.onGround){
+    if(f===player){
+      addEffect("投げ不可",f.x+f.width/2,f.y-12,"#8888ff");
+    }
+    return;
+  }
+
+  faceOpponent(f);
+  f.vx=0;
+  f.vy=0;
+  f.guard=false;
+  f.throwTimer=SKILL_CONFIG.throw.timer;
+  f.throwHitDone=false;
+  f.throwLockout=SKILL_CONFIG.throw.lockout;
+  startGame();
+
+  addEffect("投げ",f.x+f.width/2,f.y-14,"#ff9944");
+}
+
+function getThrowBox(f){
+  const cfg=SKILL_CONFIG.throw;
+
+  if(f.face===1){
+    return{
+      x:f.x+f.width-2,
+      y:f.y+cfg.offsetY,
+      width:cfg.range,
+      height:cfg.height
+    };
+  }
+
+  return{
+    x:f.x-cfg.range+2,
+    y:f.y+cfg.offsetY,
+    width:cfg.range,
+    height:cfg.height
+  };
+}
+
+function applyThrow(attacker,target){
+  if(!rectsHit(getThrowBox(attacker),target)){
+    addEffect("空振り",attacker.x+attacker.width/2,attacker.y-10,"#66ccff");
+    return;
+  }
+
+  if(
+    !target.onGround||
+    target.dashTimer>0||
+    target.throwInvulnTimer>0||
+    target.perfectGuardTimer>0||
+    target.thrownFreezeTimer>0||
+    target.knockdownTimer>0||
+    target.hurtTimer>0
+  ){
+    addEffect("回避",target.x+target.width/2,target.y-10,"#66ccff");
+    return;
+  }
+
+  const cfg=SKILL_CONFIG.throw;
+  const damage=attacker===player
+    ? cfg.playerDamage
+    : Math.ceil(cfg.enemyBaseDamage);
+
+  attacker.vx=0;
+  attacker.vy=0;
+
+  target.guard=false;
+  target.attackTimer=0;
+  target.specialTimer=0;
+  target.throwTimer=0;
+  target.attackHitDone=true;
+  target.throwHitDone=true;
+  target.inputBuffer=null;
+
+  target.hp=Math.max(0,target.hp-damage);
+  target.hurtTimer=24;
+  target.thrownFreezeTimer=cfg.grabbedFreeze;
+  target.throwSpin=34;
+  target.knockdownTimer=cfg.knockdown;
+  target.knockdownAngle=attacker.face;
+  target.vx=0;
+  target.vy=0;
+  target.onGround=true;
+  target.airComboCount=0;
+  target.guardRegenDelay=24;
+  target.throwInvulnTimer=cfg.throwInvuln;
+  target.pendingThrowKnockbackX=attacker.face*cfg.knockbackX;
+  target.pendingThrowKnockbackY=cfg.knockbackY;
+
+  attacker.energy=clamp(attacker.energy+18,0,attacker.maxEnergy);
+
+  registerCombo(attacker,false,false);
+  addEffect("つかみ",target.x+target.width/2,target.y-28,"#ff9944");
+  addEffect("叩きつけ",target.x+target.width/2,target.y-52,"#ffcc66");
+  spawnImpactBurst(target.x+target.width/2,target.y+34,"#ff9944",1.35);
+  spawnHitParticles(target.x+target.width/2,target.y+34,"#ff9944",1.35);
+
+  hitStop=10;
+  screenShake=12;
+}
+
+
+/* ===================== PLAYER / ENEMY ACTIONS ===================== */
+function normalAttack(f,allowBuffer=true){
+  if(gamePaused)return;
+
+  if(!canAct(f)){
+    if(f===player&&allowBuffer)bufferInput("attack");
+    return;
+  }
+  const normal=getNormalData(f);
+  faceOpponent(f);
+  f.attackTimer=valueOr(normal.timer,18);
+  f.attackHitDone=false;
+  startGame();
+}
+
+function specialAttack(f,allowBuffer=true){
+  if(gamePaused)return;
+
+  if(!canAct(f)||f.specialCooldown>0){
+    if(f===player&&allowBuffer)bufferInput("special");
+    return;
+  }
+
+  const special=getSpecialData(f);
+  const cost=getSpecialCost(f);
+
+  if(f.energy<cost){
+    if(f===player)addEffect("ゲージ不足",f.x+f.width/2,f.y-12,"#8888ff");
+    return;
+  }
+
+  faceOpponent(f);
+  f.energy-=cost;
+  f.specialTimer=valueOr(special.timer,36);
+  f.specialCooldown=valueOr(special.cooldown,120);
+  f.attackHitDone=false;
+
+  if(special.kind==="speedBoost"){
+    f.boostTimer=valueOr(special.duration,180);
+    f.attackHitDone=true;
+    addEffect("超加速",f.x+f.width/2,f.y-14,special.color||"#ffff66");
+  }else if(special.kind==="perfectGuard"){
+    f.perfectGuardTimer=valueOr(special.duration,120);
+    f.guard=true;
+    f.attackHitDone=true;
+    addEffect("完全ガード",f.x+f.width/2,f.y-14,special.color||"#ff55cc");
+  }else if(special.kind==="rush"){
+    f.vx=f.face*valueOr(special.rushSpeed,8);
+    addEffect(special.name||"突進",f.x+f.width/2,f.y-14,special.color||"#ff6688");
+  }else{
+    addEffect(special.name||"必殺技",f.x+f.width/2,f.y-14,special.color||"#cc77ff");
+  }
+
+  startGame();
+  screenFlash=8;
+}
+
+function jump(f,allowBuffer=true){
+  if(gamePaused)return;
+
+  if(f.onGround&&f.hurtTimer<=0&&f.guardBreakTimer<=0){
+    f.vy=-13.5*getFighterStat(f,"jump",1);
+    f.onGround=false;
+    startGame();
+  }else if(f===player&&allowBuffer){
+    bufferInput("jump");
+  }
+}
+
+function dash(f,allowBuffer=true){
+  if(gamePaused)return;
+
+  if(f.dashCooldown>0||f.hurtTimer>0||f.guardBreakTimer>0){
+    if(f===player&&allowBuffer)bufferInput("dash");
+    return;
+  }
+  f.dashTimer=16;
+  f.dashCooldown=58;
+  f.vx=f.face*11*getFighterStat(f,"dash",1);
+  f.guard=false;
+  startGame();
+  addEffect("回避",f.x+f.width/2,f.y+20,"#66ccff");
+}
+
+
+/* ===================== COMBAT HITBOXES ===================== */
+function resolveNormalHit(attacker,target){
+  const attack=getNormalData(attacker);
+  const hitFrame=valueOr(attack.hitFrame,9);
+
+  if(attacker.attackTimer!==hitFrame||attacker.attackHitDone)return;
+
+  const box=getAttackBox(
+    attacker,
+    valueOr(attack.range,58),
+    valueOr(attack.height,44),
+    valueOr(attack.offsetY,attacker===player?20:22)
+  );
+
+  if(rectsHit(box,target)){
+    const baseDamage=valueOr(
+      attack.damage,
+      attacker===player?SKILL_CONFIG.normal.playerDamage:SKILL_CONFIG.normal.enemyBaseDamage
+    );
+    const damage=Math.ceil(baseDamage*getAttackDamageMultiplier(attacker));
+    const groundY=valueOr(attack.groundY,attacker===player?-2.2:-1.8);
+    const airY=valueOr(attack.airY,attacker===player?-5.2:-4.8);
+    takeDamage(
+      target,
+      damage,
+      attacker.face*valueOr(attack.knockX,5),
+      target.onGround?groundY:airY,
+      attacker,
+      false
+    );
+  }
+
+  attacker.attackHitDone=true;
+}
+
+function spawnSpecialProjectile(attacker,special){
+  const dir=attacker.face;
+  const width=valueOr(special.projectileWidth,48);
+  const height=valueOr(special.projectileHeight,32);
+
+  projectiles.push({
+    owner:attacker,
+    x:attacker.x+attacker.width/2+dir*34,
+    y:attacker.y+valueOr(special.projectileY,34),
+    vx:dir*valueOr(special.projectileSpeed,8),
+    width:width,
+    height:height,
+    damage:Math.ceil(valueOr(special.damage,24)*getAttackDamageMultiplier(attacker)),
+    knockX:valueOr(special.knockX,8),
+    knockY:valueOr(special.knockY,-4),
+    color:special.color||"#ffcc33",
+    type:special.projectileType||"orb",
+    life:valueOr(special.projectileLife,70),
+    maxLife:valueOr(special.projectileLife,70),
+    hit:false
+  });
+
+  addEffect(special.projectileType==="fist"?"発射":"射出",attacker.x+attacker.width/2,attacker.y-18,special.color||"#ffcc33");
+}
+
+function resolveSpecialHit(attacker,target){
+  const attack=getSpecialData(attacker);
+  const hitFrame=valueOr(attack.hitFrame,18);
+
+  if(attacker.specialTimer!==hitFrame||attacker.attackHitDone)return;
+
+  if(attack.kind==="speedBoost"||attack.kind==="perfectGuard"){
+    attacker.attackHitDone=true;
+    return;
+  }
+
+  if(attack.kind==="projectile"){
+    spawnSpecialProjectile(attacker,attack);
+    attacker.attackHitDone=true;
+    return;
+  }
+
+  const box=getAttackBox(
+    attacker,
+    valueOr(attack.range,attacker===player?122:118),
+    valueOr(attack.height,70),
+    valueOr(attack.offsetY,attacker===player?8:10)
+  );
+
+  if(rectsHit(box,target)){
+    const baseDamage=valueOr(
+      attack.damage,
+      attacker===player?SKILL_CONFIG.special.playerDamage:SKILL_CONFIG.special.enemyBaseDamage
+    );
+    const damage=Math.ceil(baseDamage*getAttackDamageMultiplier(attacker));
+    takeDamage(
+      target,
+      damage,
+      attacker.face*valueOr(attack.knockX,attacker===player?9:9),
+      valueOr(attack.knockY,attacker===player?-8.6:-7.4),
+      attacker,
+      true
+    );
+  }
+
+  attacker.attackHitDone=true;
+}
+
+function getAttackBox(f,range,height,offsetY){
+  if(f.face===1){
+    return{
+      x:f.x+f.width-4,
+      y:f.y+offsetY,
+      width:range,
+      height:height
+    };
+  }
+  return{
+    x:f.x-range+4,
+    y:f.y+offsetY,
+    width:range,
+    height:height
+  };
+}
+
+function guardBreak(target){
+  target.guard=false;
+  target.guardGauge=0;
+  target.guardBreakTimer=75;
+  target.attackTimer=0;
+  target.specialTimer=0;
+  target.throwTimer=0;
+  target.attackHitDone=true;
+  target.throwHitDone=true;
+  addEffect("ガード崩し",target.x+target.width/2,target.y-20,"#ffcc33");
+  spawnImpactBurst(target.x+target.width/2,target.y+34,"#ffcc33",1.45);
+  spawnHitParticles(target.x+target.width/2,target.y+34,"#ffcc33",1.35);
+  screenShake=14;
+}
+
+function registerCombo(attacker,isCounter,isSpecial){
+  if(!attacker)return;
+
+  if(combo.owner!==attacker||combo.timer<=0){
+    combo.count=0;
+  }
+
+  combo.owner=attacker;
+  combo.count++;
+  combo.timer=92;
+  combo.max=Math.max(combo.max,combo.count);
+
+  if(combo.count>=2){
+    addEffect(combo.count+"連撃",canvas.width/2,118,attacker===player?"#66ffcc":"#ff99aa");
+  }
+
+  if(isCounter){
+    addEffect("カウンター",canvas.width/2,148,"#ffcc33");
+  }
+
+  if(isSpecial){
+    screenFlash=Math.max(screenFlash,12);
+  }
+}
+
+
+/* ===================== DAMAGE / GUARD / PARRY ===================== */
+function takeDamage(target,amount,knockbackX,knockbackY,attacker,isSpecial){
+  if(target.dashTimer>0){
+    addEffect("回避",target.x+target.width/2,target.y-10,"#66ccff");
+    return;
+  }
+
+  if(target.perfectGuardTimer>0){
+    target.energy=clamp(target.energy+6,0,target.maxEnergy);
+
+    if(attacker){
+      attacker.hurtTimer=Math.max(attacker.hurtTimer,valueOr(getSpecialData(target).counterStun,8));
+      attacker.vx*=.25;
+    }
+
+    addEffect("完全ガード",target.x+target.width/2,target.y-18,getSpecialData(target).color||"#ffcc66");
+    spawnImpactBurst(target.x+target.width/2,target.y+34,getSpecialData(target).color||"#ffcc66",1.2);
+    spawnHitParticles(target.x+target.width/2,target.y+34,getSpecialData(target).color||"#ffcc66",1.05);
+    hitStop=7;
+    screenShake=5;
+    return;
+  }
+
+  if(target.parryTimer>0){
+    target.parryTimer=0;
+    target.guard=false;
+    target.energy=clamp(target.energy+SKILL_CONFIG.parry.energyGain,0,target.maxEnergy);
+
+    if(attacker){
+      attacker.attackTimer=0;
+      attacker.specialTimer=0;
+      attacker.throwTimer=0;
+      attacker.attackHitDone=true;
+      attacker.throwHitDone=true;
+      attacker.hurtTimer=Math.max(attacker.hurtTimer,SKILL_CONFIG.parry.attackerStun);
+      attacker.vx=0;
+    }
+
+    addEffect("パリィ",target.x+target.width/2,target.y-18,"#66ff88");
+    spawnImpactBurst(target.x+target.width/2,target.y+34,"#66ff88",1.25);
+    spawnHitParticles(target.x+target.width/2,target.y+34,"#66ff88",1.25);
+    hitStop=SKILL_CONFIG.parry.hitStop;
+    screenFlash=10;
+    screenShake=7;
+    return;
+  }
+
+  const isCounter=target.attackTimer>0||target.specialTimer>0||target.dashTimer>0;
+
+  target.attackTimer=0;
+  target.specialTimer=0;
+  target.throwTimer=0;
+  target.attackHitDone=true;
+  target.throwHitDone=true;
+  target.inputBuffer=null;
+
+  let damage=amount;
+
+  if(isCounter){
+    damage=Math.ceil(damage*1.32);
+  }
+
+  if(!target.onGround){
+    target.airComboCount++;
+  }else{
+    target.airComboCount=0;
+  }
+
+  if(target.airComboCount>3){
+    target.guard=false;
+    target.hurtTimer=24;
+    target.vx=knockbackX*1.45;
+    target.vy=-3.2;
+    target.airComboCount=0;
+    damage=Math.ceil(amount*.45);
+    target.hp=Math.max(0,target.hp-damage);
+    registerCombo(attacker,isCounter,isSpecial);
+    addEffect("空中弾き",target.x+target.width/2,target.y-20,"#66ffcc");
+    spawnImpactBurst(target.x+target.width/2,target.y+34,"#66ffcc",1.45);
+    spawnHitParticles(target.x+target.width/2,target.y+34,"#66ffcc",1.45);
+    hitStop=8;
+    screenShake=9;
+    return;
+  }
+
+  if(target.guard&&target.guardBreakTimer<=0&&target.onGround){
+    const guardDamage=isSpecial?30:20;
+    target.guardGauge-=guardDamage;
+    target.guardRegenDelay=42;
+
+    if(target.guardGauge<=0){
+      guardBreak(target);
+      damage=Math.ceil(amount*.55);
+    }else{
+      damage=isSpecial?Math.ceil(amount*.18):0;
+      addEffect(isSpecial?"削り":"ガード",target.x+target.width/2,target.y-12,isSpecial?"#cc77ff":"#4488ff");
+    }
+  }else{
+    addEffect("-"+damage,target.x+target.width/2,target.y-16,isCounter?"#ffcc33":"#ff5577");
+  }
+
+  target.hp=Math.max(0,target.hp-damage);
+  registerCombo(attacker,isCounter,isSpecial);
+
+  const comboPenalty=target.airComboCount*2;
+  target.hurtTimer=Math.max(9,target.guard?8:18-comboPenalty);
+  target.vx=knockbackX*Math.max(.72,1-target.airComboCount*.09);
+
+  if(knockbackY!==0){
+    target.vy=knockbackY*Math.max(.62,1-target.airComboCount*.13);
+    target.onGround=false;
+  }else if(!target.onGround){
+    target.vy=Math.min(target.vy,-4.5);
+  }
+
+  target.energy=clamp(target.energy+8,0,target.maxEnergy);
+  if(attacker)attacker.energy=clamp(attacker.energy+15,0,attacker.maxEnergy);
+
+  checkWallBounce(target,attacker,isSpecial);
+
+  const hitColor=target.guard?"#4488ff":isCounter?"#ffcc33":isSpecial?"#cc77ff":"#ff5577";
+  hitStop=isSpecial?9:5;
+  screenShake=isSpecial?13:7;
+  spawnImpactBurst(target.x+target.width/2,target.y+36,hitColor,isSpecial?1.65:1);
+  spawnHitParticles(target.x+target.width/2,target.y+36,hitColor,isSpecial?1.55:1);
+}
+
+function checkWallBounce(target,attacker,isSpecial){
+  if(!isSpecial||target.wallBounce)return;
+
+  const nearLeft=target.x<=38;
+  const nearRight=target.x+target.width>=canvas.width-38;
+
+  if(!nearLeft&&!nearRight)return;
+
+  target.wallBounce=true;
+  target.vx=nearLeft?8.5:-8.5;
+  target.vy=-7.2;
+  target.onGround=false;
+  target.hurtTimer=26;
+
+  if(attacker)attacker.energy=clamp(attacker.energy+12,0,attacker.maxEnergy);
+
+  addEffect("壁バウンド",target.x+target.width/2,target.y-22,"#cc77ff");
+  spawnImpactBurst(target.x+target.width/2,target.y+34,"#cc77ff",1.6);
+  spawnHitParticles(target.x+target.width/2,target.y+34,"#cc77ff",1.45);
+  screenFlash=10;
+}
+
+
+/* ===================== HIT RESOLUTION ===================== */
+function handleAttackHits(){
+  if(player.throwTimer===SKILL_CONFIG.throw.hitFrame&&!player.throwHitDone){
+    applyThrow(player,enemy);
+    player.throwHitDone=true;
+  }
+
+  if(enemy.throwTimer===SKILL_CONFIG.throw.hitFrame&&!enemy.throwHitDone){
+    applyThrow(enemy,player);
+    enemy.throwHitDone=true;
+  }
+
+  resolveNormalHit(player,enemy);
+  resolveNormalHit(enemy,player);
+  resolveSpecialHit(player,enemy);
+  resolveSpecialHit(enemy,player);
+}
+
+
+/* ===================== UPDATE: PLAYER / ENEMY / PHYSICS ===================== */
+function updatePlayer(){
+  const canGuard=player.onGround&&
+    player.dashTimer<=0&&
+    player.attackTimer<=0&&
+    player.specialTimer<=0&&
+    player.throwTimer<=0&&
+    player.hurtTimer<=0&&
+    player.guardBreakTimer<=0;
+
+  player.guard=(keys["KeyX"]&&canGuard&&pendingGuardTimer<=0)||player.perfectGuardTimer>0;
+
+  const playerSpeed=getFighterStat(player,"speed",1);
+  let accel=(player.guard?0.22:0.72)*playerSpeed;
+  let maxSpeed=(player.guard?2:5.7)*playerSpeed;
+
+  if(player.throwTimer>0){
+    accel=0;
+    player.vx=0;
+  }
+
+  if(player.hurtTimer>0||player.guardBreakTimer>0){
+    accel=0;
+  }
+
+  if(keys["ArrowLeft"])player.vx-=accel;
+  if(keys["ArrowRight"])player.vx+=accel;
+
+  if(!keys["ArrowLeft"]&&!keys["ArrowRight"]&&player.dashTimer<=0){
+    player.vx*=.78;
+  }
+
+  if(player.dashTimer<=0){
+    player.vx=clamp(player.vx,-maxSpeed,maxSpeed);
+  }
+
+  applyPhysics(player);
+}
+
+function updateEnemyAI(){
+  enemy.guard=enemy.perfectGuardTimer>0;
+
+  const distance=Math.abs(centerX(player)-centerX(enemy));
+  const ai=enemy.aiProfile||{};
+  const enemySpeed=getFighterStat(enemy,"speed",1);
+  const normal=getNormalData(enemy);
+  const special=getSpecialData(enemy);
+  const specialType=specialKind(enemy);
+  const normalReach=valueOr(normal.range,58);
+  const specialReach=specialType==="projectile"
+    ? Math.min(360,valueOr(special.projectileSpeed,8)*Math.min(valueOr(special.projectileLife,70),42))
+    : valueOr(special.range,118);
+  const preferredRange=valueOr(ai.preferredRange,92);
+  const minRange=valueOr(ai.minRange,42);
+  enemy.aiTimer--;
+
+  // Level affects AI behavior, not enemy attack damage.
+  const aggression=clamp(.45+level*.055+valueOr(ai.aggressionBias,0),.20,.97);
+  const reaction=Math.max(7,34-level*2+valueOr(ai.reactionAdjust,0));
+  const lowHp=enemy.hp/enemy.maxHp<.35;
+  const playerThreatening=player.attackTimer>5||player.specialTimer>8||player.throwTimer>6;
+  const guardChance=clamp(.22+level*.025+(lowHp?0.16:0)+valueOr(ai.guardBias,0),.06,.88);
+  const canSpecial=enemy.energy>=getSpecialCost(enemy)&&enemy.specialCooldown<=0&&enemy.specialTimer<=0;
+
+  if(enemy.guardHoldTimer>0){
+    enemy.guard=true;
+    enemy.guardHoldTimer--;
+  }
+
+  if(
+    canSpecial&&
+    specialType==="perfectGuard"&&
+    enemy.perfectGuardTimer<=0&&
+    playerThreatening&&
+    distance<Math.max(132,normalReach+64)&&
+    enemy.onGround&&
+    enemy.guardBreakTimer<=0&&
+    enemy.hurtTimer<=0&&
+    Math.random()<clamp(.26+level*.014+valueOr(ai.guardBias,0)*.45,.08,.70)
+  ){
+    specialAttack(enemy);
+  }
+
+  if(
+    playerThreatening&&
+    enemy.specialTimer<=0&&
+    distance<Math.max(118,normalReach+46)&&
+    enemy.onGround&&
+    enemy.guardGauge>18&&
+    enemy.guardBreakTimer<=0&&
+    enemy.hurtTimer<=0&&
+    Math.random()<guardChance
+  ){
+    enemy.guard=true;
+    enemy.guardHoldTimer=14+Math.min(level,10);
+  }
+
+  if(enemy.aiTimer<=0){
+    enemy.aiTimer=reaction;
+
+    if(enemy.guardBreakTimer<=0&&enemy.hurtTimer<=0&&enemy.throwTimer<=0&&!enemy.guard){
+      if(distance>preferredRange){
+        enemy.vx+=enemy.face*(1.2+level*.08)*enemySpeed;
+      }
+
+      if(distance<preferredRange*.72&&enemy.dashCooldown<=0&&Math.random()<valueOr(ai.keepAway,0)){
+        enemy.face=player.x<enemy.x?1:-1;
+        dash(enemy);
+        faceOpponent(enemy);
+      }
+
+      if(
+        distance<52&&
+        enemy.onGround&&
+        enemy.throwLockout<=0&&
+        player.throwInvulnTimer<=0&&
+        player.knockdownTimer<=0&&
+        player.hurtTimer<=0&&
+        Math.random()<0.12+Math.min(0.10,level*0.006)+valueOr(ai.throwBias,0)
+      ){
+        throwAttack(enemy);
+      }else if(distance<normalReach+18&&Math.random()<aggression){
+        normalAttack(enemy);
+      }
+
+      if(canSpecial){
+        const specialBias=valueOr(ai.specialBias,0);
+
+        if(
+          specialType==="perfectGuard"&&
+          enemy.perfectGuardTimer<=0&&
+          playerThreatening&&
+          distance<Math.max(128,normalReach+62)&&
+          Math.random()<clamp(.30+level*.018+specialBias+valueOr(ai.guardBias,0)*.35,.08,.76)
+        ){
+          specialAttack(enemy);
+        }else if(
+          specialType==="speedBoost"&&
+          enemy.boostTimer<=0&&
+          (distance>normalReach+12||lowHp||Math.random()<.35)&&
+          Math.random()<clamp(.28+level*.012+specialBias+valueOr(ai.dashBias,0)*.45,.08,.72)
+        ){
+          specialAttack(enemy);
+        }else if(
+          specialType==="projectile"&&
+          distance>normalReach+10&&
+          distance<specialReach+76&&
+          Math.random()<clamp(.30+level*.02+specialBias,.08,.76)
+        ){
+          specialAttack(enemy);
+        }else if(
+          specialType!=="perfectGuard"&&
+          specialType!=="speedBoost"&&
+          specialType!=="projectile"&&
+          (
+            (!player.onGround&&distance<specialReach+22&&Math.random()<.36+level*.018+specialBias)||
+            (distance<specialReach+18&&Math.random()<.35+level*.025+specialBias)
+          )
+        ){
+          specialAttack(enemy);
+        }
+      }
+
+      if(distance<95&&Math.random()<.18+level*.014+valueOr(ai.guardBias,0)*.35&&enemy.guardGauge>22&&enemy.onGround){
+        enemy.guard=true;
+      }
+
+      if(distance<52&&lowHp&&enemy.dashCooldown<=0&&Math.random()<.22+valueOr(ai.dashBias,0)){
+        enemy.face=player.x<enemy.x?1:-1;
+        dash(enemy);
+        faceOpponent(enemy);
+      }else if(distance<70&&enemy.dashCooldown<=0&&Math.random()<.12+level*.01+valueOr(ai.dashBias,0)){
+        enemy.face=player.x<enemy.x?1:-1;
+        dash(enemy);
+        faceOpponent(enemy);
+      }
+    }
+  }
+
+  if(Math.random()<enemy.jumpChance+valueOr(ai.jumpBias,0)&&enemy.onGround&&enemy.guardBreakTimer<=0){
+    jump(enemy);
+  }
+
+  if(distance<minRange&&enemy.onGround&&enemy.hurtTimer<=0&&enemy.guardBreakTimer<=0){
+    enemy.vx-=enemy.face*(.35+level*.025)*enemySpeed;
+  }
+
+  enemy.vx*=.88;
+  enemy.vx=clamp(enemy.vx,-(3.6+level*.14)*enemySpeed,(3.6+level*.14)*enemySpeed);
+
+  applyPhysics(enemy);
+}
+
+function applyPhysics(f){
+  const wasThrowing=f.throwTimer>0;
+  const wasKnockdown=f.knockdownTimer>0;
+
+  if(f.throwInvulnTimer>0){
+    f.throwInvulnTimer--;
+  }
+
+  if(f.thrownFreezeTimer>0){
+    f.thrownFreezeTimer--;
+    f.vx=0;
+    f.vy=0;
+
+    if(f.parryTimer>0)f.parryTimer--;
+    if(f.hurtTimer>0)f.hurtTimer--;
+    if(f.throwSpin>0)f.throwSpin--;
+    if(f.knockdownTimer>0)f.knockdownTimer--;
+    if(f.throwLockout>0)f.throwLockout--;
+
+    if(f.thrownFreezeTimer<=0){
+      f.vx=f.pendingThrowKnockbackX||0;
+      f.vy=f.pendingThrowKnockbackY||0;
+      f.pendingThrowKnockbackX=0;
+      f.pendingThrowKnockbackY=0;
+
+      addEffect("ダウン",f.x+f.width/2,f.y-16,"#ffcc66");
+      spawnHitParticles(f.x+f.width/2,f.y+f.height-12,"#ff9944");
+
+      if(f.vy!==0){
+        f.onGround=false;
+      }
+    }
+
+    return;
+  }
+
+  if(f.throwTimer>0){
+    f.vx=0;
+    f.vy=0;
+  }
+
+  f.x+=f.vx;
+  f.y+=f.vy;
+  f.vy+=GRAVITY;
+
+  if(f.y+f.height>=FLOOR_Y){
+    f.y=FLOOR_Y-f.height;
+    f.vy=0;
+    f.onGround=true;
+    f.airComboCount=0;
+    f.wallBounce=false;
+
+    if(f.knockdownTimer>0){
+      f.vx*=0.55;
+      f.hurtTimer=Math.max(f.hurtTimer,18);
+    }
+  }
+
+  f.x=clamp(f.x,28,canvas.width-f.width-28);
+
+  if(f.attackTimer>0)f.attackTimer--;
+  if(f.specialTimer>0)f.specialTimer--;
+  if(f.throwTimer>0)f.throwTimer--;
+  if(f.parryTimer>0)f.parryTimer--;
+  if(f.dashTimer>0)f.dashTimer--;
+  if(f.dashCooldown>0)f.dashCooldown--;
+  if(f.specialCooldown>0)f.specialCooldown--;
+  if(f.boostTimer>0)f.boostTimer--;
+  if(f.perfectGuardTimer>0)f.perfectGuardTimer--;
+  if(f.hurtTimer>0)f.hurtTimer--;
+  if(f.guardBreakTimer>0)f.guardBreakTimer--;
+  if(f.throwSpin>0)f.throwSpin--;
+  if(f.knockdownTimer>0)f.knockdownTimer--;
+  if(f.throwLockout>0)f.throwLockout--;
+
+  if(wasKnockdown&&f.knockdownTimer<=0){
+    f.throwInvulnTimer=Math.max(
+      f.throwInvulnTimer,
+      SKILL_CONFIG.throw.afterWakeInvuln
+    );
+    addEffect("投げ無敵",f.x+f.width/2,f.y-12,"#ffcc66");
+  }
+
+  if(wasThrowing&&f.throwTimer<=0){
+    f.vx=0;
+    f.vy=0;
+  }
+
+  if(f.guard){
+    f.guardRegenDelay=Math.max(f.guardRegenDelay,30);
+  }
+
+  if(f.guardRegenDelay>0){
+    f.guardRegenDelay--;
+  }
+
+  if(!f.guard&&f.guardBreakTimer<=0&&f.guardRegenDelay<=0){
+    f.guardGauge=clamp(f.guardGauge+.11,0,f.maxGuardGauge);
+  }
+
+  f.energy=clamp(f.energy+.035*getFighterStat(f,"energyRegen",1),0,f.maxEnergy);
+}
+
+
+function resolveFighterPush(){
+  const pLeft=player.x;
+  const pRight=player.x+player.width;
+  const eLeft=enemy.x;
+  const eRight=enemy.x+enemy.width;
+
+  const verticalOverlap=player.y<enemy.y+enemy.height&&player.y+player.height>enemy.y;
+  if(!verticalOverlap)return;
+  if(pRight<=eLeft||eRight<=pLeft)return;
+
+  const overlap=Math.min(pRight-eLeft,eRight-pLeft);
+  if(overlap<=0)return;
+
+  const playerDashing=player.dashTimer>0;
+  const enemyDashing=enemy.dashTimer>0;
+
+  if(playerDashing||enemyDashing){
+    const mover=playerDashing?player:enemy;
+    const other=playerDashing?enemy:player;
+
+    if(mover.dashTimer>7){
+      mover.x+=mover.face*(overlap+3);
+      mover.x=clamp(mover.x,28,canvas.width-mover.width-28);
+      addEffect("すり抜け",mover.x+mover.width/2,mover.y+10,"#66ccff");
+      return;
+    }
+
+    other.x+=mover.face*-Math.min(overlap*.35,4);
+    other.x=clamp(other.x,28,canvas.width-other.width-28);
+    return;
+  }
+
+  const push=overlap/2+.2;
+
+  if(centerX(player)<centerX(enemy)){
+    player.x-=push;
+    enemy.x+=push;
+  }else{
+    player.x+=push;
+    enemy.x-=push;
+  }
+
+  player.x=clamp(player.x,28,canvas.width-player.width-28);
+  enemy.x=clamp(enemy.x,28,canvas.width-enemy.width-28);
+
+  player.vx*=.45;
+  enemy.vx*=.45;
+}
+
+function updateProjectiles(){
+  projectiles.forEach(p=>{
+    p.x+=p.vx;
+    p.life--;
+
+    const target=p.owner===player?enemy:player;
+    const box={x:p.x,y:p.y,width:p.width,height:p.height};
+
+    if(!p.hit&&target&&rectsHit(box,target)){
+      p.hit=true;
+      takeDamage(
+        target,
+        p.damage,
+        (p.vx>=0?1:-1)*p.knockX,
+        p.knockY,
+        p.owner,
+        true
+      );
+      spawnImpactBurst(target.x+target.width/2,target.y+36,p.color,1.35);
+    }
+  });
+
+  projectiles=projectiles.filter(p=>!p.hit&&p.life>0&&p.x>-90&&p.x<canvas.width+90);
+}
+
+
+/* ===================== EFFECT SYSTEM ===================== */
+function updateEffects(){
+  if(combo.timer>0){
+    combo.timer--;
+  }else{
+    combo.count=0;
+    combo.owner=null;
+  }
+
+  if(screenShake>0)screenShake--;
+  if(screenFlash>0)screenFlash--;
+  if(finishTimer>0)finishTimer--;
+  if(roundBanner.timer>0)roundBanner.timer--;
+
+  effects.forEach(e=>{
+    e.y-=e.vy;
+    e.life--;
+    e.alpha=e.life/e.maxLife;
+  });
+  effects=effects.filter(e=>e.life>0);
+
+  bursts.forEach(b=>{
+    b.radius+=b.speed;
+    b.life--;
+    b.alpha=b.life/b.maxLife;
+  });
+  bursts=bursts.filter(b=>b.life>0);
+
+  particles.forEach(p=>{
+    p.x+=p.vx;
+    p.y+=p.vy;
+    p.vy+=.12;
+    p.life--;
+    p.alpha=p.life/p.maxLife;
+  });
+  particles=particles.filter(p=>p.life>0);
+}
+
+function addEffect(text,x,y,color){
+  effects.push({
+    text:text,
+    x:x,
+    y:y,
+    color:color,
+    life:38,
+    maxLife:38,
+    alpha:1,
+    vy:.85
+  });
+}
+
+function spawnImpactBurst(x,y,color,power=1){
+  const life=14+Math.floor(power*8);
+  bursts.push({
+    x:x,
+    y:y,
+    radius:5,
+    speed:1.8+power*1.45,
+    color:color,
+    life:life,
+    maxLife:life,
+    alpha:1,
+    lineWidth:2+power
+  });
+}
+
+function spawnHitParticles(x,y,color,power=1){
+  const count=Math.floor(12*power);
+
+  for(let i=0;i<count;i++){
+    const life=20+Math.floor(Math.random()*10);
+    const spark=Math.random()<.45;
+
+    particles.push({
+      x:x,
+      y:y,
+      vx:(Math.random()-.5)*(5+power*2.5),
+      vy:(Math.random()-.85)*(4+power*2),
+      size:2+Math.random()*(3+power*2),
+      length:10+Math.random()*16*power,
+      angle:Math.random()*Math.PI,
+      type:spark?"spark":"square",
+      color:color,
+      life:life,
+      maxLife:life,
+      alpha:1
+    });
+  }
+}
+
+
+/* ===================== ROUND / LEVEL / GAME STATE ===================== */
+function checkRoundState(){
+  if(enemy.hp<=0){
+    const clearedLevel=level;
+    defeatedLevel=clearedLevel;
+
+    if(player.specialTimer>0||combo.count>=3){
+      finishTimer=95;
+      finishText=player.specialTimer>0?"必殺フィニッシュ":"連撃フィニッシュ";
+      screenFlash=22;
+      screenShake=22;
+    }
+
+    showBanner("撃破","レベル "+clearedLevel+" クリア","#ffcc33",86);
+    spawnImpactBurst(canvas.width/2,176,"#ffcc33",2);
+
+    level++;
+    player.hp=player.maxHp;
+    player.energy=clamp(player.energy+42,0,player.maxEnergy);
+    player.guardGauge=player.maxGuardGauge;
+    player.throwInvulnTimer=0;
+    player.thrownFreezeTimer=0;
+    player.knockdownTimer=0;
+    player.throwSpin=0;
+    player.inputBuffer=null;
+
+    addEffect("次のレベル "+level,canvas.width/2,155,"#66ffcc");
+    projectiles=[];
+    spawnEnemy();
+    resetRoundPositions();
+  }
+
+  if(player.hp<=0){
+    if(!gameOver){
+      gamePaused=false;
+      updatePauseButton();
+      showBanner("敗北",defeatedLevel>0?"レベル "+defeatedLevel+" クリア":"未勝利","#ff3355",92);
+      screenShake=18;
+      screenFlash=16;
+    }
+
+    gameOver=true;
+    if(!scoreSaved){
+      scoreSaved=true;
+      addHighScore(defeatedLevel);
+    }
+  }
+}
+
+function update(){
+  if(gamePaused){
+    return;
+  }
+
+  frameCount++;
+
+  processPendingInputs();
+
+  if(!gameStarted||gameOver){
+    updateEffects();
+    return;
+  }
+
+  if(hitStop>0){
+    hitStop--;
+    updateEffects();
+    return;
+  }
+
+  updateFacing();
+  consumeInputBuffer();
+  updatePlayer();
+  updateEnemyAI();
+  resolveFighterPush();
+  updateFacing();
+  handleAttackHits();
+  updateProjectiles();
+  updateEffects();
+  checkRoundState();
+}
+
+
+
+/* ===================== RENDER: BACKGROUND ===================== */
+function drawBackground(){
+  ctx.fillStyle="#06101f";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  const g=ctx.createLinearGradient(0,0,0,canvas.height);
+  g.addColorStop(0,"rgba(102,204,255,.16)");
+  g.addColorStop(.48,"rgba(125,44,255,.05)");
+  g.addColorStop(.72,"rgba(255,85,204,.035)");
+  g.addColorStop(1,"rgba(0,0,0,.28)");
+  ctx.fillStyle=g;
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  const buildings=[118,84,138,104,154,96,126,112,148,88];
+
+  ctx.save();
+  ctx.fillStyle="rgba(2,8,18,.82)";
+  buildings.forEach((h,i)=>{
+    const x=24+i*78;
+    const w=50+(i%3)*12;
+    const y=FLOOR_Y-h-18;
+    ctx.fillRect(x,y,w,h);
+
+    ctx.fillStyle=i%2===0?"rgba(102,204,255,.18)":"rgba(255,204,51,.16)";
+    for(let wy=y+14;wy<y+h-10;wy+=18){
+      for(let wx=x+9;wx<x+w-8;wx+=16){
+        if((wx+wy+i*11)%3!==0){
+          ctx.fillRect(wx,wy,6,7);
+        }
+      }
+    }
+    ctx.fillStyle="rgba(2,8,18,.82)";
+  });
+
+  ctx.restore();
+
+  ctx.fillStyle="rgba(0,255,255,.04)";
+  for(let y=44;y<FLOOR_Y;y+=42){
+    ctx.fillRect(0,y,canvas.width,1);
+  }
+
+  ctx.fillStyle="rgba(255,255,255,.035)";
+  for(let x=0;x<canvas.width;x+=48){
+    ctx.fillRect(x,0,1,FLOOR_Y);
+  }
+
+  ctx.strokeStyle="#66ccff";
+  ctx.lineWidth=3;
+  ctx.shadowColor="#66ccff";
+  ctx.shadowBlur=12;
+  ctx.beginPath();
+  ctx.moveTo(30,FLOOR_Y+2);
+  ctx.lineTo(canvas.width-30,FLOOR_Y+2);
+  ctx.stroke();
+  ctx.shadowBlur=0;
+
+  const floor=ctx.createLinearGradient(0,FLOOR_Y,0,canvas.height);
+  floor.addColorStop(0,"rgba(102,204,255,.16)");
+  floor.addColorStop(.5,"rgba(255,85,204,.07)");
+  floor.addColorStop(1,"rgba(0,0,0,.25)");
+  ctx.fillStyle=floor;
+  ctx.fillRect(30,FLOOR_Y+4,canvas.width-60,54);
+
+  ctx.strokeStyle="rgba(102,204,255,.22)";
+  ctx.lineWidth=1;
+  for(let i=0;i<9;i++){
+    const t=i/8;
+    const y=FLOOR_Y+8+t*t*76;
+    ctx.beginPath();
+    ctx.moveTo(44,y);
+    ctx.lineTo(canvas.width-44,y);
+    ctx.stroke();
+  }
+
+  for(let i=-5;i<=5;i++){
+    ctx.beginPath();
+    ctx.moveTo(canvas.width/2+i*18,FLOOR_Y+4);
+    ctx.lineTo(canvas.width/2+i*86,canvas.height);
+    ctx.stroke();
+  }
+
+  ctx.fillStyle="rgba(255,255,255,.08)";
+  ctx.fillRect(0,FLOOR_Y+38,canvas.width,3);
+}
+
+
+/* ===================== RENDER: QUOKKA COLOR HELPERS ===================== */
+function enemyLevelColor(){
+  if(enemy&&enemy.rainbow){
+    return "hsl(" + ((frameCount * 4) % 360) + ",100%,60%)";
+  }
+
+  if(enemy&&enemy.colors){
+    return enemy.colors.base;
+  }
+
+  return "#ff6688";
+}
+
+function enemyCoreColor(){
+  if(enemy&&enemy.rainbow){
+    return "hsl(" + ((frameCount * 4 + 80) % 360) + ",100%,72%)";
+  }
+
+  if(enemy&&enemy.colors){
+    return enemy.colors.core;
+  }
+
+  return "#ffe1e8";
+}
+
+function getFighterColors(f,isPlayer){
+  const fallback=isPlayer
+    ? {base:"#66ccff",core:"#ffffff",inner:"#bdf5ff",visor:"#7dffff"}
+    : {base:enemyLevelColor(),core:enemyCoreColor(),inner:"#ffe1e8",visor:"#ffdd66"};
+
+  if(!f||!f.colors)return fallback;
+
+  if(f.rainbow){
+    return{
+      base:"hsl("+((frameCount*4)%360)+",100%,60%)",
+      core:"hsl("+((frameCount*4+80)%360)+",100%,72%)",
+      inner:f.colors.inner,
+      visor:"hsl("+((frameCount*4+170)%360)+",100%,66%)"
+    };
+  }
+
+  return f.colors;
+}
+
+function getFighterVisual(f){
+  const visuals={
+    visor:{bodyRx:28,bodyRy:38,headRx:24,headRy:22,muzzleRx:16,muzzleRy:11,earX:1,earY:1,tailStyle:"soft",tailLength:64,tailWidth:10,legWidth:8,armWidth:8,shadowW:42,shadowH:8,headForward:18},
+    antenna:{bodyRx:24,bodyRy:35,headRx:22,headRy:20,muzzleRx:14,muzzleRy:10,earX:.85,earY:1.2,tailStyle:"bolt",tailLength:72,tailWidth:7,legWidth:7,armWidth:7,shadowW:36,shadowH:7,headForward:19},
+    armor:{bodyRx:34,bodyRy:42,headRx:26,headRy:23,muzzleRx:17,muzzleRy:12,earX:1.1,earY:.82,tailStyle:"heavy",tailLength:44,tailWidth:15,legWidth:10,armWidth:10,shadowW:50,shadowH:10,headForward:16},
+    star:{bodyRx:27,bodyRy:38,headRx:24,headRy:22,muzzleRx:16,muzzleRy:11,earX:1.08,earY:1.08,tailStyle:"comet",tailLength:74,tailWidth:8,legWidth:8,armWidth:8,shadowW:42,shadowH:8,headForward:18},
+    blade:{bodyRx:29,bodyRy:39,headRx:25,headRy:22,muzzleRx:17,muzzleRy:10,earX:.82,earY:1.25,tailStyle:"blade",tailLength:58,tailWidth:8,legWidth:8,armWidth:8,shadowW:43,shadowH:8,headForward:19},
+    rail:{bodyRx:26,bodyRy:38,headRx:23,headRy:21,muzzleRx:15,muzzleRy:10,earX:.9,earY:1.05,tailStyle:"rail",tailLength:78,tailWidth:6,legWidth:7,armWidth:7,shadowW:40,shadowH:8,headForward:18},
+    shield:{bodyRx:36,bodyRy:44,headRx:27,headRy:24,muzzleRx:17,muzzleRy:12,earX:1.12,earY:.8,tailStyle:"heavy",tailLength:40,tailWidth:16,legWidth:11,armWidth:11,shadowW:52,shadowH:11,headForward:15},
+    phase:{bodyRx:23,bodyRy:36,headRx:22,headRy:20,muzzleRx:14,muzzleRy:9,earX:.8,earY:1.15,tailStyle:"phase",tailLength:68,tailWidth:6,legWidth:6,armWidth:6,shadowW:34,shadowH:7,headForward:20},
+    crown:{bodyRx:34,bodyRy:43,headRx:27,headRy:24,muzzleRx:18,muzzleRy:12,earX:1.15,earY:1.05,tailStyle:"comet",tailLength:82,tailWidth:11,legWidth:9,armWidth:9,shadowW:51,shadowH:10,headForward:17}
+  };
+
+  return visuals[(f&&f.motif)||"visor"]||visuals.visor;
+}
+
+function drawSideQuokkaEar(x,y,angle,base,inner,scaleX=1,scaleY=1){
+  ctx.save();
+  ctx.translate(x,y);
+  ctx.rotate(angle);
+
+  ctx.fillStyle=base;
+  ctx.shadowColor=base;
+  ctx.shadowBlur=10;
+  ctx.beginPath();
+  ctx.ellipse(0,0,8*scaleX,24*scaleY,0,0,Math.PI*2);
+  ctx.fill();
+
+  ctx.fillStyle=inner;
+  ctx.shadowBlur=0;
+  ctx.beginPath();
+  ctx.ellipse(0,1,4*scaleX,14*scaleY,0,0,Math.PI*2);
+  ctx.fill();
+
+  ctx.restore();
+}
+
+function drawSideQuokkaTail(f,base){
+  const dir=f.face;
+  const visual=getFighterVisual(f);
+  const tailX=f.x+f.width/2-dir*25;
+  const tailY=f.y+f.height-20;
+  const length=visual.tailLength;
+
+  ctx.strokeStyle=base;
+  ctx.lineWidth=visual.tailWidth;
+  ctx.lineCap="round";
+  ctx.lineJoin="round";
+  ctx.shadowColor=base;
+  ctx.shadowBlur=10;
+
+  ctx.beginPath();
+  ctx.moveTo(tailX,tailY);
+
+  if(visual.tailStyle==="bolt"){
+    ctx.lineTo(tailX-dir*22,tailY-8);
+    ctx.lineTo(tailX-dir*36,tailY+9);
+    ctx.lineTo(tailX-dir*length,tailY-18);
+  }else if(visual.tailStyle==="heavy"){
+    ctx.quadraticCurveTo(tailX-dir*22,tailY+12,tailX-dir*length,tailY+2);
+  }else if(visual.tailStyle==="blade"){
+    ctx.lineTo(tailX-dir*length,tailY-18);
+    ctx.stroke();
+    ctx.fillStyle=base;
+    ctx.beginPath();
+    ctx.moveTo(tailX-dir*(length+2),tailY-18);
+    ctx.lineTo(tailX-dir*(length-18),tailY-30);
+    ctx.lineTo(tailX-dir*(length-12),tailY-6);
+    ctx.closePath();
+    ctx.fill();
+    ctx.shadowBlur=0;
+    return;
+  }else if(visual.tailStyle==="rail"){
+    ctx.lineTo(tailX-dir*length,tailY-8);
+    ctx.stroke();
+    ctx.lineWidth=2;
+    ctx.beginPath();
+    ctx.moveTo(tailX-dir*12,tailY-8);
+    ctx.lineTo(tailX-dir*(length-10),tailY-16);
+    ctx.stroke();
+    ctx.shadowBlur=0;
+    return;
+  }else if(visual.tailStyle==="phase"){
+    ctx.globalAlpha=.62;
+    ctx.quadraticCurveTo(tailX-dir*34,tailY-18,tailX-dir*length,tailY-2);
+  }else{
+    ctx.quadraticCurveTo(tailX-dir*40,tailY+2,tailX-dir*length,tailY-14);
+  }
+
+  ctx.stroke();
+  ctx.globalAlpha=1;
+  ctx.shadowBlur=0;
+}
+
+function drawSideQuokkaLegs(f,base){
+  const dir=f.face;
+  const bodyX=f.x+f.width/2;
+  const footY=FLOOR_Y-2;
+
+  ctx.strokeStyle=base;
+  ctx.lineWidth=getFighterVisual(f).legWidth;
+  ctx.lineCap="round";
+  ctx.shadowColor=base;
+  ctx.shadowBlur=8;
+
+  // back leg
+  ctx.beginPath();
+  ctx.moveTo(bodyX-dir*12,f.y+f.height-30);
+  ctx.lineTo(bodyX-dir*20,footY-6);
+  ctx.lineTo(bodyX-dir*38,footY);
+  ctx.stroke();
+
+  // front leg
+  ctx.beginPath();
+  ctx.moveTo(bodyX+dir*8,f.y+f.height-28);
+  ctx.lineTo(bodyX+dir*18,footY-6);
+  ctx.lineTo(bodyX+dir*36,footY);
+  ctx.stroke();
+
+  ctx.shadowBlur=0;
+}
+
+function drawSideQuokkaArms(f,base,visor){
+  const dir=f.face;
+  const shoulderX=f.x+f.width/2+dir*14;
+  const shoulderY=f.y+54;
+
+  let handX=shoulderX+dir*18;
+  let handY=shoulderY+16;
+
+  if(f.attackTimer>0){
+    handX=shoulderX+dir*(34+(18-f.attackTimer)*1.6);
+    handY=shoulderY+4;
+  }
+
+  if(f.specialTimer>0){
+    handX=shoulderX+dir*58;
+    handY=shoulderY-8;
+  }
+
+  if(f.throwTimer>0){
+    handX=shoulderX+dir*44;
+    handY=shoulderY+16;
+  }
+
+  ctx.strokeStyle=base;
+  ctx.lineWidth=getFighterVisual(f).armWidth;
+  ctx.lineCap="round";
+  ctx.shadowColor=base;
+  ctx.shadowBlur=8;
+
+  ctx.beginPath();
+  ctx.moveTo(shoulderX,shoulderY);
+  ctx.lineTo(handX,handY);
+  ctx.stroke();
+
+  ctx.shadowBlur=0;
+
+  if(f.attackTimer>6||f.specialTimer>8||f.throwTimer>6){
+    ctx.strokeStyle=f.specialTimer>0?"#cc77ff":f.throwTimer>0?"#ff9944":visor;
+    ctx.lineWidth=f.specialTimer>0?10:f.throwTimer>0?8:6;
+    ctx.shadowColor=ctx.strokeStyle;
+    ctx.shadowBlur=14;
+
+    ctx.beginPath();
+    ctx.moveTo(handX,handY);
+    ctx.lineTo(handX+dir*(f.specialTimer>0?64:f.throwTimer>0?26:34),handY);
+    ctx.stroke();
+
+    ctx.shadowBlur=0;
+  }
+}
+
+function drawSideCyberLines(f,visor){
+  const dir=f.face;
+  const cx=f.x+f.width/2;
+
+  ctx.strokeStyle=visor;
+  ctx.lineWidth=2;
+  ctx.shadowColor=visor;
+  ctx.shadowBlur=8;
+
+  ctx.beginPath();
+  ctx.moveTo(cx-dir*18,f.y+52);
+  ctx.lineTo(cx+dir*16,f.y+52);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(cx+dir*2,f.y+58);
+  ctx.lineTo(cx+dir*8,f.y+f.height-28);
+  ctx.stroke();
+
+  ctx.shadowBlur=0;
+}
+
+
+function drawAttackSignature(f,isPlayer,base,visor,headX,headY,bodyX,bodyY){
+  if(f.specialTimer<=0&&f.attackTimer<=0)return;
+
+  const dir=f.face;
+  const special=getSpecialData(f);
+  const normal=getNormalData(f);
+  const kind=f.specialTimer>0?specialKind(f):"normal";
+  const reach=f.specialTimer>0
+    ? (kind==="projectile"?Math.max(72,valueOr(special.projectileWidth,48)*1.35):valueOr(special.range,118))
+    : valueOr(normal.range,58);
+  const color=f.specialTimer>0?(special.color||visor):visor;
+  const motif=f.motif||"visor";
+  const startX=headX+dir*24;
+  const startY=headY+8;
+
+  ctx.save();
+  ctx.globalAlpha=f.specialTimer>0?0.78:0.44;
+  ctx.strokeStyle=color;
+  ctx.fillStyle=color;
+  ctx.shadowColor=color;
+  ctx.shadowBlur=f.specialTimer>0?22:12;
+  ctx.lineCap="round";
+
+  if(f.specialTimer>0){
+    if(kind==="laser"){
+      ctx.lineWidth=10;
+      ctx.beginPath();
+      ctx.moveTo(startX,startY);
+      ctx.lineTo(startX+dir*reach,startY-2);
+      ctx.stroke();
+      ctx.globalAlpha=.35;
+      ctx.lineWidth=3;
+      for(let i=-1;i<=1;i+=2){
+        ctx.beginPath();
+        ctx.moveTo(startX,startY+i*12);
+        ctx.lineTo(startX+dir*reach,startY+i*8);
+        ctx.stroke();
+      }
+    }else if(kind==="projectile"){
+      const chargeX=startX+dir*46;
+      const chargeY=startY+2;
+      const radius=special.projectileType==="fist"?24:22;
+      ctx.globalAlpha=.82;
+      ctx.lineWidth=5;
+      ctx.beginPath();
+      ctx.moveTo(startX-dir*18,chargeY);
+      ctx.lineTo(chargeX-dir*radius,chargeY);
+      ctx.stroke();
+      ctx.beginPath();
+      if(special.projectileType==="fist"){
+        ctx.ellipse(chargeX,chargeY,radius*1.22,radius*.78,0,0,Math.PI*2);
+        ctx.fill();
+        ctx.strokeStyle="rgba(0,0,0,.55)";
+        ctx.lineWidth=3;
+        ctx.beginPath();
+        ctx.moveTo(chargeX-dir*11,chargeY-8);
+        ctx.lineTo(chargeX+dir*13,chargeY-8);
+        ctx.moveTo(chargeX-dir*14,chargeY+4);
+        ctx.lineTo(chargeX+dir*16,chargeY+4);
+        ctx.stroke();
+      }else{
+        ctx.arc(chargeX,chargeY,radius,0,Math.PI*2);
+        ctx.fill();
+        ctx.strokeStyle="rgba(255,255,255,.76)";
+        ctx.lineWidth=2;
+        ctx.stroke();
+      }
+    }else if(kind==="speedBoost"){
+      ctx.lineWidth=4;
+      for(let i=0;i<4;i++){
+        const y=bodyY-36+i*18;
+        ctx.beginPath();
+        ctx.moveTo(bodyX-dir*(24+i*5),y);
+        ctx.lineTo(bodyX-dir*(74+i*12),y);
+        ctx.stroke();
+      }
+      ctx.globalAlpha=.45;
+      ctx.lineWidth=3;
+      ctx.beginPath();
+      ctx.arc(bodyX,bodyY-16,44,0,Math.PI*2);
+      ctx.stroke();
+    }else if(kind==="perfectGuard"){
+      ctx.lineWidth=7;
+      ctx.beginPath();
+      ctx.arc(bodyX,bodyY-18,52,0,Math.PI*2);
+      ctx.stroke();
+      ctx.globalAlpha=.30;
+      ctx.fillStyle=color;
+      ctx.beginPath();
+      ctx.arc(bodyX,bodyY-18,50,0,Math.PI*2);
+      ctx.fill();
+    }else if(kind==="rush"){
+      ctx.lineWidth=6;
+      for(let i=0;i<3;i++){
+        ctx.beginPath();
+        ctx.moveTo(bodyX-dir*(10+i*18),bodyY-40+i*18);
+        ctx.lineTo(bodyX+dir*(72+i*14),bodyY-20+i*12);
+        ctx.stroke();
+      }
+    }else{
+      ctx.lineWidth=7;
+      ctx.beginPath();
+      ctx.moveTo(startX,startY-14);
+      ctx.quadraticCurveTo(startX+dir*(reach*.45),startY-36,startX+dir*reach,startY+10);
+      ctx.stroke();
+    }
+
+    ctx.restore();
+    return;
+  }
+
+  if(motif==="rail"){
+    ctx.lineWidth=4;
+    ctx.beginPath();
+    ctx.moveTo(startX,startY);
+    ctx.lineTo(startX+dir*reach,startY-4);
+    ctx.stroke();
+  }else if(motif==="shield"||motif==="armor"){
+    ctx.lineWidth=4;
+    ctx.beginPath();
+    ctx.arc(bodyX+dir*38,bodyY-4,28,-1.1,1.1);
+    ctx.stroke();
+  }else if(motif==="phase"){
+    ctx.lineWidth=3;
+    for(let i=0;i<3;i++){
+      ctx.beginPath();
+      ctx.arc(startX+dir*(30+i*26),startY-2,i*8+12,0,Math.PI*2);
+      ctx.stroke();
+    }
+  }else if(motif==="crown"){
+    ctx.lineWidth=5;
+    ctx.beginPath();
+    ctx.moveTo(startX,startY-14);
+    ctx.lineTo(startX+dir*reach,startY+8);
+    ctx.moveTo(startX,startY+16);
+    ctx.lineTo(startX+dir*reach,startY-8);
+    ctx.stroke();
+  }else if(motif==="antenna"){
+    ctx.lineWidth=4;
+    ctx.beginPath();
+    ctx.moveTo(headX-dir*12,headY-40);
+    ctx.quadraticCurveTo(startX+dir*40,startY-70,startX+dir*reach,startY);
+    ctx.stroke();
+  }else{
+    ctx.lineWidth=4;
+    ctx.beginPath();
+    ctx.moveTo(startX,startY-14);
+    ctx.quadraticCurveTo(startX+dir*(reach*.45),startY-36,startX+dir*reach,startY+10);
+    ctx.stroke();
+  }
+
+  ctx.restore();
+}
+
+function drawFighterMotif(f,isPlayer,base,core,visor,headX,headY,bodyX,bodyY){
+  const dir=f.face;
+  const motif=f.motif||"visor";
+
+  ctx.save();
+  ctx.shadowColor=visor;
+  ctx.shadowBlur=10;
+  ctx.strokeStyle=visor;
+  ctx.fillStyle=core;
+
+  if(motif==="antenna"){
+    ctx.lineWidth=3;
+    ctx.beginPath();
+    ctx.moveTo(headX-dir*2,headY-20);
+    ctx.lineTo(headX-dir*10,headY-38);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(headX-dir*12,headY-40,5,0,Math.PI*2);
+    ctx.fill();
+  }else if(motif==="armor"||motif==="shield"){
+    ctx.lineWidth=3;
+    ctx.strokeStyle=base;
+    ctx.strokeRect(bodyX-dir*17,bodyY-18,34,36);
+    ctx.fillStyle="rgba(255,255,255,.22)";
+    ctx.fillRect(bodyX-dir*12,bodyY-13,24,26);
+  }else if(motif==="star"){
+    ctx.beginPath();
+    for(let i=0;i<5;i++){
+      const a=-Math.PI/2+i*Math.PI*2/5;
+      const x=bodyX+Math.cos(a)*13;
+      const y=bodyY-6+Math.sin(a)*13;
+      if(i===0)ctx.moveTo(x,y);
+      else ctx.lineTo(x,y);
+    }
+    ctx.closePath();
+    ctx.fill();
+  }else if(motif==="blade"){
+    ctx.fillStyle=visor;
+    ctx.beginPath();
+    ctx.moveTo(headX+dir*8,headY-22);
+    ctx.lineTo(headX+dir*24,headY-35);
+    ctx.lineTo(headX+dir*19,headY-16);
+    ctx.closePath();
+    ctx.fill();
+  }else if(motif==="rail"){
+    ctx.lineWidth=4;
+    ctx.beginPath();
+    ctx.moveTo(bodyX-dir*10,bodyY-24);
+    ctx.lineTo(bodyX+dir*32,bodyY-30);
+    ctx.stroke();
+    ctx.fillRect(bodyX+dir*30,bodyY-34,dir*18,8);
+  }else if(motif==="phase"){
+    ctx.lineWidth=2;
+    ctx.beginPath();
+    ctx.arc(bodyX,bodyY-2,30,frameCount*.08,frameCount*.08+Math.PI*1.35);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(headX,headY,30,-frameCount*.06,-frameCount*.06+Math.PI*.95);
+    ctx.stroke();
+  }else if(motif==="crown"){
+    ctx.fillStyle=visor;
+    ctx.beginPath();
+    ctx.moveTo(headX-dir*16,headY-22);
+    ctx.lineTo(headX-dir*6,headY-40);
+    ctx.lineTo(headX+dir*2,headY-24);
+    ctx.lineTo(headX+dir*13,headY-42);
+    ctx.lineTo(headX+dir*20,headY-22);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  ctx.restore();
+}
+
+
+/* ===================== RENDER: SIDE-VIEW CYBER QUOKKA ===================== */
+function drawFighter(f,isPlayer){
+  const dir=f.face;
+  const cx=f.x+f.width/2;
+  const colors=getFighterColors(f,isPlayer);
+  const visual=getFighterVisual(f);
+  const base=colors.base;
+  const core=colors.core;
+  const inner=colors.inner;
+  const visor=colors.visor;
+
+  ctx.save();
+  ctx.globalAlpha=.26;
+  ctx.fillStyle="#000000";
+  ctx.beginPath();
+  ctx.ellipse(cx,FLOOR_Y+7,visual.shadowW,visual.shadowH,0,0,Math.PI*2);
+  ctx.fill();
+  ctx.restore();
+
+  ctx.save();
+
+  if(f.knockdownTimer>0){
+    const progress=1-(f.knockdownTimer/SKILL_CONFIG.throw.knockdown);
+    const fallAmount=Math.min(1,Math.max(0,progress*2.4));
+    const baseAngle=f.knockdownAngle||f.face||1;
+    const angle=baseAngle*(Math.PI/2)*fallAmount;
+
+    ctx.translate(cx,f.y+f.height-10);
+    ctx.rotate(angle);
+    ctx.translate(-cx,-(f.y+f.height-10));
+  }else if(f.throwSpin>0){
+    const angle=(f.face*0.18)*Math.sin(f.throwSpin*0.45);
+    ctx.translate(cx,f.y+f.height/2);
+    ctx.rotate(angle);
+    ctx.translate(-cx,-(f.y+f.height/2));
+  }
+
+  if(f.dashTimer>0){
+    ctx.globalAlpha=.48;
+    ctx.fillStyle=base;
+    ctx.fillRect(f.x-dir*28,f.y+22,f.width,f.height-26);
+    ctx.globalAlpha=1;
+  }
+
+  if(f.guardBreakTimer>0){
+    ctx.globalAlpha=Math.floor(f.guardBreakTimer/4)%2===0?0.45:1;
+  }
+
+  if(f.hurtTimer>0&&Math.floor(f.hurtTimer/3)%2===0){
+    ctx.globalAlpha=.68;
+  }
+
+  const fighterAlpha=ctx.globalAlpha;
+  if(f.energy>=getSpecialCost(f)||f.specialTimer>0){
+    const auraColor=f.specialTimer>0?"#cc77ff":isPlayer?"#66ffcc":"#ffdd66";
+    ctx.globalAlpha=fighterAlpha*(f.specialTimer>0?0.32:0.18);
+    ctx.strokeStyle=auraColor;
+    ctx.lineWidth=f.specialTimer>0?4:2;
+    ctx.shadowColor=auraColor;
+    ctx.shadowBlur=18;
+    ctx.beginPath();
+    ctx.arc(cx,f.y+46,52+Math.sin(frameCount*.12)*3,0,Math.PI*2);
+    ctx.stroke();
+    ctx.shadowBlur=0;
+    ctx.globalAlpha=fighterAlpha;
+  }
+
+  if(f.boostTimer>0){
+    ctx.globalAlpha=fighterAlpha*.28;
+    ctx.strokeStyle=getSpecialData(f).color||"#ffff66";
+    ctx.lineWidth=3;
+    ctx.shadowColor=ctx.strokeStyle;
+    ctx.shadowBlur=16;
+    for(let i=0;i<3;i++){
+      ctx.beginPath();
+      ctx.ellipse(cx-dir*(18+i*18),f.y+42+i*12,18+i*5,8+i*2,0,0,Math.PI*2);
+      ctx.stroke();
+    }
+    ctx.shadowBlur=0;
+    ctx.globalAlpha=fighterAlpha;
+  }
+
+  if(f.perfectGuardTimer>0){
+    ctx.globalAlpha=fighterAlpha*.34;
+    ctx.strokeStyle=getSpecialData(f).color||"#ffcc66";
+    ctx.lineWidth=5;
+    ctx.shadowColor=ctx.strokeStyle;
+    ctx.shadowBlur=20;
+    ctx.beginPath();
+    ctx.arc(cx,f.y+44,58+Math.sin(frameCount*.18)*3,0,Math.PI*2);
+    ctx.stroke();
+    ctx.shadowBlur=0;
+    ctx.globalAlpha=fighterAlpha;
+  }
+
+  drawSideQuokkaTail(f,base);
+
+  const headX=cx+dir*visual.headForward;
+  const headY=f.y+28;
+  const bodyX=cx-dir*2;
+  const bodyY=f.y+62;
+
+  // back ear then front ear
+  drawSideQuokkaEar(headX-dir*14,headY-18,dir*-0.45,base,inner,visual.earX,visual.earY);
+  drawSideQuokkaEar(headX+dir*4,headY-22,dir*-0.25,base,inner,visual.earX,visual.earY);
+
+  // body
+  ctx.fillStyle=base;
+  ctx.shadowColor=base;
+  ctx.shadowBlur=14;
+  ctx.beginPath();
+  ctx.ellipse(bodyX,bodyY,visual.bodyRx,visual.bodyRy,dir*0.05,0,Math.PI*2);
+  ctx.fill();
+
+  // belly/core plate
+  ctx.fillStyle="rgba(255,255,255,.16)";
+  ctx.shadowBlur=0;
+  ctx.beginPath();
+  ctx.ellipse(bodyX+dir*4,bodyY+4,visual.bodyRx*.54,visual.bodyRy*.6,0,0,Math.PI*2);
+  ctx.fill();
+
+  // head side shape
+  ctx.fillStyle=base;
+  ctx.shadowColor=base;
+  ctx.shadowBlur=12;
+  ctx.beginPath();
+  ctx.ellipse(headX,headY,visual.headRx,visual.headRy,0,0,Math.PI*2);
+  ctx.fill();
+
+  // muzzle / nose protrudes toward opponent
+  ctx.fillStyle=inner;
+  ctx.shadowBlur=0;
+  ctx.beginPath();
+  ctx.ellipse(headX+dir*18,headY+8,visual.muzzleRx,visual.muzzleRy,0,0,Math.PI*2);
+  ctx.fill();
+
+  ctx.fillStyle="#07111f";
+  ctx.beginPath();
+  ctx.ellipse(headX+dir*30,headY+5,5,4,0,0,Math.PI*2);
+  ctx.fill();
+
+  // single visible eye
+  ctx.fillStyle="#ffffff";
+  ctx.beginPath();
+  ctx.arc(headX+dir*8,headY-3,4,0,Math.PI*2);
+  ctx.fill();
+
+  ctx.fillStyle="#07111f";
+  ctx.beginPath();
+  ctx.arc(headX+dir*9,headY-3,2,0,Math.PI*2);
+  ctx.fill();
+
+  // cyber visor, side-mounted
+  ctx.fillStyle="#07111f";
+  ctx.fillRect(headX-dir*4,headY-11,dir*24,8);
+
+  ctx.fillStyle=visor;
+  ctx.shadowColor=visor;
+  ctx.shadowBlur=12;
+  ctx.fillRect(headX+dir*0,headY-9,dir*20,4);
+  ctx.shadowBlur=0;
+
+  // smiling quokka mouth
+  ctx.strokeStyle="#07111f";
+  ctx.lineWidth=2;
+  ctx.beginPath();
+  ctx.arc(headX+dir*17,headY+13,8,0.15,Math.PI-0.15);
+  ctx.stroke();
+
+  // glowing chest core
+  ctx.fillStyle=core;
+  ctx.shadowColor=core;
+  ctx.shadowBlur=16;
+  ctx.beginPath();
+  ctx.arc(bodyX+dir*7,bodyY-5,8,0,Math.PI*2);
+  ctx.fill();
+
+  drawFighterMotif(f,isPlayer,base,core,visor,headX,headY,bodyX,bodyY);
+  drawAttackSignature(f,isPlayer,base,visor,headX,headY,bodyX,bodyY);
+  drawSideCyberLines(f,visor);
+  drawSideQuokkaArms(f,base,visor);
+  drawSideQuokkaLegs(f,base);
+
+  if(f.thrownFreezeTimer>0){
+    ctx.strokeStyle="#ff9944";
+    ctx.lineWidth=5;
+    ctx.shadowColor="#ff9944";
+    ctx.shadowBlur=18;
+    ctx.beginPath();
+    ctx.arc(cx,f.y+44,50,0,Math.PI*2);
+    ctx.stroke();
+
+    ctx.fillStyle="#ffcc66";
+    ctx.font="bold 13px sans-serif";
+    ctx.textAlign="center";
+    ctx.fillText("つかまれ中",cx,f.y-8);
+    ctx.textAlign="left";
+  }
+
+  if(f.throwInvulnTimer > SKILL_CONFIG.throw.afterWakeInvuln - 18){
+    ctx.strokeStyle="rgba(255,204,102,0.7)";
+    ctx.lineWidth=3;
+    ctx.shadowColor="#ffcc66";
+    ctx.shadowBlur=10;
+    ctx.beginPath();
+    ctx.arc(cx,f.y+44,44,0,Math.PI*2);
+    ctx.stroke();
+
+    ctx.fillStyle="#ffcc66";
+    ctx.font="bold 11px sans-serif";
+    ctx.textAlign="center";
+    ctx.fillText("投げ無敵",cx,f.y-8);
+    ctx.textAlign="left";
+  }
+
+  if(f.guardBreakTimer>0){
+    ctx.strokeStyle="#ffcc33";
+    ctx.lineWidth=4;
+    ctx.shadowColor="#ffcc33";
+    ctx.shadowBlur=16;
+    ctx.beginPath();
+    ctx.arc(cx,f.y+42,48,0,Math.PI*2);
+    ctx.stroke();
+  }
+
+  if(f.guard){
+    ctx.strokeStyle=isPlayer?"#4488ff":"#ff99aa";
+    ctx.lineWidth=5;
+    ctx.shadowColor=ctx.strokeStyle;
+    ctx.shadowBlur=14;
+
+    const shieldX=cx+f.face*26;
+    const shieldY=f.y+46;
+
+    ctx.beginPath();
+
+    if(f.face===1){
+      // 右向き時：キャラの右側にシールド
+      ctx.arc(shieldX,shieldY,42,-1.25,1.25);
+    }else{
+      // 左向き時：キャラの左側にシールド
+      ctx.arc(shieldX,shieldY,42,Math.PI-1.25,Math.PI+1.25);
+    }
+
+    ctx.stroke();
+
+    // シールドの中心ライン。向きが分かるように前方へ少し伸ばす
+    ctx.strokeStyle=isPlayer?"rgba(125,255,255,.8)":"rgba(255,190,210,.8)";
+    ctx.lineWidth=2;
+    ctx.beginPath();
+    ctx.moveTo(cx+f.face*10,shieldY);
+    ctx.lineTo(cx+f.face*54,shieldY);
+    ctx.stroke();
+  }
+
+  ctx.restore();
+  ctx.shadowBlur=0;
+  ctx.globalAlpha=1;
+}
+
+
+/* Legacy front-facing arm/leg renderers removed.
+   The EX8 renderer uses drawSideQuokkaArms() and drawSideQuokkaLegs(). */
+
+function drawBar(x,y,w,h,ratio,color,label){
+  const fill=clamp(ratio,0,1);
+
+  ctx.save();
+  ctx.fillStyle="rgba(1,4,12,.82)";
+  ctx.fillRect(x,y,w,h);
+
+  ctx.fillStyle="rgba(255,255,255,.08)";
+  ctx.fillRect(x,y,w,h*.45);
+
+  if(fill>0){
+    ctx.shadowColor=color;
+    ctx.shadowBlur=fill<.25?4:11;
+    ctx.fillStyle=color;
+    ctx.fillRect(x,y,fill*w,h);
+
+    ctx.fillStyle="rgba(255,255,255,.18)";
+    ctx.fillRect(x,y,fill*w,Math.max(2,h*.28));
+  }
+
+  ctx.shadowBlur=0;
+  ctx.strokeStyle=fill<.25?"#ffcc33":"rgba(255,255,255,.72)";
+  ctx.lineWidth=1.5;
+  ctx.strokeRect(x+.5,y+.5,w-1,h-1);
+
+  ctx.fillStyle="white";
+  ctx.font="bold 10px sans-serif";
+  ctx.fillText(label,x+6,y+h-3);
+  ctx.restore();
+}
+
+function drawBars(){
+  const playerColor=player.colors?player.colors.base:"#66ccff";
+  const enemyColor=enemyLevelColor();
+
+  ctx.save();
+  ctx.fillStyle=playerColor;
+  ctx.font="bold 12px sans-serif";
+  ctx.fillText(shortName(player.displayName).toUpperCase(),24,16);
+
+  ctx.textAlign="right";
+  ctx.fillStyle=enemyColor;
+  ctx.fillText(shortName(enemy.displayName).toUpperCase(),canvas.width-24,16);
+  ctx.textAlign="left";
+  ctx.restore();
+
+  drawBar(24,20,260,18,player.hp/player.maxHp,playerColor,"自分HP");
+  drawBar(canvas.width-284,20,260,18,enemy.hp/enemy.maxHp,enemyColor,"敵HP");
+
+  drawBar(24,46,220,12,player.energy/player.maxEnergy,getSpecialData(player).color||"#cc77ff","必殺");
+  drawBar(canvas.width-244,46,220,12,enemy.energy/enemy.maxEnergy,getSpecialData(enemy).color||"#cc77ff","敵必殺");
+
+  drawBar(24,64,220,10,player.guardGauge/player.maxGuardGauge,"#4488ff","ガード");
+  drawBar(canvas.width-244,64,220,10,enemy.guardGauge/enemy.maxGuardGauge,"#4488ff","ガード");
+
+  if(player.inputBuffer){
+    ctx.fillStyle="#66ffcc";
+    ctx.font="11px sans-serif";
+    ctx.fillText("先行入力 : "+player.inputBuffer.action,24,92);
+  }
+
+  ctx.fillStyle=enemyColor;
+  ctx.font="23px sans-serif";
+  ctx.fillText("レベル : "+level,canvas.width/2-55,36);
+
+  ctx.font="14px sans-serif";
+  ctx.fillText("勝利レベル : "+(defeatedLevel>0?defeatedLevel:"なし"),canvas.width/2-55,60);
+  ctx.font="11px sans-serif";
+  ctx.fillStyle="#d9ecff";
+  ctx.textAlign="center";
+  ctx.fillText(player.displayName+" 対 "+enemy.displayName,canvas.width/2,86);
+  ctx.textAlign="left";
+}
+function drawEffects(){
+  effects.forEach(e=>{
+    ctx.save();
+    ctx.globalAlpha=e.alpha;
+    ctx.fillStyle=e.color;
+    ctx.font="bold 20px sans-serif";
+    ctx.textAlign="center";
+    ctx.shadowColor=e.color;
+    ctx.shadowBlur=10;
+    ctx.fillText(e.text,e.x,e.y);
+    ctx.restore();
+  });
+
+  ctx.textAlign="left";
+
+  bursts.forEach(b=>{
+    ctx.save();
+    ctx.globalAlpha=b.alpha*.82;
+    ctx.strokeStyle=b.color;
+    ctx.lineWidth=b.lineWidth;
+    ctx.shadowColor=b.color;
+    ctx.shadowBlur=14;
+    ctx.beginPath();
+    ctx.arc(b.x,b.y,b.radius,0,Math.PI*2);
+    ctx.stroke();
+    ctx.restore();
+  });
+
+  projectiles.forEach(p=>{
+    ctx.save();
+    ctx.globalAlpha=clamp(p.life/p.maxLife,.25,1);
+    ctx.fillStyle=p.color;
+    ctx.strokeStyle=p.color;
+    ctx.shadowColor=p.color;
+    ctx.shadowBlur=16;
+
+    if(p.type==="fist"){
+      ctx.beginPath();
+      ctx.ellipse(p.x+p.width/2,p.y+p.height/2,p.width/2,p.height/2,0,0,Math.PI*2);
+      ctx.fill();
+      ctx.strokeStyle="rgba(0,0,0,.55)";
+      ctx.lineWidth=3;
+      ctx.beginPath();
+      ctx.moveTo(p.x+p.width*.35,p.y+p.height*.3);
+      ctx.lineTo(p.x+p.width*.72,p.y+p.height*.3);
+      ctx.moveTo(p.x+p.width*.28,p.y+p.height*.52);
+      ctx.lineTo(p.x+p.width*.76,p.y+p.height*.52);
+      ctx.stroke();
+    }else{
+      ctx.beginPath();
+      ctx.arc(p.x+p.width/2,p.y+p.height/2,Math.max(p.width,p.height)/2,0,Math.PI*2);
+      ctx.fill();
+      ctx.strokeStyle="rgba(255,255,255,.75)";
+      ctx.lineWidth=2;
+      ctx.stroke();
+    }
+
+    ctx.restore();
+  });
+
+  particles.forEach(p=>{
+    ctx.save();
+    ctx.globalAlpha=p.alpha;
+    ctx.fillStyle=p.color;
+    ctx.strokeStyle=p.color;
+    ctx.shadowColor=p.color;
+    ctx.shadowBlur=8;
+
+    if(p.type==="spark"){
+      ctx.translate(p.x,p.y);
+      ctx.rotate(p.angle);
+      ctx.lineWidth=Math.max(1,p.size*.35);
+      ctx.beginPath();
+      ctx.moveTo(-p.length*.35,0);
+      ctx.lineTo(p.length*.65,0);
+      ctx.stroke();
+    }else{
+      ctx.fillRect(p.x,p.y,p.size,p.size);
+    }
+
+    ctx.restore();
+  });
+
+  ctx.globalAlpha=1;
+  ctx.shadowBlur=0;
+}
+
+function drawComboUI(){
+  if(combo.count<2||combo.timer<=0)return;
+
+  const color=combo.owner===player?"#66ffcc":"#ff99aa";
+  const x=combo.owner===player?120:canvas.width-190;
+
+  ctx.save();
+  ctx.fillStyle=color;
+  ctx.shadowColor=color;
+  ctx.shadowBlur=14;
+  ctx.font="bold 34px sans-serif";
+  ctx.fillText(combo.count+"連撃",x,128);
+  ctx.font="14px sans-serif";
+  ctx.fillText("最大 "+combo.max,x+4,150);
+  ctx.restore();
+}
+
+function drawCenteredFitText(text,y,maxWidth,maxSize,minSize,color,shadowColor){
+  ctx.save();
+  ctx.textAlign="center";
+  ctx.fillStyle=color;
+  ctx.shadowColor=shadowColor||"transparent";
+  ctx.shadowBlur=shadowColor?18:0;
+
+  let size=maxSize;
+  do{
+    ctx.font="bold "+size+"px sans-serif";
+    if(ctx.measureText(text).width<=maxWidth||size<=minSize)break;
+    size--;
+  }while(size>minSize);
+
+  ctx.fillText(text,canvas.width/2,y);
+  ctx.restore();
+  return size;
+}
+
+function drawStartScreen(){
+  ctx.fillStyle="rgba(0,0,0,.82)";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  drawCenteredFitText("サイバークアッカファイター",172,canvas.width-88,50,30,"#66ccff","#66ccff");
+  drawCenteredFitText("EX8",224,260,44,32,"#66ccff","#66ccff");
+  drawCenteredFitText("攻撃・移動・防御ボタンで開始",304,canvas.width-96,23,16,"white",null);
+  drawCenteredFitText(player.displayName+" 対 "+enemy.displayName+" / レベル "+level,342,canvas.width-80,16,12,"#d9ecff",null);
+  ctx.textAlign="left";
+}
+
+function drawGameOver(){
+  ctx.fillStyle="rgba(0,0,0,.76)";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  ctx.fillStyle="#ff3355";
+  ctx.font="bold 58px sans-serif";
+  ctx.textAlign="center";
+  ctx.shadowColor="#ff3355";
+  ctx.shadowBlur=18;
+  ctx.fillText("ゲームオーバー",canvas.width/2,205);
+
+  ctx.shadowBlur=0;
+  ctx.fillStyle="white";
+  ctx.font="25px sans-serif";
+  ctx.fillText(defeatedLevel>0?"レベル "+defeatedLevel+" まで勝利":"勝利レベルなし",canvas.width/2,270);
+
+  ctx.font="20px sans-serif";
+  ctx.fillText("リセットで再挑戦",canvas.width/2,326);
+  ctx.textAlign="left";
+}
+
+function drawPauseOverlay(){
+  if(!gamePaused)return;
+
+  ctx.save();
+  ctx.fillStyle="rgba(0,0,0,.64)";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  ctx.textAlign="center";
+  ctx.fillStyle="#ffcc66";
+  ctx.shadowColor="#ffcc66";
+  ctx.shadowBlur=18;
+  ctx.font="bold 48px sans-serif";
+  ctx.fillText("一時停止中",canvas.width/2,205);
+
+  ctx.shadowBlur=0;
+  ctx.fillStyle="white";
+  ctx.font="18px sans-serif";
+  ctx.fillText("再開ボタンで続きからプレイ",canvas.width/2,252);
+  ctx.restore();
+  ctx.textAlign="left";
+}
+
+function drawFinishOverlay(){
+  if(finishTimer<=0)return;
+
+  ctx.save();
+
+  const alpha=Math.min(.78,finishTimer/45);
+  ctx.fillStyle="rgba(0,0,0,"+alpha+")";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  ctx.textAlign="center";
+  ctx.fillStyle="#cc77ff";
+  ctx.shadowColor="#cc77ff";
+  ctx.shadowBlur=24;
+  ctx.font="bold 52px sans-serif";
+  ctx.fillText(finishText,canvas.width/2,215);
+
+  ctx.fillStyle="white";
+  ctx.shadowBlur=0;
+  ctx.font="20px sans-serif";
+  ctx.fillText("レベル "+defeatedLevel+" クリア",canvas.width/2,260);
+
+  ctx.restore();
+  ctx.textAlign="left";
+}
+
+function drawRoundBanner(){
+  if(roundBanner.timer<=0||finishTimer>0)return;
+
+  const t=roundBanner.timer/roundBanner.maxTimer;
+  const enter=clamp((roundBanner.maxTimer-roundBanner.timer)/12,0,1);
+  const alpha=clamp(Math.min(t*1.3,enter*1.2),0,1);
+  const pop=1+Math.sin((1-t)*Math.PI)*.08;
+
+  ctx.save();
+  ctx.globalAlpha=alpha;
+  ctx.textAlign="center";
+  ctx.translate(canvas.width/2,canvas.height/2-38);
+  ctx.scale(pop,pop);
+
+  ctx.font="bold 62px sans-serif";
+  ctx.lineWidth=8;
+  ctx.strokeStyle="rgba(0,0,0,.78)";
+  ctx.strokeText(roundBanner.text,0,0);
+  ctx.fillStyle=roundBanner.color;
+  ctx.shadowColor=roundBanner.color;
+  ctx.shadowBlur=24;
+  ctx.fillText(roundBanner.text,0,0);
+
+  if(roundBanner.subText){
+    ctx.shadowBlur=0;
+    ctx.font="bold 19px sans-serif";
+    ctx.fillStyle="white";
+    ctx.fillText(roundBanner.subText,0,34);
+  }
+
+  ctx.restore();
+  ctx.textAlign="left";
+}
+
+function drawScreenFlash(){
+  if(screenFlash<=0)return;
+
+  ctx.save();
+  ctx.globalAlpha=screenFlash/24;
+  ctx.fillStyle="#ffffff";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.restore();
+}
+
+
+/* ===================== MAIN DRAW LOOP ===================== */
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  ctx.save();
+
+  if(screenShake>0&&!gamePaused){
+    const shake=screenShake>12?6:3;
+    ctx.translate((Math.random()-.5)*shake,(Math.random()-.5)*shake);
+  }
+
+  drawBackground();
+  drawFighter(player,true);
+  drawFighter(enemy,false);
+  drawEffects();
+  drawBars();
+  drawComboUI();
+
+  if(!gameStarted)drawStartScreen();
+  if(gameOver)drawGameOver();
+
+  drawFinishOverlay();
+  drawRoundBanner();
+  drawPauseOverlay();
+
+  ctx.restore();
+
+  if(!gamePaused)drawScreenFlash();
+}
+
+function loop(){
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+
+/* ===================== KEYBOARD INPUT ===================== */
+document.addEventListener("keydown",e=>{
+  const wasPressed=keys[e.code];
+
+  if(wasPressed){
+    return;
+  }
+
+  keys[e.code]=true;
+
+  if(gamePaused){
+    return;
+  }
+
+  if(e.code==="KeyZ"){
+    startGame();
+    lastAttackPressFrame=frameCount;
+
+    if(trySimultaneousThrow()){
+      return;
+    }
+
+    pendingAttackTimer=SKILL_CONFIG.input.throwWindow;
+    return;
+  }
+
+  if(e.code==="KeyX"){
+    startGame();
+    lastGuardPressFrame=frameCount;
+
+    if(trySimultaneousThrow()){
+      return;
+    }
+
+    pendingGuardTimer=SKILL_CONFIG.input.throwWindow;
+    return;
+  }
+
+  if(e.code==="ArrowUp")jump(player);
+  if(e.code==="KeyC")specialAttack(player);
+  if(e.code==="ShiftLeft"||e.code==="ShiftRight")dash(player);
+});
+
+document.addEventListener("keyup",e=>{
+  keys[e.code]=false;
+
+  if(e.code==="KeyZ"){
+    attackTouchHeld=false;
+  }
+
+  if(e.code==="KeyX"){
+    pendingGuardTimer=0;
+    guardTouchHeld=false;
+  }
+
+  if(!keys["KeyZ"]&&!keys["KeyX"]&&!attackTouchHeld&&!guardTouchHeld){
+    throwInputLock=false;
+  }
+});
+
+
+/* ===================== TOUCH / MOUSE INPUT ===================== */
+function holdButton(id,code){
+  const btn=document.getElementById(id);
+
+  btn.addEventListener("touchstart",e=>{
+    e.preventDefault();
+    startGame();
+    keys[code]=true;
+  },{passive:false});
+
+  btn.addEventListener("touchend",e=>{
+    e.preventDefault();
+    keys[code]=false;
+  },{passive:false});
+
+  btn.addEventListener("touchcancel",e=>{
+    e.preventDefault();
+    keys[code]=false;
+  },{passive:false});
+
+  btn.addEventListener("mousedown",()=>{
+    startGame();
+    keys[code]=true;
+  });
+
+  btn.addEventListener("mouseup",()=>{
+    keys[code]=false;
+  });
+
+  btn.addEventListener("mouseleave",()=>{
+    keys[code]=false;
+  });
+}
+
+function tapButton(id,func){
+  const btn=document.getElementById(id);
+  let touchLocked=false;
+
+  btn.addEventListener("touchstart",e=>{
+    e.preventDefault();
+    touchLocked=true;
+    func();
+
+    setTimeout(()=>{
+      touchLocked=false;
+    },120);
+  },{passive:false});
+
+  btn.addEventListener("click",()=>{
+    if(touchLocked)return;
+    func();
+  });
+}
+
+holdButton("leftBtn","ArrowLeft");
+holdButton("rightBtn","ArrowRight");
+
+bindAttackButton();
+bindGuardButton();
+
+tapButton("jumpBtn",()=>jump(player));
+tapButton("dashBtn",()=>dash(player));
+tapButton("specialBtn",()=>specialAttack(player));
+
+function bindAttackButton(){
+  const btn=document.getElementById("attackBtn");
+  let touchLocked=false;
+
+  function press(){
+    if(gamePaused)return;
+
+    startGame();
+
+    if(attackTouchHeld){
+      return;
+    }
+
+    attackTouchHeld=true;
+    lastAttackPressFrame=frameCount;
+
+    if(trySimultaneousThrow()){
+      return;
+    }
+
+    pendingAttackTimer=SKILL_CONFIG.input.throwWindow;
+  }
+
+  function release(){
+    attackTouchHeld=false;
+
+    if(!guardTouchHeld&&!keys["KeyZ"]&&!keys["KeyX"]){
+      throwInputLock=false;
+    }
+  }
+
+  btn.addEventListener("touchstart",e=>{
+    e.preventDefault();
+    touchLocked=true;
+    press();
+  },{passive:false});
+
+  btn.addEventListener("touchend",e=>{
+    e.preventDefault();
+    release();
+
+    setTimeout(()=>{
+      touchLocked=false;
+    },120);
+  },{passive:false});
+
+  btn.addEventListener("touchcancel",e=>{
+    e.preventDefault();
+    release();
+  },{passive:false});
+
+  btn.addEventListener("mousedown",()=>{
+    if(touchLocked)return;
+    press();
+  });
+
+  btn.addEventListener("mouseup",release);
+  btn.addEventListener("mouseleave",release);
+}
+
+function bindGuardButton(){
+  const btn=document.getElementById("guardBtn");
+
+  function press(){
+    if(gamePaused)return;
+
+    startGame();
+
+    if(guardTouchHeld){
+      return;
+    }
+
+    guardTouchHeld=true;
+    keys["KeyX"]=true;
+    lastGuardPressFrame=frameCount;
+
+    if(trySimultaneousThrow()){
+      return;
+    }
+
+    pendingGuardTimer=SKILL_CONFIG.input.throwWindow;
+  }
+
+  function release(){
+    guardTouchHeld=false;
+    keys["KeyX"]=false;
+    pendingGuardTimer=0;
+
+    if(!attackTouchHeld&&!keys["KeyZ"]&&!keys["KeyX"]){
+      throwInputLock=false;
+    }
+  }
+
+  btn.addEventListener("touchstart",e=>{
+    e.preventDefault();
+    press();
+  },{passive:false});
+
+  btn.addEventListener("touchend",e=>{
+    e.preventDefault();
+    release();
+  },{passive:false});
+
+  btn.addEventListener("touchcancel",e=>{
+    e.preventDefault();
+    release();
+  },{passive:false});
+
+  btn.addEventListener("mousedown",press);
+  btn.addEventListener("mouseup",release);
+  btn.addEventListener("mouseleave",release);
+}
+
+function populateMatchSetup(){
+  const playerSelect=document.getElementById("playerSelect");
+  const enemySelect=document.getElementById("enemySelect");
+  const levelInput=document.getElementById("enemyLevelInput");
+
+  playerSelect.innerHTML="";
+  PLAYER_ROSTER.forEach(profile=>{
+    const option=document.createElement("option");
+    option.value=profile.id;
+    option.textContent=profile.name;
+    playerSelect.appendChild(option);
+  });
+
+  enemySelect.innerHTML="";
+  ENEMY_ARCHETYPES.forEach(profile=>{
+    const option=document.createElement("option");
+    option.value=profile.id;
+    option.textContent=profile.name;
+    enemySelect.appendChild(option);
+  });
+
+  playerSelect.value=selectedPlayerId;
+  enemySelect.value=selectedEnemyId;
+  levelInput.value=selectedStartLevel;
+  updateMatchupInfo();
+}
+
+function syncMatchSetupFromUI(){
+  const playerSelect=document.getElementById("playerSelect");
+  const enemySelect=document.getElementById("enemySelect");
+  const levelInput=document.getElementById("enemyLevelInput");
+  const parsed=Math.floor(Number(levelInput.value));
+
+  selectedPlayerId=playerSelect.value;
+  selectedEnemyId=enemySelect.value;
+  selectedStartLevel=clamp(Number.isFinite(parsed)?parsed:1,1,30);
+  levelInput.value=selectedStartLevel;
+  updateMatchupInfo();
+}
+
+function profileSpecHtml(profile,isEnemy){
+  const normal=profile.normal;
+  const special=profile.special;
+  const stats=profile.stats||{};
+  const role=isEnemy?"敵":"自分";
+  const hpText=isEnemy?"HP倍率 "+valueOr(stats.hpScale,1).toFixed(2):"HP "+valueOr(stats.hp,100);
+  const guardText=isEnemy?"ガード倍率 "+valueOr(stats.guardScale,1).toFixed(2):"ガード "+valueOr(stats.guard,100);
+  const speedText="速さ "+valueOr(stats.speed,1).toFixed(2);
+  const typeNames={laser:"レーザー",projectile:"飛び道具",speedBoost:"強化",perfectGuard:"完全ガード",rush:"突進"};
+  const durationText=special.duration?Math.round(special.duration/6)/10+"秒":"";
+
+  return '<section class="spec-block">'+
+    '<div class="spec-title">'+role+'：'+profile.name+'</div>'+
+    '<p class="spec-desc">'+profile.tag+'</p>'+
+    '<div class="spec-row"><span class="spec-label">能力</span><span class="stat-list">'+
+      '<span class="stat-chip">'+hpText+'</span>'+
+      '<span class="stat-chip">'+guardText+'</span>'+
+      '<span class="stat-chip">'+speedText+'</span>'+
+    '</span></div>'+
+    '<div class="spec-row"><span class="spec-label">通常</span><span class="stat-list">'+
+      '<span class="stat-chip">威力 '+normal.damage+'</span>'+
+      '<span class="stat-chip">射程 '+normal.range+'</span>'+
+      '<span class="stat-chip">発生 '+normal.hitFrame+'F</span>'+
+    '</span></div>'+
+    '<div class="spec-row"><span class="spec-label">必殺</span><span class="stat-list">'+
+      '<span class="stat-chip">'+special.name+'</span>'+
+      '<span class="stat-chip">'+(typeNames[special.kind]||"打撃")+'</span>'+
+      (special.damage>0?'<span class="stat-chip">威力 '+special.damage+'</span>':'<span class="stat-chip">直接ダメージなし</span>')+
+      (special.damageBoost?'<span class="stat-chip">攻撃 x'+special.damageBoost.toFixed(2)+'</span>':'')+
+      (special.range>0?'<span class="stat-chip">射程 '+special.range+'</span>':'')+
+      (durationText?'<span class="stat-chip">持続 '+durationText+'</span>':'')+
+      '<span class="stat-chip">消費 '+special.cost+'</span>'+
+    '</span></div>'+
+    '<p class="spec-desc special-note">必殺：'+special.desc+'</p>'+
+  '</section>';
+}
+
+function updateMatchupInfo(){
+  const info=document.getElementById("matchupInfo");
+  if(!info)return;
+
+  const playerProfile=getPlayerProfile();
+  const enemyProfile=getEnemyProfile();
+  info.innerHTML=
+    '<div class="match-title">選択中の対戦</div>'+
+    '<div class="match-names">'+
+      '<span class="match-name">'+playerProfile.name+'</span>'+
+      '<span class="versus">対</span>'+
+      '<span class="match-name">'+enemyProfile.name+'</span>'+
+      '<span class="match-level">レベル '+selectedStartLevel+'</span>'+
+    '</div>'+
+    profileSpecHtml(playerProfile,false)+
+    profileSpecHtml(enemyProfile,true);
+}
+
+document.getElementById("playerSelect").addEventListener("change",()=>{
+  syncMatchSetupFromUI();
+});
+
+document.getElementById("enemySelect").addEventListener("change",()=>{
+  syncMatchSetupFromUI();
+});
+
+document.getElementById("enemyLevelInput").addEventListener("change",()=>{
+  syncMatchSetupFromUI();
+});
+
+document.getElementById("applyMatchBtn").addEventListener("click",()=>{
+  syncMatchSetupFromUI();
+  resetGame();
+  startGame();
+});
+
+document.getElementById("pauseBtn").addEventListener("click",()=>{
+  togglePause();
+});
+
+document.getElementById("resetBtn").addEventListener("click",()=>{
+  syncMatchSetupFromUI();
+  resetGame();
+});
+
+populateMatchSetup();
+resetGame();
+displayHighScores();
+loop();
+</script>
+
+</body>
+</html>
