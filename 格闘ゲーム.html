@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>CYBER FIGHTER CORE EX4</title>
+<title>CYBER QUOKKA FIGHTER EX7</title>
 
 <style>
 *{box-sizing:border-box;}
@@ -260,8 +260,8 @@ canvas{
 
 <body>
 
-<h1>CYBER FIGHTER CORE EX4</h1>
-<p>← → 移動 / ↑ ジャンプ / Z 攻撃 / X ガード / C 必殺技 / Shift 回避</p>
+<h1>CYBER QUOKKA FIGHTER EX7</h1>
+<p>← → 移動 / ↑ ジャンプ / Z 攻撃 / X ガード / Z+X 投げ / C 必殺技 / Shift 回避</p>
 
 <div class="top-buttons">
   <button id="resetBtn" class="reset-btn">RESET</button>
@@ -301,6 +301,13 @@ canvas{
       壁バウンド<br>
       必殺技フィニッシュ<br>
       ガードクラッシュ<br>
+      攻撃＋防御同時押し投げ<br>
+      投げられた側の高速ダウン復帰<br>
+      起き上がり投げ無敵で連続投げ防止<br>
+      成功時のみ発動するパリィ<br>
+      敵攻撃力のレベル上昇なし<br>
+      横向きサイバークアッカワラビー化<br>
+      敵はレベルごとに色変化<br>
       スマホ縦画面UI最適化
     </div>
   </div>
@@ -312,7 +319,47 @@ const ctx=canvas.getContext("2d");
 
 const FLOOR_Y=372;
 const GRAVITY=.72;
-const SCORE_KEY="cyberFighterCoreEX4HighScores";
+const SCORE_KEY="cyberQuokkaFighterEX7HighScores";
+
+const SKILL_CONFIG={
+  input:{
+    throwWindow:4
+  },
+  normal:{
+    playerDamage:12,
+    enemyBaseDamage:10,
+    enemyLevelScale:0
+  },
+  special:{
+    playerDamage:34,
+    enemyBaseDamage:24,
+    enemyLevelScale:0,
+    cost:60
+  },
+  throw:{
+    timer:24,
+    hitFrame:11,
+    range:56,
+    height:58,
+    offsetY:24,
+    playerDamage:18,
+    enemyBaseDamage:14,
+    enemyLevelScale:0,
+    knockbackX:10,
+    knockbackY:-3.6,
+    lockout:18,
+    grabbedFreeze:12,
+    knockdown:46,
+    throwInvuln:45,
+    afterWakeInvuln:60
+  },
+  parry:{
+    window:5,
+    attackerStun:15,
+    hitStop:8,
+    energyGain:18
+  }
+};
 
 let keys={};
 let player;
@@ -330,6 +377,15 @@ let gameStarted=false;
 let gameOver=false;
 let scoreSaved=false;
 let highScores=loadHighScores();
+
+let frameCount=0;
+let lastAttackPressFrame=-999;
+let lastGuardPressFrame=-999;
+let pendingAttackTimer=0;
+let pendingGuardTimer=0;
+let attackTouchHeld=false;
+let guardTouchHeld=false;
+let throwInputLock=false;
 
 let combo={
   count:0,
@@ -398,9 +454,12 @@ function makeFighter(x,y,w,h,face,isPlayer){
     maxGuardGauge:isPlayer?100:92+level*3,
     guardBreakTimer:0,
     guardRegenDelay:0,
+    parryTimer:0,
     onGround:true,
     attackTimer:0,
     attackHitDone:false,
+    throwTimer:0,
+    throwHitDone:false,
     guard:false,
     dashTimer:0,
     dashCooldown:0,
@@ -409,6 +468,14 @@ function makeFighter(x,y,w,h,face,isPlayer){
     hurtTimer:0,
     airComboCount:0,
     wallBounce:false,
+    thrownFreezeTimer:0,
+    throwSpin:0,
+    knockdownTimer:0,
+    knockdownAngle:0,
+    throwInvulnTimer:0,
+    throwLockout:0,
+    pendingThrowKnockbackX:0,
+    pendingThrowKnockbackY:0,
     inputBuffer:null,
     aiTimer:0,
     jumpChance:.004+level*.0007
@@ -434,6 +501,14 @@ function resetGame(){
   gameOver=false;
   scoreSaved=false;
   keys={};
+  frameCount=0;
+  lastAttackPressFrame=-999;
+  lastGuardPressFrame=-999;
+  pendingAttackTimer=0;
+  pendingGuardTimer=0;
+  attackTouchHeld=false;
+  guardTouchHeld=false;
+  throwInputLock=false;
 }
 
 function spawnEnemy(){
@@ -479,6 +554,7 @@ function faceOpponent(f){
 function canAct(f){
   return f.attackTimer<=0&&
          f.specialTimer<=0&&
+         f.throwTimer<=0&&
          f.hurtTimer<=0&&
          f.guardBreakTimer<=0;
 }
@@ -507,8 +583,176 @@ function consumeInputBuffer(){
 
   if(action==="attack")normalAttack(player,false);
   if(action==="special")specialAttack(player,false);
+  if(action==="throw")throwAttack(player,false);
   if(action==="jump")jump(player,false);
   if(action==="dash")dash(player,false);
+}
+
+function trySimultaneousThrow(){
+  if(throwInputLock){
+    return false;
+  }
+
+  if(!canAct(player)||!player.onGround||player.throwLockout>0){
+    return false;
+  }
+
+  const keyboardClose=
+    Math.abs(lastAttackPressFrame-lastGuardPressFrame)<=SKILL_CONFIG.input.throwWindow;
+
+  const touchClose=attackTouchHeld&&guardTouchHeld;
+
+  if(keyboardClose||touchClose){
+    throwInputLock=true;
+    pendingAttackTimer=0;
+    pendingGuardTimer=0;
+    player.guard=false;
+    player.vx=0;
+    player.vy=0;
+    throwAttack(player);
+    lastAttackPressFrame=-999;
+    lastGuardPressFrame=-999;
+    return true;
+  }
+
+  return false;
+}
+
+function processPendingInputs(){
+  if(pendingAttackTimer>0){
+    pendingAttackTimer--;
+
+    if(trySimultaneousThrow()){
+      return;
+    }
+
+    if(pendingAttackTimer<=0){
+      normalAttack(player,false);
+    }
+  }
+
+  if(pendingGuardTimer>0){
+    pendingGuardTimer--;
+
+    if(trySimultaneousThrow()){
+      return;
+    }
+
+    if(pendingGuardTimer<=0&&keys["KeyX"]){
+      startGame();
+
+      if(canAct(player)&&player.onGround){
+        player.parryTimer=SKILL_CONFIG.parry.window;
+      }
+    }
+  }
+}
+
+function throwAttack(f,allowBuffer=true){
+  if(!canAct(f)||f.throwLockout>0){
+    if(f===player&&allowBuffer){
+      bufferInput("throw");
+    }
+    return;
+  }
+
+  if(!f.onGround){
+    if(f===player){
+      addEffect("NO THROW",f.x+f.width/2,f.y-12,"#8888ff");
+    }
+    return;
+  }
+
+  faceOpponent(f);
+  f.vx=0;
+  f.vy=0;
+  f.guard=false;
+  f.throwTimer=SKILL_CONFIG.throw.timer;
+  f.throwHitDone=false;
+  f.throwLockout=SKILL_CONFIG.throw.lockout;
+  startGame();
+
+  addEffect("THROW",f.x+f.width/2,f.y-14,"#ff9944");
+}
+
+function getThrowBox(f){
+  const cfg=SKILL_CONFIG.throw;
+
+  if(f.face===1){
+    return{
+      x:f.x+f.width-2,
+      y:f.y+cfg.offsetY,
+      width:cfg.range,
+      height:cfg.height
+    };
+  }
+
+  return{
+    x:f.x-cfg.range+2,
+    y:f.y+cfg.offsetY,
+    width:cfg.range,
+    height:cfg.height
+  };
+}
+
+function applyThrow(attacker,target){
+  if(!rectsHit(getThrowBox(attacker),target)){
+    addEffect("MISS",attacker.x+attacker.width/2,attacker.y-10,"#66ccff");
+    return;
+  }
+
+  if(
+    !target.onGround||
+    target.dashTimer>0||
+    target.throwInvulnTimer>0||
+    target.thrownFreezeTimer>0||
+    target.knockdownTimer>0||
+    target.hurtTimer>0
+  ){
+    addEffect("MISS",target.x+target.width/2,target.y-10,"#66ccff");
+    return;
+  }
+
+  const cfg=SKILL_CONFIG.throw;
+  const damage=attacker===player
+    ? cfg.playerDamage
+    : Math.ceil(cfg.enemyBaseDamage);
+
+  attacker.vx=0;
+  attacker.vy=0;
+
+  target.guard=false;
+  target.attackTimer=0;
+  target.specialTimer=0;
+  target.throwTimer=0;
+  target.attackHitDone=true;
+  target.throwHitDone=true;
+  target.inputBuffer=null;
+
+  target.hp=Math.max(0,target.hp-damage);
+  target.hurtTimer=24;
+  target.thrownFreezeTimer=cfg.grabbedFreeze;
+  target.throwSpin=34;
+  target.knockdownTimer=cfg.knockdown;
+  target.knockdownAngle=attacker.face;
+  target.vx=0;
+  target.vy=0;
+  target.onGround=true;
+  target.airComboCount=0;
+  target.guardRegenDelay=24;
+  target.throwInvulnTimer=cfg.throwInvuln;
+  target.pendingThrowKnockbackX=attacker.face*cfg.knockbackX;
+  target.pendingThrowKnockbackY=cfg.knockbackY;
+
+  attacker.energy=clamp(attacker.energy+18,0,attacker.maxEnergy);
+
+  registerCombo(attacker,false,false);
+  addEffect("GRABBED",target.x+target.width/2,target.y-28,"#ff9944");
+  addEffect("SLAM",target.x+target.width/2,target.y-52,"#ffcc66");
+  spawnHitParticles(target.x+target.width/2,target.y+34,"#ff9944");
+
+  hitStop=10;
+  screenShake=12;
 }
 
 function normalAttack(f,allowBuffer=true){
@@ -528,13 +772,13 @@ function specialAttack(f,allowBuffer=true){
     return;
   }
 
-  if(f.energy<60){
+  if(f.energy<SKILL_CONFIG.special.cost){
     if(f===player)addEffect("NO ENERGY",f.x+f.width/2,f.y-12,"#8888ff");
     return;
   }
 
   faceOpponent(f);
-  f.energy-=60;
+  f.energy-=SKILL_CONFIG.special.cost;
   f.specialTimer=36;
   f.specialCooldown=120;
   f.attackHitDone=false;
@@ -589,7 +833,9 @@ function guardBreak(target){
   target.guardBreakTimer=75;
   target.attackTimer=0;
   target.specialTimer=0;
+  target.throwTimer=0;
   target.attackHitDone=true;
+  target.throwHitDone=true;
   addEffect("GUARD BREAK",target.x+target.width/2,target.y-20,"#ffcc33");
   spawnHitParticles(target.x+target.width/2,target.y+34,"#ffcc33");
   screenShake=14;
@@ -626,11 +872,36 @@ function takeDamage(target,amount,knockbackX,knockbackY,attacker,isSpecial){
     return;
   }
 
+  if(target.parryTimer>0){
+    target.parryTimer=0;
+    target.guard=false;
+    target.energy=clamp(target.energy+SKILL_CONFIG.parry.energyGain,0,target.maxEnergy);
+
+    if(attacker){
+      attacker.attackTimer=0;
+      attacker.specialTimer=0;
+      attacker.throwTimer=0;
+      attacker.attackHitDone=true;
+      attacker.throwHitDone=true;
+      attacker.hurtTimer=Math.max(attacker.hurtTimer,SKILL_CONFIG.parry.attackerStun);
+      attacker.vx=0;
+    }
+
+    addEffect("PARRY",target.x+target.width/2,target.y-18,"#66ff88");
+    spawnHitParticles(target.x+target.width/2,target.y+34,"#66ff88");
+    hitStop=SKILL_CONFIG.parry.hitStop;
+    screenFlash=10;
+    screenShake=7;
+    return;
+  }
+
   const isCounter=target.attackTimer>0||target.specialTimer>0||target.dashTimer>0;
 
   target.attackTimer=0;
   target.specialTimer=0;
+  target.throwTimer=0;
   target.attackHitDone=true;
+  target.throwHitDone=true;
   target.inputBuffer=null;
 
   let damage=amount;
@@ -647,7 +918,7 @@ function takeDamage(target,amount,knockbackX,knockbackY,attacker,isSpecial){
 
   if(target.airComboCount>3){
     target.guard=false;
-    target.hurtTimer=34;
+    target.hurtTimer=24;
     target.vx=knockbackX*1.45;
     target.vy=-3.2;
     target.airComboCount=0;
@@ -723,10 +994,20 @@ function checkWallBounce(target,attacker,isSpecial){
 }
 
 function handleAttackHits(){
+  if(player.throwTimer===SKILL_CONFIG.throw.hitFrame&&!player.throwHitDone){
+    applyThrow(player,enemy);
+    player.throwHitDone=true;
+  }
+
+  if(enemy.throwTimer===SKILL_CONFIG.throw.hitFrame&&!enemy.throwHitDone){
+    applyThrow(enemy,player);
+    enemy.throwHitDone=true;
+  }
+
   if(player.attackTimer===9&&!player.attackHitDone){
     const box=getAttackBox(player,58,44,20);
     if(rectsHit(box,enemy)){
-      takeDamage(enemy,12,player.face*5,enemy.onGround?-2.2:-5.2,player,false);
+      takeDamage(enemy,SKILL_CONFIG.normal.playerDamage,player.face*5,enemy.onGround?-2.2:-5.2,player,false);
     }
     player.attackHitDone=true;
   }
@@ -734,7 +1015,8 @@ function handleAttackHits(){
   if(enemy.attackTimer===9&&!enemy.attackHitDone){
     const box=getAttackBox(enemy,58,44,22);
     if(rectsHit(box,player)){
-      takeDamage(player,10+level*1.1,enemy.face*5,player.onGround?-1.8:-4.8,enemy,false);
+      const damage=SKILL_CONFIG.normal.enemyBaseDamage;
+      takeDamage(player,damage,enemy.face*5,player.onGround?-1.8:-4.8,enemy,false);
     }
     enemy.attackHitDone=true;
   }
@@ -742,7 +1024,7 @@ function handleAttackHits(){
   if(player.specialTimer===18&&!player.attackHitDone){
     const box=getAttackBox(player,122,70,8);
     if(rectsHit(box,enemy)){
-      takeDamage(enemy,34,player.face*9,-8.6,player,true);
+      takeDamage(enemy,SKILL_CONFIG.special.playerDamage,player.face*9,-8.6,player,true);
     }
     player.attackHitDone=true;
   }
@@ -750,7 +1032,8 @@ function handleAttackHits(){
   if(enemy.specialTimer===18&&!enemy.attackHitDone){
     const box=getAttackBox(enemy,118,70,10);
     if(rectsHit(box,player)){
-      takeDamage(player,24+level*1.4,enemy.face*9,-7.4,enemy,true);
+      const damage=SKILL_CONFIG.special.enemyBaseDamage;
+      takeDamage(player,damage,enemy.face*9,-7.4,enemy,true);
     }
     enemy.attackHitDone=true;
   }
@@ -761,13 +1044,19 @@ function updatePlayer(){
     player.dashTimer<=0&&
     player.attackTimer<=0&&
     player.specialTimer<=0&&
+    player.throwTimer<=0&&
     player.hurtTimer<=0&&
     player.guardBreakTimer<=0;
 
-  player.guard=keys["KeyX"]&&canGuard;
+  player.guard=keys["KeyX"]&&canGuard&&pendingGuardTimer<=0;
 
   let accel=player.guard?.22:.72;
   let maxSpeed=player.guard?2:5.7;
+
+  if(player.throwTimer>0){
+    accel=0;
+    player.vx=0;
+  }
 
   if(player.hurtTimer>0||player.guardBreakTimer>0){
     accel=0;
@@ -799,12 +1088,22 @@ function updateEnemyAI(){
   if(enemy.aiTimer<=0){
     enemy.aiTimer=reaction;
 
-    if(enemy.guardBreakTimer<=0&&enemy.hurtTimer<=0){
+    if(enemy.guardBreakTimer<=0&&enemy.hurtTimer<=0&&enemy.throwTimer<=0){
       if(distance>92){
         enemy.vx+=enemy.face*(1.2+level*.08);
       }
 
-      if(distance<78&&Math.random()<aggression){
+      if(
+        distance<52&&
+        enemy.onGround&&
+        enemy.throwLockout<=0&&
+        player.throwInvulnTimer<=0&&
+        player.knockdownTimer<=0&&
+        player.hurtTimer<=0&&
+        Math.random()<0.12+Math.min(0.10,level*0.006)
+      ){
+        throwAttack(enemy);
+      }else if(distance<78&&Math.random()<aggression){
         normalAttack(enemy);
       }
 
@@ -835,6 +1134,46 @@ function updateEnemyAI(){
 }
 
 function applyPhysics(f){
+  const wasThrowing=f.throwTimer>0;
+  const wasKnockdown=f.knockdownTimer>0;
+
+  if(f.throwInvulnTimer>0){
+    f.throwInvulnTimer--;
+  }
+
+  if(f.thrownFreezeTimer>0){
+    f.thrownFreezeTimer--;
+    f.vx=0;
+    f.vy=0;
+
+    if(f.parryTimer>0)f.parryTimer--;
+    if(f.hurtTimer>0)f.hurtTimer--;
+    if(f.throwSpin>0)f.throwSpin--;
+    if(f.knockdownTimer>0)f.knockdownTimer--;
+    if(f.throwLockout>0)f.throwLockout--;
+
+    if(f.thrownFreezeTimer<=0){
+      f.vx=f.pendingThrowKnockbackX||0;
+      f.vy=f.pendingThrowKnockbackY||0;
+      f.pendingThrowKnockbackX=0;
+      f.pendingThrowKnockbackY=0;
+
+      addEffect("DOWN",f.x+f.width/2,f.y-16,"#ffcc66");
+      spawnHitParticles(f.x+f.width/2,f.y+f.height-12,"#ff9944");
+
+      if(f.vy!==0){
+        f.onGround=false;
+      }
+    }
+
+    return;
+  }
+
+  if(f.throwTimer>0){
+    f.vx=0;
+    f.vy=0;
+  }
+
   f.x+=f.vx;
   f.y+=f.vy;
   f.vy+=GRAVITY;
@@ -845,17 +1184,40 @@ function applyPhysics(f){
     f.onGround=true;
     f.airComboCount=0;
     f.wallBounce=false;
+
+    if(f.knockdownTimer>0){
+      f.vx*=0.55;
+      f.hurtTimer=Math.max(f.hurtTimer,18);
+    }
   }
 
   f.x=clamp(f.x,28,canvas.width-f.width-28);
 
   if(f.attackTimer>0)f.attackTimer--;
   if(f.specialTimer>0)f.specialTimer--;
+  if(f.throwTimer>0)f.throwTimer--;
+  if(f.parryTimer>0)f.parryTimer--;
   if(f.dashTimer>0)f.dashTimer--;
   if(f.dashCooldown>0)f.dashCooldown--;
   if(f.specialCooldown>0)f.specialCooldown--;
   if(f.hurtTimer>0)f.hurtTimer--;
   if(f.guardBreakTimer>0)f.guardBreakTimer--;
+  if(f.throwSpin>0)f.throwSpin--;
+  if(f.knockdownTimer>0)f.knockdownTimer--;
+  if(f.throwLockout>0)f.throwLockout--;
+
+  if(wasKnockdown&&f.knockdownTimer<=0){
+    f.throwInvulnTimer=Math.max(
+      f.throwInvulnTimer,
+      SKILL_CONFIG.throw.afterWakeInvuln
+    );
+    addEffect("THROW SAFE",f.x+f.width/2,f.y-12,"#ffcc66");
+  }
+
+  if(wasThrowing&&f.throwTimer<=0){
+    f.vx=0;
+    f.vy=0;
+  }
 
   if(f.guard){
     f.guardRegenDelay=Math.max(f.guardRegenDelay,30);
@@ -871,6 +1233,7 @@ function applyPhysics(f){
 
   f.energy=clamp(f.energy+.035,0,f.maxEnergy);
 }
+
 
 function resolveFighterPush(){
   const pLeft=player.x;
@@ -994,6 +1357,10 @@ function checkRoundState(){
     player.hp=player.maxHp;
     player.energy=clamp(player.energy+42,0,player.maxEnergy);
     player.guardGauge=player.maxGuardGauge;
+    player.throwInvulnTimer=0;
+    player.thrownFreezeTimer=0;
+    player.knockdownTimer=0;
+    player.throwSpin=0;
     player.inputBuffer=null;
 
     addEffect("LEVEL UP",canvas.width/2,155,"#66ffcc");
@@ -1010,6 +1377,10 @@ function checkRoundState(){
 }
 
 function update(){
+  frameCount++;
+
+  processPendingInputs();
+
   if(!gameStarted||gameOver){
     updateEffects();
     return;
@@ -1031,6 +1402,7 @@ function update(){
   updateEffects();
   checkRoundState();
 }
+
 
 function drawBackground(){
   ctx.fillStyle="#06101f";
@@ -1067,17 +1439,222 @@ function drawBackground(){
   ctx.fillRect(0,FLOOR_Y+38,canvas.width,3);
 }
 
-function drawFighter(f,isPlayer){
+function enemyLevelColor(){
+  if(level >= 10){
+    return "hsl(" + ((frameCount * 4) % 360) + ",100%,60%)";
+  }
+
+  const colors=[
+    "#ff6688",
+    "#ff8844",
+    "#ffcc33",
+    "#ccff44",
+    "#66ff88",
+    "#44ffd5",
+    "#4488ff",
+    "#9955ff",
+    "#ff55cc"
+  ];
+
+  return colors[(level - 1) % colors.length];
+}
+
+function enemyCoreColor(){
+  if(level >= 10){
+    return "hsl(" + ((frameCount * 4 + 80) % 360) + ",100%,72%)";
+  }
+
+  const colors=[
+    "#ffe1e8",
+    "#ffe0cc",
+    "#fff2aa",
+    "#edffb5",
+    "#ccffdd",
+    "#c9fff4",
+    "#d4e2ff",
+    "#ead8ff",
+    "#ffd6f2"
+  ];
+
+  return colors[(level - 1) % colors.length];
+}
+
+function drawSideQuokkaEar(x,y,angle,base,inner){
+  ctx.save();
+  ctx.translate(x,y);
+  ctx.rotate(angle);
+
+  ctx.fillStyle=base;
+  ctx.shadowColor=base;
+  ctx.shadowBlur=10;
+  ctx.beginPath();
+  ctx.ellipse(0,0,8,24,0,0,Math.PI*2);
+  ctx.fill();
+
+  ctx.fillStyle=inner;
+  ctx.shadowBlur=0;
+  ctx.beginPath();
+  ctx.ellipse(0,1,4,14,0,0,Math.PI*2);
+  ctx.fill();
+
+  ctx.restore();
+}
+
+function drawSideQuokkaTail(f,base){
+  const dir=f.face;
+  const tailX=f.x+f.width/2-dir*25;
+  const tailY=f.y+f.height-20;
+
+  ctx.strokeStyle=base;
+  ctx.lineWidth=10;
+  ctx.lineCap="round";
+  ctx.shadowColor=base;
+  ctx.shadowBlur=10;
+
+  ctx.beginPath();
+  ctx.moveTo(tailX,tailY);
+  ctx.quadraticCurveTo(
+    tailX-dir*40,
+    tailY+2,
+    tailX-dir*64,
+    tailY-14
+  );
+  ctx.stroke();
+
+  ctx.shadowBlur=0;
+}
+
+function drawSideQuokkaLegs(f,base){
+  const dir=f.face;
+  const bodyX=f.x+f.width/2;
+  const footY=FLOOR_Y-2;
+
+  ctx.strokeStyle=base;
+  ctx.lineWidth=8;
+  ctx.lineCap="round";
+  ctx.shadowColor=base;
+  ctx.shadowBlur=8;
+
+  // back leg
+  ctx.beginPath();
+  ctx.moveTo(bodyX-dir*12,f.y+f.height-30);
+  ctx.lineTo(bodyX-dir*20,footY-6);
+  ctx.lineTo(bodyX-dir*38,footY);
+  ctx.stroke();
+
+  // front leg
+  ctx.beginPath();
+  ctx.moveTo(bodyX+dir*8,f.y+f.height-28);
+  ctx.lineTo(bodyX+dir*18,footY-6);
+  ctx.lineTo(bodyX+dir*36,footY);
+  ctx.stroke();
+
+  ctx.shadowBlur=0;
+}
+
+function drawSideQuokkaArms(f,base,visor){
+  const dir=f.face;
+  const shoulderX=f.x+f.width/2+dir*14;
+  const shoulderY=f.y+54;
+
+  let handX=shoulderX+dir*18;
+  let handY=shoulderY+16;
+
+  if(f.attackTimer>0){
+    handX=shoulderX+dir*(34+(18-f.attackTimer)*1.6);
+    handY=shoulderY+4;
+  }
+
+  if(f.specialTimer>0){
+    handX=shoulderX+dir*58;
+    handY=shoulderY-8;
+  }
+
+  if(f.throwTimer>0){
+    handX=shoulderX+dir*44;
+    handY=shoulderY+16;
+  }
+
+  ctx.strokeStyle=base;
+  ctx.lineWidth=8;
+  ctx.lineCap="round";
+  ctx.shadowColor=base;
+  ctx.shadowBlur=8;
+
+  ctx.beginPath();
+  ctx.moveTo(shoulderX,shoulderY);
+  ctx.lineTo(handX,handY);
+  ctx.stroke();
+
+  ctx.shadowBlur=0;
+
+  if(f.attackTimer>6||f.specialTimer>8||f.throwTimer>6){
+    ctx.strokeStyle=f.specialTimer>0?"#cc77ff":f.throwTimer>0?"#ff9944":visor;
+    ctx.lineWidth=f.specialTimer>0?10:f.throwTimer>0?8:6;
+    ctx.shadowColor=ctx.strokeStyle;
+    ctx.shadowBlur=14;
+
+    ctx.beginPath();
+    ctx.moveTo(handX,handY);
+    ctx.lineTo(handX+dir*(f.specialTimer>0?64:f.throwTimer>0?26:34),handY);
+    ctx.stroke();
+
+    ctx.shadowBlur=0;
+  }
+}
+
+function drawSideCyberLines(f,visor){
+  const dir=f.face;
   const cx=f.x+f.width/2;
-  const base=isPlayer?"#66ccff":"#ff6688";
-  const core=isPlayer?"#ffffff":"#ffe1e8";
+
+  ctx.strokeStyle=visor;
+  ctx.lineWidth=2;
+  ctx.shadowColor=visor;
+  ctx.shadowBlur=8;
+
+  ctx.beginPath();
+  ctx.moveTo(cx-dir*18,f.y+52);
+  ctx.lineTo(cx+dir*16,f.y+52);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(cx+dir*2,f.y+58);
+  ctx.lineTo(cx+dir*8,f.y+f.height-28);
+  ctx.stroke();
+
+  ctx.shadowBlur=0;
+}
+
+function drawFighter(f,isPlayer){
+  const dir=f.face;
+  const cx=f.x+f.width/2;
+  const base=isPlayer?"#66ccff":enemyLevelColor();
+  const core=isPlayer?"#ffffff":enemyCoreColor();
+  const inner=isPlayer?"#bdf5ff":"#ffe1e8";
+  const visor=isPlayer?"#7dffff":level>=10?enemyCoreColor():"#ffdd66";
 
   ctx.save();
 
+  if(f.knockdownTimer>0){
+    const progress=1-(f.knockdownTimer/SKILL_CONFIG.throw.knockdown);
+    const fallAmount=Math.min(1,Math.max(0,progress*2.4));
+    const baseAngle=f.knockdownAngle||f.face||1;
+    const angle=baseAngle*(Math.PI/2)*fallAmount;
+
+    ctx.translate(cx,f.y+f.height-10);
+    ctx.rotate(angle);
+    ctx.translate(-cx,-(f.y+f.height-10));
+  }else if(f.throwSpin>0){
+    const angle=(f.face*0.18)*Math.sin(f.throwSpin*0.45);
+    ctx.translate(cx,f.y+f.height/2);
+    ctx.rotate(angle);
+    ctx.translate(-cx,-(f.y+f.height/2));
+  }
+
   if(f.dashTimer>0){
-    ctx.globalAlpha=.55;
-    ctx.fillStyle="#66ccff";
-    ctx.fillRect(f.x-f.face*22,f.y+10,f.width,f.height-8);
+    ctx.globalAlpha=.48;
+    ctx.fillStyle=base;
+    ctx.fillRect(f.x-dir*28,f.y+22,f.width,f.height-26);
     ctx.globalAlpha=1;
   }
 
@@ -1086,40 +1663,125 @@ function drawFighter(f,isPlayer){
   }
 
   if(f.hurtTimer>0&&Math.floor(f.hurtTimer/3)%2===0){
-    ctx.globalAlpha=.62;
+    ctx.globalAlpha=.68;
   }
 
+  drawSideQuokkaTail(f,base);
+
+  const headX=cx+dir*18;
+  const headY=f.y+28;
+  const bodyX=cx-dir*2;
+  const bodyY=f.y+62;
+
+  // back ear then front ear
+  drawSideQuokkaEar(headX-dir*14,headY-18,dir*-0.45,base,inner);
+  drawSideQuokkaEar(headX+dir*4,headY-22,dir*-0.25,base,inner);
+
+  // body
+  ctx.fillStyle=base;
+  ctx.shadowColor=base;
+  ctx.shadowBlur=14;
+  ctx.beginPath();
+  ctx.ellipse(bodyX,bodyY,28,38,dir*0.05,0,Math.PI*2);
+  ctx.fill();
+
+  // belly/core plate
+  ctx.fillStyle="rgba(255,255,255,.16)";
+  ctx.shadowBlur=0;
+  ctx.beginPath();
+  ctx.ellipse(bodyX+dir*4,bodyY+4,15,23,0,0,Math.PI*2);
+  ctx.fill();
+
+  // head side shape
   ctx.fillStyle=base;
   ctx.shadowColor=base;
   ctx.shadowBlur=12;
-  ctx.fillRect(f.x+8,f.y+18,f.width-16,f.height-24);
-
-  ctx.fillStyle=core;
-  ctx.fillRect(f.x+16,f.y+32,f.width-32,13);
-
-  ctx.fillStyle=base;
   ctx.beginPath();
-  ctx.arc(cx,f.y+14,18,0,Math.PI*2);
+  ctx.ellipse(headX,headY,24,22,0,0,Math.PI*2);
   ctx.fill();
 
-  ctx.fillStyle="#02040a";
-  ctx.fillRect(cx+f.face*5,f.y+8,5,5);
+  // muzzle / nose protrudes toward opponent
+  ctx.fillStyle=inner;
+  ctx.shadowBlur=0;
+  ctx.beginPath();
+  ctx.ellipse(headX+dir*18,headY+8,16,11,0,0,Math.PI*2);
+  ctx.fill();
 
-  ctx.strokeStyle="rgba(255,255,255,.55)";
+  ctx.fillStyle="#07111f";
+  ctx.beginPath();
+  ctx.ellipse(headX+dir*30,headY+5,5,4,0,0,Math.PI*2);
+  ctx.fill();
+
+  // single visible eye
+  ctx.fillStyle="#ffffff";
+  ctx.beginPath();
+  ctx.arc(headX+dir*8,headY-3,4,0,Math.PI*2);
+  ctx.fill();
+
+  ctx.fillStyle="#07111f";
+  ctx.beginPath();
+  ctx.arc(headX+dir*9,headY-3,2,0,Math.PI*2);
+  ctx.fill();
+
+  // cyber visor, side-mounted
+  ctx.fillStyle="#07111f";
+  ctx.fillRect(headX-dir*4,headY-11,dir*24,8);
+
+  ctx.fillStyle=visor;
+  ctx.shadowColor=visor;
+  ctx.shadowBlur=12;
+  ctx.fillRect(headX+dir*0,headY-9,dir*20,4);
+  ctx.shadowBlur=0;
+
+  // smiling quokka mouth
+  ctx.strokeStyle="#07111f";
   ctx.lineWidth=2;
-  ctx.strokeRect(f.x+12,f.y+22,f.width-24,f.height-34);
+  ctx.beginPath();
+  ctx.arc(headX+dir*17,headY+13,8,0.15,Math.PI-0.15);
+  ctx.stroke();
 
-  drawArm(f,base);
-  drawLegs(f,base);
+  // glowing chest core
+  ctx.fillStyle=core;
+  ctx.shadowColor=core;
+  ctx.shadowBlur=16;
+  ctx.beginPath();
+  ctx.arc(bodyX+dir*7,bodyY-5,8,0,Math.PI*2);
+  ctx.fill();
 
-  if(f.guard){
-    ctx.strokeStyle=isPlayer?"#4488ff":"#ff99aa";
+  drawSideCyberLines(f,visor);
+  drawSideQuokkaArms(f,base,visor);
+  drawSideQuokkaLegs(f,base);
+
+  if(f.thrownFreezeTimer>0){
+    ctx.strokeStyle="#ff9944";
     ctx.lineWidth=5;
-    ctx.shadowColor=ctx.strokeStyle;
-    ctx.shadowBlur=14;
+    ctx.shadowColor="#ff9944";
+    ctx.shadowBlur=18;
     ctx.beginPath();
-    ctx.arc(cx+f.face*14,f.y+44,42,-1.25,1.25);
+    ctx.arc(cx,f.y+44,50,0,Math.PI*2);
     ctx.stroke();
+
+    ctx.fillStyle="#ffcc66";
+    ctx.font="bold 13px sans-serif";
+    ctx.textAlign="center";
+    ctx.fillText("GRABBED",cx,f.y-8);
+    ctx.textAlign="left";
+  }
+
+  if(f.throwInvulnTimer>0&&f.throwInvulnTimer>0&&f.throwInvulnTimer>SKILL_CONFIG.throw.afterWakeInvuln-18){
+    ctx.strokeStyle="rgba(255,204,102,0.7)";
+    ctx.lineWidth=3;
+    ctx.shadowColor="#ffcc66";
+    ctx.shadowBlur=10;
+    ctx.beginPath();
+    ctx.arc(cx,f.y+44,44,0,Math.PI*2);
+    ctx.stroke();
+
+    ctx.fillStyle="#ffcc66";
+    ctx.font="bold 11px sans-serif";
+    ctx.textAlign="center";
+    ctx.fillText("THROW SAFE",cx,f.y-8);
+    ctx.textAlign="left";
   }
 
   if(f.guardBreakTimer>0){
@@ -1132,10 +1794,21 @@ function drawFighter(f,isPlayer){
     ctx.stroke();
   }
 
+  if(f.guard){
+    ctx.strokeStyle=isPlayer?"#4488ff":"#ff99aa";
+    ctx.lineWidth=5;
+    ctx.shadowColor=ctx.strokeStyle;
+    ctx.shadowBlur=14;
+    ctx.beginPath();
+    ctx.arc(cx+f.face*18,f.y+46,42,-1.25,1.25);
+    ctx.stroke();
+  }
+
   ctx.restore();
   ctx.shadowBlur=0;
   ctx.globalAlpha=1;
 }
+
 
 function drawArm(f,color){
   ctx.strokeStyle=color;
@@ -1143,18 +1816,23 @@ function drawArm(f,color){
   ctx.lineCap="round";
 
   let sx=f.x+f.width/2+f.face*10;
-  let sy=f.y+40;
+  let sy=f.y+55;
   let hx=sx+f.face*24;
-  let hy=sy+14;
+  let hy=sy+10;
 
   if(f.attackTimer>0){
     hx=sx+f.face*(36+(18-f.attackTimer)*1.2);
-    hy=sy+2;
+    hy=sy-2;
   }
 
   if(f.specialTimer>0){
     hx=sx+f.face*50;
-    hy=sy-12;
+    hy=sy-16;
+  }
+
+  if(f.throwTimer>0){
+    hx=sx+f.face*46;
+    hy=sy+22;
   }
 
   ctx.beginPath();
@@ -1162,12 +1840,12 @@ function drawArm(f,color){
   ctx.lineTo(hx,hy);
   ctx.stroke();
 
-  if(f.attackTimer>6||f.specialTimer>8){
-    ctx.strokeStyle=f.specialTimer>0?"#cc77ff":"#ffffff";
-    ctx.lineWidth=f.specialTimer>0?10:6;
+  if(f.attackTimer>6||f.specialTimer>8||f.throwTimer>6){
+    ctx.strokeStyle=f.specialTimer>0?"#cc77ff":f.throwTimer>0?"#ff9944":"#ffffff";
+    ctx.lineWidth=f.specialTimer>0?10:f.throwTimer>0?8:6;
     ctx.beginPath();
     ctx.moveTo(hx,hy);
-    ctx.lineTo(hx+f.face*(f.specialTimer>0?58:30),hy);
+    ctx.lineTo(hx+f.face*(f.specialTimer>0?58:f.throwTimer>0?22:30),hy);
     ctx.stroke();
   }
 }
@@ -1178,7 +1856,7 @@ function drawLegs(f,color){
   ctx.lineCap="round";
 
   const hx=f.x+f.width/2;
-  const hy=f.y+f.height-22;
+  const hy=f.y+f.height-20;
 
   ctx.beginPath();
   ctx.moveTo(hx-10,hy);
@@ -1225,6 +1903,7 @@ function drawBars(){
 
   ctx.fillStyle="white";
   ctx.font="23px sans-serif";
+  ctx.fillStyle=enemyLevelColor();
   ctx.fillText("LEVEL : "+level,canvas.width/2-55,36);
 
   ctx.font="14px sans-serif";
@@ -1286,7 +1965,7 @@ function drawStartScreen(){
   ctx.textAlign="center";
   ctx.shadowColor="#66ccff";
   ctx.shadowBlur=18;
-  ctx.fillText("CYBER FIGHTER",canvas.width/2,158);
+  ctx.fillText("CYBER QUOKKA",canvas.width/2,158);
   ctx.fillText("CORE EX4",canvas.width/2,218);
 
   ctx.shadowBlur=0;
@@ -1295,7 +1974,7 @@ function drawStartScreen(){
   ctx.fillText("攻撃・移動・防御ボタンで開始",canvas.width/2,303);
 
   ctx.font="16px sans-serif";
-  ctx.fillText("コンボ / カウンター / 壁バウンド / フィニッシュ演出 搭載",canvas.width/2,342);
+  ctx.fillText("横向きサイバークアッカ / 対面バトル / 色変化ボス 搭載",canvas.width/2,342);
   ctx.textAlign="left";
 }
 
@@ -1390,21 +2069,57 @@ function loop(){
 
 document.addEventListener("keydown",e=>{
   const wasPressed=keys[e.code];
+
+  if(wasPressed){
+    return;
+  }
+
   keys[e.code]=true;
 
-  if(wasPressed&&(e.code==="ArrowUp"||e.code==="KeyZ"||e.code==="KeyC"||e.code==="ShiftLeft"||e.code==="ShiftRight")){
+  if(e.code==="KeyZ"){
+    startGame();
+    lastAttackPressFrame=frameCount;
+
+    if(trySimultaneousThrow()){
+      return;
+    }
+
+    pendingAttackTimer=SKILL_CONFIG.input.throwWindow;
+    return;
+  }
+
+  if(e.code==="KeyX"){
+    startGame();
+    lastGuardPressFrame=frameCount;
+
+    if(trySimultaneousThrow()){
+      return;
+    }
+
+    pendingGuardTimer=SKILL_CONFIG.input.throwWindow;
     return;
   }
 
   if(e.code==="ArrowUp")jump(player);
-  if(e.code==="KeyZ")normalAttack(player);
-  if(e.code==="KeyX")startGame();
   if(e.code==="KeyC")specialAttack(player);
   if(e.code==="ShiftLeft"||e.code==="ShiftRight")dash(player);
 });
 
 document.addEventListener("keyup",e=>{
   keys[e.code]=false;
+
+  if(e.code==="KeyZ"){
+    attackTouchHeld=false;
+  }
+
+  if(e.code==="KeyX"){
+    pendingGuardTimer=0;
+    guardTouchHeld=false;
+  }
+
+  if(!keys["KeyZ"]&&!keys["KeyX"]&&!attackTouchHeld&&!guardTouchHeld){
+    throwInputLock=false;
+  }
 });
 
 function holdButton(id,code){
@@ -1462,12 +2177,122 @@ function tapButton(id,func){
 
 holdButton("leftBtn","ArrowLeft");
 holdButton("rightBtn","ArrowRight");
-holdButton("guardBtn","KeyX");
+
+bindAttackButton();
+bindGuardButton();
 
 tapButton("jumpBtn",()=>jump(player));
 tapButton("dashBtn",()=>dash(player));
-tapButton("attackBtn",()=>normalAttack(player));
 tapButton("specialBtn",()=>specialAttack(player));
+
+function bindAttackButton(){
+  const btn=document.getElementById("attackBtn");
+  let touchLocked=false;
+
+  function press(){
+    startGame();
+
+    if(attackTouchHeld){
+      return;
+    }
+
+    attackTouchHeld=true;
+    lastAttackPressFrame=frameCount;
+
+    if(trySimultaneousThrow()){
+      return;
+    }
+
+    pendingAttackTimer=SKILL_CONFIG.input.throwWindow;
+  }
+
+  function release(){
+    attackTouchHeld=false;
+
+    if(!guardTouchHeld&&!keys["KeyZ"]&&!keys["KeyX"]){
+      throwInputLock=false;
+    }
+  }
+
+  btn.addEventListener("touchstart",e=>{
+    e.preventDefault();
+    touchLocked=true;
+    press();
+  },{passive:false});
+
+  btn.addEventListener("touchend",e=>{
+    e.preventDefault();
+    release();
+
+    setTimeout(()=>{
+      touchLocked=false;
+    },120);
+  },{passive:false});
+
+  btn.addEventListener("touchcancel",e=>{
+    e.preventDefault();
+    release();
+  },{passive:false});
+
+  btn.addEventListener("mousedown",()=>{
+    if(touchLocked)return;
+    press();
+  });
+
+  btn.addEventListener("mouseup",release);
+  btn.addEventListener("mouseleave",release);
+}
+
+function bindGuardButton(){
+  const btn=document.getElementById("guardBtn");
+
+  function press(){
+    startGame();
+
+    if(guardTouchHeld){
+      return;
+    }
+
+    guardTouchHeld=true;
+    keys["KeyX"]=true;
+    lastGuardPressFrame=frameCount;
+
+    if(trySimultaneousThrow()){
+      return;
+    }
+
+    pendingGuardTimer=SKILL_CONFIG.input.throwWindow;
+  }
+
+  function release(){
+    guardTouchHeld=false;
+    keys["KeyX"]=false;
+    pendingGuardTimer=0;
+
+    if(!attackTouchHeld&&!keys["KeyZ"]&&!keys["KeyX"]){
+      throwInputLock=false;
+    }
+  }
+
+  btn.addEventListener("touchstart",e=>{
+    e.preventDefault();
+    press();
+  },{passive:false});
+
+  btn.addEventListener("touchend",e=>{
+    e.preventDefault();
+    release();
+  },{passive:false});
+
+  btn.addEventListener("touchcancel",e=>{
+    e.preventDefault();
+    release();
+  },{passive:false});
+
+  btn.addEventListener("mousedown",press);
+  btn.addEventListener("mouseup",release);
+  btn.addEventListener("mouseleave",release);
+}
 
 document.getElementById("resetBtn").addEventListener("click",()=>{
   resetGame();
