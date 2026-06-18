@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>CYBER QUOKKA FIGHTER EX7</title>
+<title>CYBER QUOKKA FIGHTER EX7.1</title>
 
 <style>
 *{box-sizing:border-box;}
@@ -260,7 +260,7 @@ canvas{
 
 <body>
 
-<h1>CYBER QUOKKA FIGHTER EX7</h1>
+<h1>CYBER QUOKKA FIGHTER EX7.1</h1>
 <p>← → 移動 / ↑ ジャンプ / Z 攻撃 / X ガード / Z+X 投げ / C 必殺技 / Shift 回避</p>
 
 <div class="top-buttons">
@@ -294,22 +294,7 @@ canvas{
     <div class="score-note">
       勝利した最高LEVELを保存します
     </div>
-    <div class="command-list">
-      <b>EX4仕様</b><br>
-      コンボカウンター<br>
-      カウンターヒット<br>
-      壁バウンド<br>
-      必殺技フィニッシュ<br>
-      ガードクラッシュ<br>
-      攻撃＋防御同時押し投げ<br>
-      投げられた側の高速ダウン復帰<br>
-      起き上がり投げ無敵で連続投げ防止<br>
-      成功時のみ発動するパリィ<br>
-      敵攻撃力のレベル上昇なし<br>
-      横向きサイバークアッカワラビー化<br>
-      敵はレベルごとに色変化<br>
-      スマホ縦画面UI最適化
-    </div>
+
   </div>
 </div>
 
@@ -319,7 +304,7 @@ const ctx=canvas.getContext("2d");
 
 const FLOOR_Y=372;
 const GRAVITY=.72;
-const SCORE_KEY="cyberQuokkaFighterEX7HighScores";
+const SCORE_KEY="cyberQuokkaFighterEX71HighScores";
 
 const SKILL_CONFIG={
   input:{
@@ -1799,8 +1784,28 @@ function drawFighter(f,isPlayer){
     ctx.lineWidth=5;
     ctx.shadowColor=ctx.strokeStyle;
     ctx.shadowBlur=14;
+
+    const shieldX=cx+f.face*26;
+    const shieldY=f.y+46;
+
     ctx.beginPath();
-    ctx.arc(cx+f.face*18,f.y+46,42,-1.25,1.25);
+
+    if(f.face===1){
+      // 右向き時：キャラの右側にシールド
+      ctx.arc(shieldX,shieldY,42,-1.25,1.25);
+    }else{
+      // 左向き時：キャラの左側にシールド
+      ctx.arc(shieldX,shieldY,42,Math.PI-1.25,Math.PI+1.25);
+    }
+
+    ctx.stroke();
+
+    // シールドの中心ライン。向きが分かるように前方へ少し伸ばす
+    ctx.strokeStyle=isPlayer?"rgba(125,255,255,.8)":"rgba(255,190,210,.8)";
+    ctx.lineWidth=2;
+    ctx.beginPath();
+    ctx.moveTo(cx+f.face*10,shieldY);
+    ctx.lineTo(cx+f.face*54,shieldY);
     ctx.stroke();
   }
 
