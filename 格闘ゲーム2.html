@@ -1630,7 +1630,11 @@ function takeDamage(target,amount,knockbackX,knockbackY,attacker,isSpecial){
   }
 
   target.energy=clamp(target.energy+8,0,target.maxEnergy);
-  if(attacker)attacker.energy=clamp(attacker.energy+15,0,attacker.maxEnergy);
+
+　if(attacker){
+  const attackEnergyGain = attacker.archetypeId === "nova" ? 5 : 15;
+  attacker.energy=clamp(attacker.energy+attackEnergyGain,0,attacker.maxEnergy);
+  }
 
   checkWallBounce(target,attacker,isSpecial);
 
