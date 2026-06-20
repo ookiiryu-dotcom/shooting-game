@@ -603,6 +603,19 @@ const PLAYER_ROSTER=[
     stats:{hp:96,guard:94,speed:1.02,jump:1,dash:1.02,energyRegen:0.35},
     normal:{damage:11,range:58,height:46,offsetY:20,hitFrame:9,timer:18,knockX:5,groundY:-2.5,airY:-5.5},
     special:{kind:"perfectGuard",name:"ノヴァシールド",desc:"約2.5秒間、攻撃と削りを完全無効化する。直接ダメージはない",damage:0,range:0,height:0,offsetY:0,hitFrame:8,timer:24,cooldown:245,cost:80,duration:150,counterStun:10,color:"#ff55cc"}
+  },
+  {
+    id:"bombquokka",
+    name:"ボムシールドクアッカ",
+    tag:"中距離設置型。弾丸と固定シールドで空間を作り、時限爆弾で崩す",
+    colors:{base:"#ff8844",core:"#fff0d8",inner:"#ffd2aa",visor:"#66ffcc"},
+    motif:"bomb",
+    guardStyle:"fixedShield",
+    size:{width:56,height:88},
+    stats:{hp:102,guard:112,speed:.96,jump:.98,dash:.94,energyRegen:1},
+    shield:{width:34,height:98,hp:54,duration:105,cooldown:22,offsetX:58,color:"#66ffcc"},
+    normal:{kind:"bullet",damage:9,range:250,height:22,offsetY:30,hitFrame:10,timer:21,knockX:4.8,groundY:-1.4,airY:-3.2,projectileSpeed:8.4,projectileWidth:34,projectileHeight:14,projectileLife:38,projectileType:"bullet",color:"#ff8844"},
+    special:{kind:"bomb",name:"クロックボム",desc:"前方に爆弾を投げる。敵に触れるか約3秒経つと爆発する。使用者は爆発に巻き込まれない",damage:32,range:0,height:0,offsetY:0,hitFrame:14,timer:38,cooldown:178,cost:64,projectileSpeed:6.4,projectileWidth:34,projectileHeight:34,projectileLife:180,projectileY:28,gravity:.18,explosionRadius:84,knockX:8.8,knockY:-7.4,color:"#ff8844",projectileType:"bomb"}
   }
 ];
 
@@ -681,6 +694,7 @@ let effects=[];
 let particles=[];
 let bursts=[];
 let projectiles=[];
+let fixedShields=[];
 let hitStop=0;
 let screenShake=0;
 let screenFlash=0;
@@ -808,6 +822,14 @@ function specialKind(f){
   return getSpecialData(f).kind||"strike";
 }
 
+function isFixedShieldUser(f){
+  return f&&f.guardStyle==="fixedShield";
+}
+
+function activeShieldFor(owner){
+  return fixedShields.find(s=>s.owner===owner);
+}
+
 function shortName(name){
   return name.length>13?name.slice(0,13):name;
 }
@@ -854,6 +876,7 @@ function makeFighter(x,y,w,h,face,isPlayer,profile){
     dashCooldown:0,
     specialTimer:0,
     specialCooldown:isPlayer?0:90,
+    fixedShieldCooldown:0,
     hurtTimer:0,
     airComboCount:0,
     wallBounce:false,
@@ -873,6 +896,8 @@ function makeFighter(x,y,w,h,face,isPlayer,profile){
     colors:profile.colors,
     motif:profile.motif,
     rainbow:!!profile.rainbow,
+    guardStyle:profile.guardStyle||"normal",
+    shieldConfig:profile.shield||null,
     archetypeId:profile.id,
     normal:profile.normal,
     special:profile.special,
@@ -895,6 +920,7 @@ function resetFighterForNeutralStart(f,x,face){
   f.throwTimer=0;
   f.throwHitDone=false;
   f.specialTimer=0;
+  f.fixedShieldCooldown=0;
   f.hurtTimer=0;
   f.guardBreakTimer=0;
   f.boostTimer=0;
@@ -932,6 +958,7 @@ function resetGame(){
   particles=[];
   bursts=[];
   projectiles=[];
+  fixedShields=[];
   hitStop=0;
   screenShake=0;
   screenFlash=0;
@@ -1360,12 +1387,24 @@ function resolveNormalHit(attacker,target){
 
   if(attacker.attackTimer!==hitFrame||attacker.attackHitDone)return;
 
+  if(attack.kind==="bullet"||attack.kind==="projectile"){
+    spawnNormalProjectile(attacker,attack);
+    attacker.attackHitDone=true;
+    return;
+  }
+
   const box=getAttackBox(
     attacker,
     valueOr(attack.range,58),
     valueOr(attack.height,44),
     valueOr(attack.offsetY,attacker===player?20:22)
   );
+
+  if(blockByFixedShield(attacker,box,valueOr(attack.damage,10),attack.color||attacker.colors.visor)){
+    attacker.attackHitDone=true;
+    return;
+  }
+
 
   if(rectsHit(box,target)){
     const baseDamage=valueOr(
@@ -1398,6 +1437,8 @@ function spawnSpecialProjectile(attacker,special){
     x:attacker.x+attacker.width/2+dir*34,
     y:attacker.y+valueOr(special.projectileY,34),
     vx:dir*valueOr(special.projectileSpeed,8),
+    vy:special.projectileType==="bomb"?-5.8:valueOr(special.projectileVy,0),
+    gravity:valueOr(special.gravity,0),
     width:width,
     height:height,
     damage:Math.ceil(valueOr(special.damage,24)*getAttackDamageMultiplier(attacker)),
@@ -1407,10 +1448,132 @@ function spawnSpecialProjectile(attacker,special){
     type:special.projectileType||"orb",
     life:valueOr(special.projectileLife,70),
     maxLife:valueOr(special.projectileLife,70),
+    explosionRadius:valueOr(special.explosionRadius,82),
     hit:false
   });
 
-  addEffect(special.projectileType==="fist"?"発射":"射出",attacker.x+attacker.width/2,attacker.y-18,special.color||"#ffcc33");
+  addEffect(special.projectileType==="fist"?"発射":special.projectileType==="bomb"?"投擲":"射出",attacker.x+attacker.width/2,attacker.y-18,special.color||"#ffcc33");
+}
+
+function spawnNormalProjectile(attacker,normal){
+  const dir=attacker.face;
+  const width=valueOr(normal.projectileWidth,32);
+  const height=valueOr(normal.projectileHeight,14);
+
+  projectiles.push({
+    owner:attacker,
+    x:attacker.x+attacker.width/2+dir*34,
+    y:attacker.y+valueOr(normal.projectileY,valueOr(normal.offsetY,28)),
+    vx:dir*valueOr(normal.projectileSpeed,8),
+    vy:valueOr(normal.projectileVy,0),
+    gravity:valueOr(normal.gravity,0),
+    width:width,
+    height:height,
+    damage:Math.ceil(valueOr(normal.damage,9)*getAttackDamageMultiplier(attacker)),
+    knockX:valueOr(normal.knockX,4.8),
+    knockY:valueOr(normal.airY,valueOr(normal.knockY,-2.5)),
+    color:normal.color||attacker.colors.visor||"#ff8844",
+    type:normal.projectileType||"bullet",
+    life:valueOr(normal.projectileLife,38),
+    maxLife:valueOr(normal.projectileLife,38),
+    hit:false
+  });
+
+  addEffect("弾丸",attacker.x+attacker.width/2,attacker.y-18,normal.color||"#ff8844");
+}
+
+function deployFixedShield(owner){
+  if(!owner||!isFixedShieldUser(owner)||owner.fixedShieldCooldown>0)return;
+  if(activeShieldFor(owner))return;
+
+  const cfg=owner.shieldConfig||{};
+  const width=valueOr(cfg.width,34);
+  const height=valueOr(cfg.height,94);
+  const offsetX=valueOr(cfg.offsetX,56);
+  const x=owner.face===1
+    ? owner.x+owner.width/2+offsetX
+    : owner.x+owner.width/2-offsetX-width;
+  const y=FLOOR_Y-height;
+  const hp=valueOr(cfg.hp,50);
+  const life=valueOr(cfg.duration,100);
+  const color=cfg.color||owner.colors.visor||"#66ffcc";
+
+  fixedShields.push({
+    owner:owner,
+    x:clamp(x,22,canvas.width-width-22),
+    y:y,
+    width:width,
+    height:height,
+    hp:hp,
+    maxHp:hp,
+    life:life,
+    maxLife:life,
+    color:color
+  });
+
+  owner.fixedShieldCooldown=valueOr(cfg.cooldown,22);
+  owner.guardRegenDelay=Math.max(owner.guardRegenDelay,28);
+  addEffect("固定シールド",owner.x+owner.width/2,owner.y-18,color);
+}
+
+function damageFixedShield(shield,damage,color){
+  shield.hp-=Math.max(1,damage);
+  shield.life=Math.max(shield.life,10);
+  spawnImpactBurst(shield.x+shield.width/2,shield.y+shield.height/2,color||shield.color,.95);
+  spawnHitParticles(shield.x+shield.width/2,shield.y+shield.height/2,color||shield.color,.65);
+
+  if(shield.hp<=0){
+    shield.life=0;
+    addEffect("シールド破壊",shield.x+shield.width/2,shield.y-10,"#ffcc33");
+    screenShake=Math.max(screenShake,7);
+  }else{
+    addEffect("防壁",shield.x+shield.width/2,shield.y-10,shield.color);
+  }
+}
+
+function blockByFixedShield(attacker,box,damage,color){
+  const shield=fixedShields.find(s=>s.owner!==attacker&&rectsHit(box,s));
+  if(!shield)return false;
+
+  damageFixedShield(shield,damage,color);
+  hitStop=Math.max(hitStop,4);
+  return true;
+}
+
+function explodeBomb(p){
+  if(p.hit)return;
+
+  p.hit=true;
+  const cx=p.x+p.width/2;
+  const cy=p.y+p.height/2;
+  const radius=valueOr(p.explosionRadius,82);
+  const color=p.color||"#ff8844";
+
+  addEffect("爆発",cx,cy-22,color);
+  spawnImpactBurst(cx,cy,color,2.05);
+  spawnHitParticles(cx,cy,color,2.1);
+  screenShake=Math.max(screenShake,17);
+  screenFlash=Math.max(screenFlash,12);
+
+  const targets=[player,enemy];
+  targets.forEach(target=>{
+    if(!target||target===p.owner)return;
+
+    const tx=target.x+target.width/2;
+    const ty=target.y+target.height/2;
+    const distance=Math.hypot(tx-cx,ty-cy);
+    if(distance<=radius+Math.max(target.width,target.height)*.25){
+      const dir=tx>=cx?1:-1;
+      takeDamage(
+        target,
+        p.damage,
+        dir*valueOr(p.knockX,8.8),
+        valueOr(p.knockY,-7.2),
+        p.owner,
+        true
+      );
+    }
+  });
 }
 
 function resolveSpecialHit(attacker,target){
@@ -1424,7 +1587,7 @@ function resolveSpecialHit(attacker,target){
     return;
   }
 
-  if(attack.kind==="projectile"){
+  if(attack.kind==="projectile"||attack.kind==="bomb"){
     spawnSpecialProjectile(attacker,attack);
     attacker.attackHitDone=true;
     return;
@@ -1436,6 +1599,11 @@ function resolveSpecialHit(attacker,target){
     valueOr(attack.height,70),
     valueOr(attack.offsetY,attacker===player?8:10)
   );
+
+  if(blockByFixedShield(attacker,box,valueOr(attack.damage,24),attack.color||attacker.colors.visor)){
+    attacker.attackHitDone=true;
+    return;
+  }
 
   if(rectsHit(box,target)){
     const baseDamage=valueOr(
@@ -1697,7 +1865,12 @@ function updatePlayer(){
     player.hurtTimer<=0&&
     player.guardBreakTimer<=0;
 
-  player.guard=(keys["KeyX"]&&canGuard&&pendingGuardTimer<=0)||player.perfectGuardTimer>0;
+  if(isFixedShieldUser(player)&&keys["KeyX"]&&canGuard&&pendingGuardTimer<=0){
+    deployFixedShield(player);
+    player.guard=player.perfectGuardTimer>0;
+  }else{
+    player.guard=(keys["KeyX"]&&canGuard&&pendingGuardTimer<=0)||player.perfectGuardTimer>0;
+  }
 
   const playerSpeed=getFighterStat(player,"speed",1);
   let accel=(player.guard?0.22:0.72)*playerSpeed;
@@ -1947,6 +2120,7 @@ function applyPhysics(f){
   if(f.dashTimer>0)f.dashTimer--;
   if(f.dashCooldown>0)f.dashCooldown--;
   if(f.specialCooldown>0)f.specialCooldown--;
+  if(f.fixedShieldCooldown>0)f.fixedShieldCooldown--;
   if(f.boostTimer>0)f.boostTimer--;
   if(f.perfectGuardTimer>0)f.perfectGuardTimer--;
   if(f.hurtTimer>0)f.hurtTimer--;
@@ -2033,29 +2207,68 @@ function resolveFighterPush(){
   enemy.vx*=.45;
 }
 
+function updateFixedShields(){
+  fixedShields.forEach(s=>{
+    s.life--;
+  });
+
+  fixedShields=fixedShields.filter(s=>s.life>0&&s.hp>0);
+}
+
 function updateProjectiles(){
   projectiles.forEach(p=>{
     p.x+=p.vx;
+    p.y+=valueOr(p.vy,0);
+
+    if(p.gravity){
+      p.vy+=p.gravity;
+    }
+
+    if(p.type==="bomb"&&p.y+p.height>=FLOOR_Y){
+      p.y=FLOOR_Y-p.height;
+      p.vy=0;
+      p.vx*=.985;
+    }
+
     p.life--;
 
     const target=p.owner===player?enemy:player;
     const box={x:p.x,y:p.y,width:p.width,height:p.height};
 
+    const shield=fixedShields.find(s=>s.owner!==p.owner&&rectsHit(box,s));
+    if(!p.hit&&shield){
+      if(p.type==="bomb"){
+        explodeBomb(p);
+      }else{
+        p.hit=true;
+        damageFixedShield(shield,p.damage,p.color);
+      }
+      return;
+    }
+
     if(!p.hit&&target&&rectsHit(box,target)){
-      p.hit=true;
-      takeDamage(
-        target,
-        p.damage,
-        (p.vx>=0?1:-1)*p.knockX,
-        p.knockY,
-        p.owner,
-        true
-      );
-      spawnImpactBurst(target.x+target.width/2,target.y+36,p.color,1.35);
+      if(p.type==="bomb"){
+        explodeBomb(p);
+      }else{
+        p.hit=true;
+        takeDamage(
+          target,
+          p.damage,
+          (p.vx>=0?1:-1)*p.knockX,
+          p.knockY,
+          p.owner,
+          true
+        );
+        spawnImpactBurst(target.x+target.width/2,target.y+36,p.color,1.35);
+      }
+    }
+
+    if(!p.hit&&p.type==="bomb"&&p.life<=0){
+      explodeBomb(p);
     }
   });
 
-  projectiles=projectiles.filter(p=>!p.hit&&p.life>0&&p.x>-90&&p.x<canvas.width+90);
+  projectiles=projectiles.filter(p=>!p.hit&&p.life>0&&p.x>-120&&p.x<canvas.width+120);
 }
 
 
@@ -2178,6 +2391,7 @@ function checkRoundState(){
 
     addEffect("次のレベル "+level,canvas.width/2,155,"#66ffcc");
     projectiles=[];
+    fixedShields=[];
     spawnEnemy();
     resetRoundPositions();
   }
@@ -2226,6 +2440,7 @@ function update(){
   resolveFighterPush();
   updateFacing();
   handleAttackHits();
+  updateFixedShields();
   updateProjectiles();
   updateEffects();
   checkRoundState();
@@ -2567,7 +2782,7 @@ function drawAttackSignature(f,isPlayer,base,visor,headX,headY,bodyX,bodyY){
   const normal=getNormalData(f);
   const kind=f.specialTimer>0?specialKind(f):"normal";
   const reach=f.specialTimer>0
-    ? (kind==="projectile"?Math.max(72,valueOr(special.projectileWidth,48)*1.35):valueOr(special.range,118))
+    ? ((kind==="projectile"||kind==="bomb")?Math.max(72,valueOr(special.projectileWidth,48)*1.35):valueOr(special.range,118))
     : valueOr(normal.range,58);
   const color=f.specialTimer>0?(special.color||visor):visor;
   const motif=f.motif||"visor";
@@ -2597,7 +2812,7 @@ function drawAttackSignature(f,isPlayer,base,visor,headX,headY,bodyX,bodyY){
         ctx.lineTo(startX+dir*reach,startY+i*8);
         ctx.stroke();
       }
-    }else if(kind==="projectile"){
+    }else if(kind==="projectile"||kind==="bomb"){
       const chargeX=startX+dir*46;
       const chargeY=startY+2;
       const radius=special.projectileType==="fist"?24:22;
@@ -2618,6 +2833,18 @@ function drawAttackSignature(f,isPlayer,base,visor,headX,headY,bodyX,bodyY){
         ctx.lineTo(chargeX+dir*13,chargeY-8);
         ctx.moveTo(chargeX-dir*14,chargeY+4);
         ctx.lineTo(chargeX+dir*16,chargeY+4);
+        ctx.stroke();
+      }else if(special.projectileType==="bomb"){
+        ctx.arc(chargeX,chargeY,radius,0,Math.PI*2);
+        ctx.fill();
+        ctx.strokeStyle="rgba(0,0,0,.55)";
+        ctx.lineWidth=3;
+        ctx.stroke();
+        ctx.strokeStyle="rgba(255,255,255,.82)";
+        ctx.lineWidth=2;
+        ctx.beginPath();
+        ctx.moveTo(chargeX+dir*8,chargeY-radius+2);
+        ctx.quadraticCurveTo(chargeX+dir*18,chargeY-radius-16,chargeX+dir*30,chargeY-radius-8);
         ctx.stroke();
       }else{
         ctx.arc(chargeX,chargeY,radius,0,Math.PI*2);
@@ -2670,7 +2897,17 @@ function drawAttackSignature(f,isPlayer,base,visor,headX,headY,bodyX,bodyY){
     return;
   }
 
-  if(motif==="rail"){
+  if(motif==="bomb"){
+    const bulletX=startX+dir*34;
+    ctx.lineWidth=4;
+    ctx.beginPath();
+    ctx.moveTo(startX,startY);
+    ctx.lineTo(bulletX-dir*12,startY);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.ellipse(bulletX,startY,18,7,0,0,Math.PI*2);
+    ctx.fill();
+  }else if(motif==="rail"){
     ctx.lineWidth=4;
     ctx.beginPath();
     ctx.moveTo(startX,startY);
@@ -2764,6 +3001,18 @@ function drawFighterMotif(f,isPlayer,base,core,visor,headX,headY,bodyX,bodyY){
     ctx.lineTo(bodyX+dir*32,bodyY-30);
     ctx.stroke();
     ctx.fillRect(bodyX+dir*30,bodyY-34,dir*18,8);
+  }else if(motif==="bomb"){
+    ctx.fillStyle=base;
+    ctx.beginPath();
+    ctx.arc(bodyX+dir*10,bodyY-6,14,0,Math.PI*2);
+    ctx.fill();
+    ctx.strokeStyle=visor;
+    ctx.lineWidth=3;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(bodyX+dir*18,bodyY-19);
+    ctx.quadraticCurveTo(bodyX+dir*28,bodyY-35,bodyX+dir*39,bodyY-27);
+    ctx.stroke();
   }else if(motif==="phase"){
     ctx.lineWidth=2;
     ctx.beginPath();
@@ -3153,6 +3402,25 @@ function drawEffects(){
     ctx.restore();
   });
 
+  fixedShields.forEach(s=>{
+    ctx.save();
+    const alpha=clamp(Math.min(s.life/s.maxLife,s.hp/s.maxHp)+.22,.24,.88);
+    ctx.globalAlpha=alpha;
+    ctx.fillStyle=s.color;
+    ctx.strokeStyle=s.color;
+    ctx.shadowColor=s.color;
+    ctx.shadowBlur=18;
+    ctx.lineWidth=3;
+    ctx.beginPath();
+    ctx.roundRect(s.x,s.y,s.width,s.height,14);
+    ctx.fill();
+    ctx.globalAlpha=clamp(alpha+.18,.35,.95);
+    ctx.stroke();
+    ctx.fillStyle="rgba(255,255,255,.55)";
+    ctx.fillRect(s.x+s.width*.42,s.y+10,s.width*.16,s.height-20);
+    ctx.restore();
+  });
+
   projectiles.forEach(p=>{
     ctx.save();
     ctx.globalAlpha=clamp(p.life/p.maxLife,.25,1);
@@ -3172,6 +3440,33 @@ function drawEffects(){
       ctx.lineTo(p.x+p.width*.72,p.y+p.height*.3);
       ctx.moveTo(p.x+p.width*.28,p.y+p.height*.52);
       ctx.lineTo(p.x+p.width*.76,p.y+p.height*.52);
+      ctx.stroke();
+    }else if(p.type==="bullet"){
+      const dir=p.vx>=0?1:-1;
+      ctx.beginPath();
+      ctx.ellipse(p.x+p.width/2,p.y+p.height/2,p.width/2,p.height/2,0,0,Math.PI*2);
+      ctx.fill();
+      ctx.globalAlpha*=.45;
+      ctx.fillRect(p.x-dir*22,p.y+p.height*.25,dir*28,p.height*.5);
+    }else if(p.type==="bomb"){
+      const cx=p.x+p.width/2;
+      const cy=p.y+p.height/2;
+      const pulse=1+Math.sin(frameCount*.28)*.08;
+      ctx.beginPath();
+      ctx.arc(cx,cy,Math.max(p.width,p.height)/2*pulse,0,Math.PI*2);
+      ctx.fill();
+      ctx.strokeStyle="rgba(0,0,0,.62)";
+      ctx.lineWidth=3;
+      ctx.stroke();
+      ctx.strokeStyle="rgba(255,255,255,.86)";
+      ctx.lineWidth=2;
+      ctx.beginPath();
+      ctx.moveTo(cx+p.width*.18,cy-p.height*.38);
+      ctx.quadraticCurveTo(cx+p.width*.42,cy-p.height*.84,cx+p.width*.78,cy-p.height*.58);
+      ctx.stroke();
+      ctx.globalAlpha*=.24;
+      ctx.beginPath();
+      ctx.arc(cx,cy,valueOr(p.explosionRadius,82),0,Math.PI*2);
       ctx.stroke();
     }else{
       ctx.beginPath();
@@ -3695,7 +3990,7 @@ function profileSpecHtml(profile,isEnemy){
   const hpText=isEnemy?"HP倍率 "+valueOr(stats.hpScale,1).toFixed(2):"HP "+valueOr(stats.hp,100);
   const guardText=isEnemy?"ガード倍率 "+valueOr(stats.guardScale,1).toFixed(2):"ガード "+valueOr(stats.guard,100);
   const speedText="速さ "+valueOr(stats.speed,1).toFixed(2);
-  const typeNames={laser:"レーザー",projectile:"飛び道具",speedBoost:"強化",perfectGuard:"完全ガード",rush:"突進"};
+  const typeNames={laser:"レーザー",projectile:"飛び道具",bomb:"時限爆弾",speedBoost:"強化",perfectGuard:"完全ガード",rush:"突進"};
   const durationText=special.duration?Math.round(special.duration/6)/10+"秒":"";
 
   return '<section class="spec-block">'+
@@ -3710,6 +4005,7 @@ function profileSpecHtml(profile,isEnemy){
       '<span class="stat-chip">威力 '+normal.damage+'</span>'+
       '<span class="stat-chip">射程 '+normal.range+'</span>'+
       '<span class="stat-chip">発生 '+normal.hitFrame+'F</span>'+
+      (normal.kind==='bullet'?'<span class="stat-chip">中距離弾</span>':'')+
     '</span></div>'+
     '<div class="spec-row"><span class="spec-label">必殺</span><span class="stat-list">'+
       '<span class="stat-chip">'+special.name+'</span>'+
