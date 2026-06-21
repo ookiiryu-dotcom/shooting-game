@@ -21,7 +21,8 @@
       margin: 0;
       display: grid;
       place-items: center;
-      overflow: hidden;
+      overflow-x: hidden;
+      overflow-y: auto;
       color: var(--ink);
       font-family: Inter, "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
       background:
@@ -93,14 +94,21 @@
     h1::after { content: "// SYSTEM ONLINE"; display: block; color: var(--pink); font: 9px ui-monospace, monospace; letter-spacing: .32em; margin-top: 3px; }
     .stats { gap: 10px; }
 
+    .home-button,
     .ranking-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       padding: 9px 13px;
       border: 1px solid rgba(255,182,41,.5);
       border-radius: 7px;
       color: #ffcb61;
+      text-decoration: none;
       background: rgba(255,182,41,.08);
       box-shadow: 0 0 14px rgba(255,182,41,.12);
       font: 800 10px ui-monospace, monospace;
+      letter-spacing: .12em;
+      white-space: nowrap;
     }
 
     .stat {
@@ -192,24 +200,18 @@
     }
     .touch-control:active { color: #031416; background: var(--cyan); }
 
-    .ranking-overlay {
-      position: absolute;
-      z-index: 20;
-      inset: 0;
-      display: grid;
-      place-items: center;
-      padding: 20px;
-      border-radius: 28px;
-      background: rgba(2,5,16,.88);
-      backdrop-filter: blur(14px);
+    .ranking-overlay,
+    .ranking-board {
+      margin-top: 18px;
+      padding: 0;
     }
-    .ranking-overlay[hidden] { display: none; }
+    .ranking-overlay[hidden] { display: block; }
     .ranking-card {
-      width: min(92%, 500px);
+      width: 100%;
       padding: 24px;
       border: 1px solid rgba(255,182,41,.4);
-      border-radius: 14px;
-      background: linear-gradient(145deg, rgba(19,28,57,.98), rgba(5,10,27,.98));
+      border-radius: 18px;
+      background: linear-gradient(145deg, rgba(19,28,57,.88), rgba(5,10,27,.92));
       box-shadow: 0 0 45px rgba(255,182,41,.13), inset 0 0 30px rgba(40,247,227,.04);
     }
     .ranking-card h2 { margin: 0 0 16px; color: #ffcb61; font: 800 25px ui-monospace, monospace; letter-spacing: .16em; text-align: center; }
@@ -219,7 +221,7 @@
     .ranking-row:first-child { color: #ffdb80; }
     .ranking-row .rank { color: var(--cyan); }
     .ranking-empty { padding: 35px 0; color: var(--muted); text-align: center; font-size: 12px; }
-    .ranking-close { display: block; margin: 18px auto 0; }
+    .ranking-close { display: none; margin: 18px auto 0; }
 
     @media (max-width: 650px) {
       .game-shell { width: 100vw; padding: 10px; border-radius: 0; }
@@ -228,12 +230,12 @@
       .stat { min-width: 58px; padding: 6px; }
       .stat-value { font-size: 15px; }
       .controls span:first-child { display: none; }
-      .touch-controls { display: grid; }
+      .touch-controls { display: none; }
       .overlay { padding: 12px; }
       .overlay h2 { margin-bottom: 4px; }
       .overlay p { margin-bottom: 10px; line-height: 1.4; font-size: 12px; }
       .gimmick-list { margin-bottom: 10px; }
-      .ranking-button { position: absolute; top: 61px; right: 13px; z-index: 2; padding: 5px 8px; }
+      .home-button, .ranking-button { padding: 6px 9px; }
       .ranking-card { padding: 15px; }
       .ranking-row { min-height: 24px; }
     }
@@ -248,7 +250,7 @@
         <div class="stat"><span class="stat-label">STAGE</span><span class="stat-value" id="stage">01</span></div>
         <div class="stat"><span class="stat-label">LIFE</span><span class="stat-value" id="lives">♥ ♥ ♥</span></div>
       </div>
-      <button class="ranking-button" id="rankingButton">TOP 10</button>
+      <a class="home-button" href="index.html" aria-label="ホームに戻る">HOME</a>
     </header>
 
     <div class="canvas-wrap">
@@ -278,7 +280,7 @@
       <button class="touch-control" id="touchLeft" aria-label="左へ移動">◀</button>
       <button class="touch-control" id="touchRight" aria-label="右へ移動">▶</button>
     </div>
-    <section class="ranking-overlay" id="rankingOverlay" hidden aria-label="到達レベルランキング">
+    <section class="ranking-board" id="rankingOverlay" aria-label="到達レベルランキング">
       <div class="ranking-card">
         <h2>TOP 10</h2>
         <div class="ranking-head"><span>RANK</span><span>LEVEL</span><span>SCORE</span><span>START</span></div>
@@ -1065,8 +1067,8 @@
     bindTouchButton('touchLeft', 'left');
     bindTouchButton('touchRight', 'right');
     playButton.addEventListener('click', () => isPaused ? toggleGamePause() : beginGame());
-    rankingButton.addEventListener('click', showRankings);
-    rankingClose.addEventListener('click', hideRankings);
+    if (rankingButton) rankingButton.addEventListener('click', showRankings);
+    if (rankingClose) rankingClose.addEventListener('click', hideRankings);
     rankingOverlay.addEventListener('click', event => { if (event.target === rankingOverlay) hideRankings(); });
 
     buildStage();
