@@ -80,7 +80,24 @@
     .game-shell::after { inset: auto -3px -3px auto; border-right: 2px solid; border-bottom: 2px solid; border-radius: 0 0 28px; }
 
     header, .stats, .controls { display: flex; align-items: center; }
-    header { justify-content: space-between; gap: 18px; margin-bottom: 14px; }
+    header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 14px;
+      text-align: center;
+    }
+
+    .top-buttons {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      width: 100%;
+    }
 
     h1 {
       margin: 0;
@@ -95,20 +112,29 @@
     .stats { gap: 10px; }
 
     .home-button,
-    .ranking-button {
+    .pause-button {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      padding: 9px 13px;
-      border: 1px solid rgba(255,182,41,.5);
-      border-radius: 7px;
-      color: #ffcb61;
+      min-width: 140px;
+      height: 42px;
+      padding: 0 16px;
+      border: 1px solid rgba(255,255,255,.18);
+      border-radius: 10px;
+      color: var(--ink);
       text-decoration: none;
-      background: rgba(255,182,41,.08);
-      box-shadow: 0 0 14px rgba(255,182,41,.12);
-      font: 800 10px ui-monospace, monospace;
+      background: rgba(255,255,255,.08);
+      box-shadow: 0 0 14px rgba(54,241,205,.12);
+      font: 800 12px ui-monospace, monospace;
       letter-spacing: .12em;
       white-space: nowrap;
+    }
+
+    .pause-button {
+      border-color: rgba(54,241,205,.55);
+      color: #02110e;
+      background: var(--cyan);
+      box-shadow: 0 0 22px rgba(54,241,205,.28);
     }
 
     .stat {
@@ -224,20 +250,45 @@
     .ranking-close { display: none; margin: 18px auto 0; }
 
     @media (max-width: 650px) {
-      .game-shell { width: 100vw; padding: 10px; border-radius: 0; }
-      header { align-items: flex-start; }
-      .stats { gap: 5px; }
-      .stat { min-width: 58px; padding: 6px; }
-      .stat-value { font-size: 15px; }
+      body { display: block; }
+      .game-shell {
+        width: min(96vw, 520px);
+        margin: 10px auto 18px;
+        padding: 10px;
+        border-radius: 16px;
+      }
+      header { gap: 9px; margin-bottom: 10px; }
+      h1 { font-size: 22px; }
+      h1::after { font-size: 7px; letter-spacing: .22em; }
+      .stats { width: 100%; justify-content: center; gap: 5px; }
+      .stat { min-width: 0; flex: 1; max-width: 100px; padding: 6px 4px; }
+      .stat-label { font-size: 8px; }
+      .stat-value { font-size: 14px; }
+      .top-buttons { gap: 8px; margin-bottom: 2px; }
+      .home-button, .pause-button {
+        min-width: 132px;
+        height: 40px;
+        font-size: 12px;
+      }
+      .canvas-wrap {
+        width: 100%;
+        max-width: 500px;
+        margin: 0 auto;
+        border-radius: 14px;
+      }
+      .controls { justify-content: center; padding-top: 10px; }
       .controls span:first-child { display: none; }
+      .controls span:last-child { font-size: 11px; }
       .touch-controls { display: none; }
-      .overlay { padding: 12px; }
-      .overlay h2 { margin-bottom: 4px; }
+      .overlay { padding: 10px; }
+      .overlay h2 { margin-bottom: 4px; font-size: 30px; }
       .overlay p { margin-bottom: 10px; line-height: 1.4; font-size: 12px; }
+      .level-picker { margin-bottom: 10px; }
       .gimmick-list { margin-bottom: 10px; }
-      .home-button, .ranking-button { padding: 6px 9px; }
       .ranking-card { padding: 15px; }
-      .ranking-row { min-height: 24px; }
+      .ranking-card h2 { font-size: 20px; }
+      .ranking-head, .ranking-row { grid-template-columns: 38px 1fr 1.3fr 1fr; gap: 5px; }
+      .ranking-row { min-height: 24px; font-size: 11px; }
     }
   </style>
 </head>
@@ -250,7 +301,10 @@
         <div class="stat"><span class="stat-label">STAGE</span><span class="stat-value" id="stage">01</span></div>
         <div class="stat"><span class="stat-label">LIFE</span><span class="stat-value" id="lives">♥ ♥ ♥</span></div>
       </div>
-      <a class="home-button" href="index.html" aria-label="ホームに戻る">HOME</a>
+      <div class="top-buttons" aria-label="ゲーム操作">
+        <button class="pause-button" id="pauseButton" type="button">PAUSE</button>
+        <a class="home-button" href="index.html" aria-label="ホームに戻る">← HOME</a>
+      </div>
     </header>
 
     <div class="canvas-wrap">
@@ -274,7 +328,7 @@
 
     <div class="controls">
       <span><span class="key">←</span> <span class="key">→</span> / マウス・画面ドラッグで移動</span>
-      <span><span class="key">SPACE</span> 一時停止</span>
+      <span><span class="key">PAUSE</span> / <span class="key">SPACE</span> 一時停止</span>
     </div>
     <div class="touch-controls" aria-label="タッチ操作">
       <button class="touch-control" id="touchLeft" aria-label="左へ移動">◀</button>
@@ -563,6 +617,7 @@
     const rankingOverlay = document.getElementById('rankingOverlay');
     const rankingRows = document.getElementById('rankingRows');
     const rankingClose = document.getElementById('rankingClose');
+    const pauseButton = document.getElementById('pauseButton');
 
     const WIDTH = canvas2.width;
     const HEIGHT = canvas2.height;
@@ -1067,6 +1122,7 @@
     bindTouchButton('touchLeft', 'left');
     bindTouchButton('touchRight', 'right');
     playButton.addEventListener('click', () => isPaused ? toggleGamePause() : beginGame());
+    if (pauseButton) pauseButton.addEventListener('click', toggleGamePause);
     if (rankingButton) rankingButton.addEventListener('click', showRankings);
     if (rankingClose) rankingClose.addEventListener('click', hideRankings);
     rankingOverlay.addEventListener('click', event => { if (event.target === rankingOverlay) hideRankings(); });
