@@ -294,6 +294,11 @@ button{
   background:linear-gradient(180deg,rgba(255,216,71,.18),rgba(255,145,0,.10));
 }
 
+.op-btn.compact{
+  font-size:16px;
+  letter-spacing:0;
+}
+
 .controls{
   display:grid;
   grid-template-columns:repeat(4,1fr);
@@ -538,6 +543,10 @@ button{
     min-height:50px;
   }
 
+  .op-btn.compact{
+    font-size:14px;
+  }
+
   .controls{
     grid-template-columns:repeat(2,1fr);
   }
@@ -563,6 +572,10 @@ button{
 
   .op-btn{
     font-size:21px;
+  }
+
+  .op-btn.compact{
+    font-size:12px;
   }
 
   .status-label{
@@ -630,8 +643,8 @@ button{
       <div class="parens">
         <button class="op-btn" data-op="(">（</button>
         <button class="op-btn" data-op=")">）</button>
-        <button class="op-btn" data-op="undo">1つ戻す</button>
-        <button class="op-btn" data-op="clear">全消し</button>
+        <button class="op-btn compact" data-op="undo">1つ戻す</button>
+        <button class="op-btn compact" data-op="clear">全消し</button>
       </div>
 
       <div class="controls">
