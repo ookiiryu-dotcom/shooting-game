@@ -672,6 +672,8 @@ button{
 
       <div class="side-actions">
         <button class="side-btn warn" id="skipBtn">わからないのでスキップ</button>
+        <button class="side-btn" id="saveProgressBtn">進行状況を保存</button>
+        <button class="side-btn" id="clearProgressBtn">保存を削除</button>
       </div>
 
       <h2>ハイスコア</h2>
@@ -728,6 +730,7 @@ button{
 
 const TARGET = 10;
 const STORAGE_KEY = 'make10PuzzleHighScoresV1';
+const PROGRESS_STORAGE_KEY = 'make10PuzzleProgressV1';
 const MAX_MISSES = 5;
 const EASY_PUZZLES = [
   { nums:[1,2,3,4], solution:'(1+2+3+4)' },
@@ -768,6 +771,7 @@ const restartConfirmOverlayEl = document.getElementById('restartConfirmOverlay')
 const finalTextEl = document.getElementById('finalText');
 const rankBodyEl = document.getElementById('rankBody');
 const nextBtn = document.getElementById('nextBtn');
+let progressLoaded = false;
 
 function randInt(min,max){
   return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -945,6 +949,7 @@ function resetExpression(){
   cursorIndex = 0;
   renderNumbers();
   renderExpression();
+  saveProgress();
 }
 
 function newPuzzle(){
@@ -959,6 +964,7 @@ function newPuzzle(){
     : '4つの数字を全部使って10を作るか、作れないと思ったら「10にならない」を押してください。';
   levelEl.textContent = level;
   missEl.textContent = `${misses}/${MAX_MISSES}`;
+  saveProgress();
 }
 
 function renderNumbers(){
@@ -976,6 +982,7 @@ function renderNumbers(){
       insertToken({type:'num', value:String(num), index});
       renderNumbers();
       renderExpression();
+      saveProgress();
     });
     numbersEl.appendChild(btn);
   });
@@ -1039,6 +1046,7 @@ function addOperator(op){
 
   insertToken({type:'op', value:op});
   renderExpression();
+  saveProgress();
 }
 
 function undo(){
@@ -1054,6 +1062,7 @@ function undo(){
 
   renderNumbers();
   renderExpression();
+  saveProgress();
 }
 
 function safeEvalExpression(expr){
@@ -1087,6 +1096,7 @@ function advanceAfterCorrect(message){
   gameActive = false;
   nextBtn.textContent = '次の問題';
   renderNumbers();
+  saveProgress();
 }
 
 function getModelAnswerText(){
@@ -1111,7 +1121,10 @@ function registerMiss(message){
   renderNumbers();
 
   if(isGameOver){
+    clearSavedProgress(false);
     setTimeout(endGame,1200);
+  }else{
+    saveProgress();
   }
 }
 
@@ -1231,8 +1244,105 @@ function restartGame(){
   newPuzzle();
 }
 
+function getProgressState(){
+  return {
+    currentNums,
+    currentSolution,
+    currentSolvable,
+    tokens,
+    used,
+    score,
+    streak,
+    level,
+    puzzleNo,
+    misses,
+    gameActive,
+    awaitingNext,
+    advancePuzzleOnNext,
+    cursorIndex
+  };
+}
+
+function isValidProgress(data){
+  return data
+    && Array.isArray(data.currentNums)
+    && data.currentNums.length === 4
+    && Array.isArray(data.tokens)
+    && Array.isArray(data.used)
+    && data.used.length === 4
+    && Number.isInteger(data.level)
+    && data.level >= 1
+    && Number.isInteger(data.puzzleNo)
+    && data.puzzleNo >= 1
+    && Number.isInteger(data.misses)
+    && data.misses >= 0
+    && data.misses < MAX_MISSES;
+}
+
+function saveProgress(showMessage = false){
+  if(!progressLoaded || misses >= MAX_MISSES) return;
+
+  try{
+    localStorage.setItem(PROGRESS_STORAGE_KEY,JSON.stringify(getProgressState()));
+    if(showMessage){
+      messageEl.className = 'message good';
+      messageEl.textContent = `レベル${level}の進行状況を保存しました。`;
+    }
+  }catch(err){
+    if(showMessage){
+      messageEl.className = 'message bad';
+      messageEl.textContent = '保存できませんでした。ブラウザの保存容量や設定を確認してください。';
+    }
+  }
+}
+
+function clearSavedProgress(showMessage = true){
+  localStorage.removeItem(PROGRESS_STORAGE_KEY);
+  if(showMessage){
+    messageEl.className = 'message';
+    messageEl.textContent = '保存した進行状況を削除しました。';
+  }
+}
+
+function loadProgress(){
+  try{
+    const data = JSON.parse(localStorage.getItem(PROGRESS_STORAGE_KEY));
+    if(!isValidProgress(data)) return false;
+
+    currentNums = data.currentNums.map(Number);
+    currentSolution = String(data.currentSolution || '');
+    currentSolvable = Boolean(data.currentSolvable);
+    tokens = data.tokens.map(token => ({
+      type:token.type === 'num' ? 'num' : 'op',
+      value:String(token.value),
+      index:Number.isInteger(token.index) ? token.index : undefined
+    }));
+    used = data.used.map(Boolean);
+    score = Number(data.score) || 0;
+    streak = Number(data.streak) || 0;
+    level = data.level;
+    puzzleNo = data.puzzleNo;
+    misses = data.misses;
+    gameActive = Boolean(data.gameActive);
+    awaitingNext = Boolean(data.awaitingNext);
+    advancePuzzleOnNext = Boolean(data.advancePuzzleOnNext);
+    cursorIndex = Math.max(0,Math.min(Number(data.cursorIndex) || 0,tokens.length));
+
+    nextBtn.textContent = awaitingNext ? '次の問題' : 'スキップ';
+    refreshStatus();
+    renderNumbers();
+    renderExpression();
+    messageEl.className = 'message good';
+    messageEl.textContent = `保存されていたレベル${level}から再開しました。`;
+    return true;
+  }catch(err){
+    return false;
+  }
+}
+
 function endGame(){
   gameActive = false;
+  clearSavedProgress(false);
 
   saveScore(score);
   renderRanking();
@@ -1294,6 +1404,8 @@ document.getElementById('impossibleBtn').addEventListener('click',markImpossible
 document.getElementById('nextBtn').addEventListener('click',skipPuzzle);
 document.getElementById('restartBtn').addEventListener('click',showRestartConfirm);
 document.getElementById('skipBtn').addEventListener('click',skipPuzzle);
+document.getElementById('saveProgressBtn').addEventListener('click',()=>saveProgress(true));
+document.getElementById('clearProgressBtn').addEventListener('click',()=>clearSavedProgress(true));
 document.getElementById('againBtn').addEventListener('click',restartGame);
 document.getElementById('cancelNextBtn').addEventListener('click',hideNextConfirm);
 document.getElementById('confirmNextBtn').addEventListener('click',confirmNextPuzzle);
@@ -1357,12 +1469,16 @@ window.addEventListener('keydown',(e)=>{
       insertToken({type:'num', value:String(digit), index:idx});
       renderNumbers();
       renderExpression();
+      saveProgress();
     }
   }
 });
 
 renderRanking();
-restartGame();
+progressLoaded = true;
+if(!loadProgress()){
+  restartGame();
+}
 </script>
 </body>
 </html>
