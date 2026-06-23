@@ -1,0 +1,1355 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>MAKE 10 PUZZLE｜メイクテン</title>
+
+<style>
+*{
+  box-sizing:border-box;
+}
+
+html{
+  touch-action:manipulation;
+}
+
+body{
+  margin:0;
+  min-height:100vh;
+  color:#fff;
+  font-family:Arial,"Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;
+  background:
+    radial-gradient(circle at 50% 0%,rgba(0,255,255,.22),transparent 32%),
+    radial-gradient(circle at 15% 20%,rgba(99,102,241,.24),transparent 28%),
+    linear-gradient(180deg,#07111f,#020409 78%);
+  overflow-x:hidden;
+}
+
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  background:
+    linear-gradient(rgba(0,255,255,.045) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,255,255,.045) 1px,transparent 1px);
+  background-size:28px 28px;
+  mask-image:linear-gradient(180deg,rgba(0,0,0,.85),transparent 85%);
+}
+
+button{
+  font-family:inherit;
+}
+
+.page{
+  width:min(920px,100%);
+  margin:0 auto;
+  padding:18px 14px 32px;
+  position:relative;
+  z-index:1;
+}
+
+.topbar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  margin-bottom:14px;
+}
+
+.home-btn{
+  border:1px solid rgba(255,255,255,.22);
+  background:rgba(255,255,255,.08);
+  color:#fff;
+  text-decoration:none;
+  padding:10px 14px;
+  border-radius:999px;
+  font-weight:bold;
+  font-size:14px;
+  box-shadow:0 0 18px rgba(0,255,255,.08);
+}
+
+.mini-info{
+  font-size:13px;
+  color:#b7d7ff;
+  text-align:right;
+}
+
+.hero{
+  border:1px solid rgba(78,202,255,.34);
+  background:
+    linear-gradient(135deg,rgba(15,31,56,.96),rgba(5,11,24,.92)),
+    radial-gradient(circle at top right,rgba(0,255,255,.20),transparent 35%);
+  box-shadow:
+    0 0 28px rgba(0,255,255,.12),
+    inset 0 0 32px rgba(255,255,255,.03);
+  border-radius:26px;
+  padding:22px 18px 18px;
+  text-align:center;
+}
+
+.hero h1{
+  margin:0;
+  font-size:clamp(32px,8vw,58px);
+  letter-spacing:.06em;
+  line-height:1;
+  text-shadow:0 0 18px rgba(0,255,255,.55);
+}
+
+.hero .sub{
+  margin:10px 0 0;
+  color:#c9eaff;
+  line-height:1.7;
+  font-size:15px;
+}
+
+.status-grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:10px;
+  margin:16px 0 0;
+}
+
+.status-card{
+  border:1px solid rgba(255,255,255,.14);
+  background:rgba(255,255,255,.06);
+  border-radius:16px;
+  padding:12px 8px;
+}
+
+.status-label{
+  color:#a8b8d8;
+  font-size:12px;
+}
+
+.status-value{
+  margin-top:4px;
+  font-size:24px;
+  font-weight:bold;
+  color:#ffffff;
+}
+
+.game-layout{
+  display:grid;
+  grid-template-columns:1fr 300px;
+  gap:14px;
+  margin-top:14px;
+}
+
+.panel{
+  border:1px solid rgba(255,255,255,.14);
+  background:rgba(7,14,30,.82);
+  backdrop-filter:blur(8px);
+  border-radius:24px;
+  padding:16px;
+  box-shadow:0 12px 30px rgba(0,0,0,.30);
+}
+
+.target{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  flex-direction:column;
+  min-height:104px;
+  border-radius:20px;
+  border:1px solid rgba(0,255,255,.28);
+  background:
+    radial-gradient(circle at center,rgba(0,255,255,.16),transparent 60%),
+    rgba(255,255,255,.045);
+  margin-bottom:14px;
+}
+
+.target span{
+  color:#9edcff;
+  font-weight:bold;
+  font-size:13px;
+  letter-spacing:.12em;
+}
+
+.target strong{
+  font-size:54px;
+  line-height:1;
+  text-shadow:0 0 18px rgba(0,255,255,.7);
+}
+
+.expression-box{
+  min-height:74px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border:1px solid rgba(255,255,255,.14);
+  background:#020711;
+  border-radius:18px;
+  padding:12px;
+  margin-bottom:14px;
+  overflow-wrap:anywhere;
+}
+
+#expression{
+  width:100%;
+  min-height:46px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-wrap:wrap;
+  gap:4px;
+  text-align:center;
+  font-size:clamp(24px,6vw,42px);
+  font-weight:bold;
+  letter-spacing:.03em;
+  color:#fff;
+}
+
+.expr-token,
+.expr-gap{
+  border:0;
+  color:inherit;
+  font:inherit;
+  line-height:1.2;
+}
+
+.expr-token{
+  padding:3px 2px;
+  border-radius:8px;
+  background:transparent;
+}
+
+.expr-gap{
+  align-self:stretch;
+  min-width:14px;
+  min-height:34px;
+  border-radius:999px;
+  background:transparent;
+}
+
+.expr-gap.active{
+  background:rgba(0,255,255,.22);
+  box-shadow:0 0 12px rgba(0,255,255,.36);
+}
+
+.placeholder{
+  color:#52617f;
+  font-size:18px;
+  font-weight:normal;
+}
+
+.numbers{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:10px;
+  margin-bottom:12px;
+}
+
+.num-btn{
+  min-height:78px;
+  border:1px solid rgba(0,255,255,.35);
+  border-radius:18px;
+  background:
+    linear-gradient(180deg,rgba(27,208,255,.22),rgba(16,86,166,.18)),
+    #07152b;
+  color:#fff;
+  font-size:34px;
+  font-weight:bold;
+  box-shadow:0 0 18px rgba(0,255,255,.08);
+}
+
+.num-btn:active,
+.op-btn:active,
+.action-btn:active{
+  transform:translateY(2px) scale(.99);
+}
+
+.num-btn.used{
+  opacity:.32;
+  filter:grayscale(.8);
+}
+
+.ops{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:8px;
+  margin-bottom:8px;
+}
+
+.parens{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:8px;
+  margin-bottom:12px;
+}
+
+.op-btn{
+  min-height:54px;
+  border:1px solid rgba(255,255,255,.15);
+  border-radius:15px;
+  background:rgba(255,255,255,.08);
+  color:#fff;
+  font-size:24px;
+  font-weight:bold;
+}
+
+.op-btn.main{
+  border-color:rgba(255,220,94,.35);
+  background:linear-gradient(180deg,rgba(255,216,71,.18),rgba(255,145,0,.10));
+}
+
+.controls{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:8px;
+}
+
+.action-btn{
+  min-height:50px;
+  border:0;
+  border-radius:15px;
+  color:#fff;
+  font-weight:bold;
+  font-size:15px;
+}
+
+.check{
+  background:linear-gradient(180deg,#19c37d,#0d8f5d);
+}
+
+.undo{
+  background:linear-gradient(180deg,#667085,#344054);
+}
+
+.clear{
+  background:linear-gradient(180deg,#ff5b6e,#b42335);
+}
+
+.message{
+  min-height:58px;
+  margin-top:12px;
+  padding:12px;
+  border-radius:16px;
+  border:1px solid rgba(255,255,255,.13);
+  background:rgba(255,255,255,.055);
+  line-height:1.6;
+  color:#dceaff;
+}
+
+.message.good{
+  border-color:rgba(25,195,125,.45);
+  background:rgba(25,195,125,.10);
+  color:#dfffee;
+}
+
+.message.bad{
+  border-color:rgba(255,91,110,.45);
+  background:rgba(255,91,110,.10);
+  color:#ffe0e5;
+}
+
+.side h2{
+  margin:0 0 10px;
+  font-size:18px;
+}
+
+.rule-list{
+  margin:0 0 14px;
+  padding-left:18px;
+  color:#cdd8f4;
+  line-height:1.75;
+  font-size:14px;
+}
+
+.side-actions{
+  display:grid;
+  gap:8px;
+  margin-bottom:14px;
+}
+
+.side-btn{
+  min-height:46px;
+  border:1px solid rgba(255,255,255,.16);
+  border-radius:15px;
+  background:rgba(255,255,255,.08);
+  color:#fff;
+  font-weight:bold;
+  font-size:15px;
+}
+
+.side-btn.warn{
+  background:linear-gradient(180deg,#ffb020,#b86b00);
+}
+
+.rank{
+  width:100%;
+  border-collapse:collapse;
+  overflow:hidden;
+  border-radius:14px;
+  font-size:13px;
+}
+
+.rank th,
+.rank td{
+  padding:8px 6px;
+  border-bottom:1px solid rgba(255,255,255,.10);
+  text-align:left;
+}
+
+.rank th{
+  color:#9edcff;
+  font-size:12px;
+}
+
+.rank td:last-child,
+.rank th:last-child{
+  text-align:right;
+}
+
+.footer-note{
+  margin:14px auto 0;
+  max-width:760px;
+  color:#91a5ca;
+  font-size:12px;
+  line-height:1.7;
+  text-align:center;
+}
+
+.overlay{
+  display:none;
+  position:fixed;
+  inset:0;
+  z-index:20;
+  background:rgba(1,5,12,.76);
+  backdrop-filter:blur(7px);
+  align-items:center;
+  justify-content:center;
+  padding:16px;
+}
+
+.modal{
+  width:min(440px,100%);
+  border:1px solid rgba(0,255,255,.32);
+  background:linear-gradient(180deg,#101d35,#060b16);
+  border-radius:24px;
+  padding:22px;
+  text-align:center;
+  box-shadow:0 0 40px rgba(0,255,255,.16);
+}
+
+.modal h2{
+  margin:0 0 10px;
+  font-size:30px;
+}
+
+.modal p{
+  color:#d6e6ff;
+  line-height:1.7;
+}
+
+.modal button{
+  width:100%;
+  min-height:52px;
+  border:0;
+  border-radius:16px;
+  background:linear-gradient(180deg,#2f80ff,#174ea6);
+  color:#fff;
+  font-size:17px;
+  font-weight:bold;
+}
+
+.modal-actions{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin-top:14px;
+}
+
+.modal-actions button{
+  width:100%;
+}
+
+.modal-actions .back-btn{
+  background:linear-gradient(180deg,#667085,#344054);
+}
+
+@media(max-width:760px){
+  .page{
+    padding:12px 10px 24px;
+  }
+
+  .topbar{
+    align-items:flex-start;
+  }
+
+  .home-btn{
+    padding:9px 12px;
+    font-size:13px;
+  }
+
+  .mini-info{
+    font-size:12px;
+  }
+
+  .hero{
+    border-radius:20px;
+    padding:18px 12px 14px;
+  }
+
+  .status-grid{
+    grid-template-columns:repeat(2,1fr);
+  }
+
+  .status-card{
+    padding:10px 6px;
+  }
+
+  .status-value{
+    font-size:22px;
+  }
+
+  .game-layout{
+    grid-template-columns:1fr;
+  }
+
+  .panel{
+    border-radius:20px;
+    padding:12px;
+  }
+
+  .target{
+    min-height:84px;
+  }
+
+  .target strong{
+    font-size:46px;
+  }
+
+  .expression-box{
+    min-height:64px;
+  }
+
+  .numbers{
+    gap:8px;
+  }
+
+  .num-btn{
+    min-height:70px;
+    font-size:32px;
+  }
+
+  .op-btn{
+    min-height:50px;
+  }
+
+  .controls{
+    grid-template-columns:repeat(2,1fr);
+  }
+
+  .action-btn{
+    min-height:48px;
+  }
+
+  .side{
+    order:2;
+  }
+}
+
+@media(max-width:390px){
+  .hero h1{
+    font-size:31px;
+  }
+
+  .num-btn{
+    min-height:62px;
+    font-size:28px;
+  }
+
+  .op-btn{
+    font-size:21px;
+  }
+
+  .status-label{
+    font-size:11px;
+  }
+}
+</style>
+</head>
+
+<body>
+<div class="page">
+  <div class="topbar">
+    <a class="home-btn" href="index.html">← HOME</a>
+    <div class="mini-info">
+      4つの数字を全部使って<br>10になるか見極めるゲーム
+    </div>
+  </div>
+
+  <section class="hero">
+    <h1>MAKE 10</h1>
+    <p class="sub">
+      表示された4つの数字をすべて1回ずつ使い、10を作れるか、作れないかを見極めよう。
+    </p>
+
+    <div class="status-grid">
+      <div class="status-card">
+        <div class="status-label">SCORE</div>
+        <div class="status-value" id="score">0</div>
+      </div>
+      <div class="status-card">
+        <div class="status-label">LEVEL</div>
+        <div class="status-value" id="level">1</div>
+      </div>
+      <div class="status-card">
+        <div class="status-label">STREAK</div>
+        <div class="status-value" id="streak">0</div>
+      </div>
+      <div class="status-card">
+        <div class="status-label">MISS</div>
+        <div class="status-value" id="miss">0/5</div>
+      </div>
+    </div>
+  </section>
+
+  <main class="game-layout">
+    <section class="panel main-game">
+      <div class="target">
+        <span>TARGET</span>
+        <strong>10</strong>
+      </div>
+
+      <div class="expression-box">
+        <div id="expression"><span class="placeholder">数字と演算子を押して式を作る</span></div>
+      </div>
+
+      <div class="numbers" id="numbers"></div>
+
+      <div class="ops">
+        <button class="op-btn main" data-op="+">＋</button>
+        <button class="op-btn main" data-op="-">−</button>
+        <button class="op-btn main" data-op="*">×</button>
+        <button class="op-btn main" data-op="/">÷</button>
+      </div>
+
+      <div class="parens">
+        <button class="op-btn" data-op="(">（</button>
+        <button class="op-btn" data-op=")">）</button>
+        <button class="op-btn" data-op="undo">1つ戻す</button>
+        <button class="op-btn" data-op="clear">全消し</button>
+      </div>
+
+      <div class="controls">
+        <button class="action-btn check" id="checkBtn">答え合わせ</button>
+        <button class="action-btn check" id="impossibleBtn">10にならない</button>
+        <button class="action-btn undo" id="nextBtn">スキップ</button>
+        <button class="action-btn clear" id="restartBtn">リスタート</button>
+      </div>
+
+      <div class="message" id="message">
+        まずは4つの数字を全部使って式を作ってください。
+      </div>
+    </section>
+
+    <aside class="panel side">
+      <h2>ルール</h2>
+      <ul class="rule-list">
+        <li>4つの数字は全部使う</li>
+        <li>同じ数字ボタンは1回だけ使える</li>
+        <li>＋ − × ÷ とカッコが使える</li>
+        <li>答えが10なら正解</li>
+        <li>10を作れない問題は「10にならない」を押す</li>
+        <li>5回間違えると終了</li>
+      </ul>
+
+      <div class="side-actions">
+        <button class="side-btn warn" id="skipBtn">わからないのでスキップ</button>
+      </div>
+
+      <h2>ハイスコア</h2>
+      <table class="rank">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>日付</th>
+            <th>点数</th>
+          </tr>
+        </thead>
+        <tbody id="rankBody"></tbody>
+      </table>
+    </aside>
+  </main>
+
+  <p class="footer-note">
+    PCでもスマホでも遊べます。スマホではボタンをタップするだけで式を作れます。
+  </p>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h2>GAME OVER</h2>
+    <p id="finalText">スコア：0</p>
+    <button id="againBtn">もう一度遊ぶ</button>
+  </div>
+</div>
+
+<div class="overlay" id="confirmOverlay">
+  <div class="modal">
+    <h2>確認</h2>
+    <p>まだ回答していません。次の問題に進んで本当によろしいですか？</p>
+    <div class="modal-actions">
+      <button class="back-btn" id="cancelNextBtn">戻る</button>
+      <button id="confirmNextBtn">進む</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="restartConfirmOverlay">
+  <div class="modal">
+    <h2>確認</h2>
+    <p>ゲームをリスタートして本当によろしいですか？</p>
+    <div class="modal-actions">
+      <button class="back-btn" id="cancelRestartBtn">戻る</button>
+      <button id="confirmRestartBtn">リスタート</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+const TARGET = 10;
+const STORAGE_KEY = 'make10PuzzleHighScoresV1';
+const MAX_MISSES = 5;
+const EASY_PUZZLES = [
+  { nums:[1,2,3,4], solution:'(1+2+3+4)' },
+  { nums:[1,1,3,5], solution:'(1+1+3+5)' },
+  { nums:[1,2,2,5], solution:'(1+2+2+5)' },
+  { nums:[1,1,4,4], solution:'(1+1+4+4)' },
+  { nums:[2,2,3,3], solution:'(2+2+3+3)' },
+  { nums:[1,2,4,4], solution:'((1+2)+4+4)' },
+  { nums:[1,3,3,3], solution:'(1+3+3+3)' },
+  { nums:[2,2,2,4], solution:'(2+2+2+4)' }
+];
+
+let currentNums = [];
+let currentSolution = '';
+let currentSolvable = true;
+let tokens = [];
+let used = [false,false,false,false];
+let score = 0;
+let streak = 0;
+let level = 1;
+let puzzleNo = 1;
+let misses = 0;
+let gameActive = true;
+let awaitingNext = false;
+let advancePuzzleOnNext = false;
+let cursorIndex = 0;
+
+const numbersEl = document.getElementById('numbers');
+const expressionEl = document.getElementById('expression');
+const messageEl = document.getElementById('message');
+const scoreEl = document.getElementById('score');
+const levelEl = document.getElementById('level');
+const streakEl = document.getElementById('streak');
+const missEl = document.getElementById('miss');
+const overlayEl = document.getElementById('overlay');
+const confirmOverlayEl = document.getElementById('confirmOverlay');
+const restartConfirmOverlayEl = document.getElementById('restartConfirmOverlay');
+const finalTextEl = document.getElementById('finalText');
+const rankBodyEl = document.getElementById('rankBody');
+const nextBtn = document.getElementById('nextBtn');
+
+function randInt(min,max){
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function approxEqual(a,b){
+  return Math.abs(a - b) < 1e-9;
+}
+
+function formatExpr(expr){
+  return expr.replaceAll('*','×').replaceAll('/','÷');
+}
+
+function solveMake10(nums){
+  const start = nums.map((n,i)=>({
+    value:n,
+    expr:String(n),
+    ids:[i]
+  }));
+
+  const seen = new Set();
+
+  function search(items){
+    if(items.length === 1){
+      if(approxEqual(items[0].value,TARGET)){
+        return items[0].expr;
+      }
+      return null;
+    }
+
+    const key = items
+      .map(item => item.value.toFixed(6) + ':' + item.ids.join(','))
+      .sort()
+      .join('|');
+
+    if(seen.has(key)) return null;
+    seen.add(key);
+
+    for(let i=0;i<items.length;i++){
+      for(let j=i+1;j<items.length;j++){
+        const a = items[i];
+        const b = items[j];
+        const rest = items.filter((_,idx)=>idx!==i && idx!==j);
+
+        const candidates = [
+          {value:a.value + b.value, expr:`(${a.expr}+${b.expr})`},
+          {value:a.value - b.value, expr:`(${a.expr}-${b.expr})`},
+          {value:b.value - a.value, expr:`(${b.expr}-${a.expr})`},
+          {value:a.value * b.value, expr:`(${a.expr}*${b.expr})`}
+        ];
+
+        if(!approxEqual(b.value,0)){
+          candidates.push({value:a.value / b.value, expr:`(${a.expr}/${b.expr})`});
+        }
+
+        if(!approxEqual(a.value,0)){
+          candidates.push({value:b.value / a.value, expr:`(${b.expr}/${a.expr})`});
+        }
+
+        for(const c of candidates){
+          if(!Number.isFinite(c.value)) continue;
+
+          const next = rest.concat([{
+            value:c.value,
+            expr:c.expr,
+            ids:a.ids.concat(b.ids).sort((x,y)=>x-y)
+          }]);
+
+          const found = search(next);
+          if(found) return found;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  return search(start);
+}
+
+function getLevelSettings(){
+  const maxNum = Math.min(6 + Math.floor(Math.max(0,level - 3) / 2) * 2, 25);
+  let impossibleRate = 0;
+  let minComplexity = 1;
+
+  if(level >= 4) impossibleRate = .08;
+  if(level >= 7) impossibleRate = .16;
+  if(level >= 10) impossibleRate = .24;
+  if(level >= 14) impossibleRate = .32;
+
+  if(level >= 6) minComplexity = 2;
+  if(level >= 10) minComplexity = 3;
+  if(level >= 15) minComplexity = 4;
+
+  return { maxNum, impossibleRate, minComplexity };
+}
+
+function measureComplexity(nums, solution){
+  if(!solution) return 0;
+
+  let complexity = 1;
+  if(/[*/]/.test(solution)) complexity += 1;
+  if(solution.includes('/')) complexity += 1;
+  if(nums.some(num => num >= 10)) complexity += 1;
+  if(level >= 9 && nums.some(num => num >= 15)) complexity += 1;
+  return complexity;
+}
+
+function makeSolvablePuzzle(settings){
+  let fallback = null;
+
+  for(let attempt=0; attempt<5000; attempt++){
+    const nums = [
+      randInt(1,settings.maxNum),
+      randInt(1,settings.maxNum),
+      randInt(1,settings.maxNum),
+      randInt(1,settings.maxNum)
+    ];
+
+    const solution = solveMake10(nums);
+    if(!solution) continue;
+
+    fallback = fallback || { nums, solution };
+    if(measureComplexity(nums, solution) >= settings.minComplexity){
+      return { nums, solution };
+    }
+  }
+
+  return fallback || { nums:[1,2,3,4], solution:'(1+2+3+4)' };
+}
+
+function makeImpossiblePuzzle(settings){
+  for(let attempt=0; attempt<5000; attempt++){
+    const nums = [
+      randInt(1,settings.maxNum),
+      randInt(1,settings.maxNum),
+      randInt(1,settings.maxNum),
+      randInt(1,settings.maxNum)
+    ];
+
+    if(!solveMake10(nums)) return nums;
+  }
+
+  return [1,1,1,1];
+}
+
+function makePuzzle(){
+  if(level <= 3){
+    const puzzle = EASY_PUZZLES[(level - 1 + puzzleNo - 1) % EASY_PUZZLES.length];
+    currentNums = [...puzzle.nums];
+    currentSolution = puzzle.solution;
+    currentSolvable = true;
+    return;
+  }
+
+  const settings = getLevelSettings();
+  const shouldBeImpossible = Math.random() < settings.impossibleRate;
+
+  if(shouldBeImpossible){
+    currentNums = makeImpossiblePuzzle(settings);
+    currentSolution = '';
+    currentSolvable = false;
+    return;
+  }
+
+  const puzzle = makeSolvablePuzzle(settings);
+  currentNums = puzzle.nums;
+  currentSolution = puzzle.solution;
+  currentSolvable = true;
+}
+
+function resetExpression(){
+  tokens = [];
+  used = [false,false,false,false];
+  cursorIndex = 0;
+  renderNumbers();
+  renderExpression();
+}
+
+function newPuzzle(){
+  awaitingNext = false;
+  gameActive = true;
+  nextBtn.textContent = 'スキップ';
+  makePuzzle();
+  resetExpression();
+  messageEl.className = 'message';
+  messageEl.textContent = level <= 3
+    ? 'まずは4つの数字を足したり引いたりして10を作ってみよう。'
+    : '4つの数字を全部使って10を作るか、作れないと思ったら「10にならない」を押してください。';
+  levelEl.textContent = level;
+  missEl.textContent = `${misses}/${MAX_MISSES}`;
+}
+
+function renderNumbers(){
+  numbersEl.innerHTML = '';
+
+  currentNums.forEach((num,index)=>{
+    const btn = document.createElement('button');
+    btn.className = 'num-btn' + (used[index] ? ' used' : '');
+    btn.textContent = num;
+    btn.disabled = used[index] || !gameActive;
+    btn.addEventListener('click',()=>{
+      if(!gameActive || used[index]) return;
+
+      used[index] = true;
+      insertToken({type:'num', value:String(num), index});
+      renderNumbers();
+      renderExpression();
+    });
+    numbersEl.appendChild(btn);
+  });
+}
+
+function renderExpression(){
+  expressionEl.innerHTML = '';
+
+  if(tokens.length === 0){
+    const placeholder = document.createElement('button');
+    placeholder.type = 'button';
+    placeholder.className = 'expr-token placeholder';
+    placeholder.textContent = '数字と演算子を押して式を作る';
+    placeholder.addEventListener('click',()=>{ cursorIndex = 0; renderExpression(); });
+    expressionEl.appendChild(placeholder);
+    return;
+  }
+
+  for(let i=0;i<=tokens.length;i++){
+    const gap = document.createElement('button');
+    gap.type = 'button';
+    gap.className = 'expr-gap' + (cursorIndex === i ? ' active' : '');
+    gap.setAttribute('aria-label', `${i + 1}番目の挿入位置`);
+    gap.addEventListener('click',()=>{
+      cursorIndex = i;
+      renderExpression();
+    });
+    expressionEl.appendChild(gap);
+
+    if(i >= tokens.length) continue;
+
+    const token = document.createElement('button');
+    token.type = 'button';
+    token.className = 'expr-token';
+    token.textContent = formatExpr(tokens[i].value);
+    token.addEventListener('click',()=>{
+      cursorIndex = i + 1;
+      renderExpression();
+    });
+    expressionEl.appendChild(token);
+  }
+}
+
+function insertToken(token){
+  tokens.splice(cursorIndex,0,token);
+  cursorIndex += 1;
+}
+
+function addOperator(op){
+  if(!gameActive) return;
+
+  if(op === 'undo'){
+    undo();
+    return;
+  }
+
+  if(op === 'clear'){
+    resetExpression();
+    return;
+  }
+
+  insertToken({type:'op', value:op});
+  renderExpression();
+}
+
+function undo(){
+  if(!gameActive || tokens.length === 0) return;
+  if(cursorIndex === 0) return;
+
+  const removeIndex = cursorIndex - 1;
+  const [last] = tokens.splice(removeIndex,1);
+  if(last.type === 'num'){
+    used[last.index] = false;
+  }
+  cursorIndex = removeIndex;
+
+  renderNumbers();
+  renderExpression();
+}
+
+function safeEvalExpression(expr){
+  if(!/^[0-9+\-*/().\s]+$/.test(expr)){
+    throw new Error('使えない文字があります');
+  }
+
+  const result = Function(`"use strict"; return (${expr});`)();
+  if(!Number.isFinite(result)){
+    throw new Error('計算できません');
+  }
+
+  return result;
+}
+
+function refreshStatus(){
+  scoreEl.textContent = score;
+  streakEl.textContent = streak;
+  levelEl.textContent = level;
+  missEl.textContent = `${misses}/${MAX_MISSES}`;
+}
+
+function advanceAfterCorrect(message){
+  puzzleNo += 1;
+  level += 1;
+  refreshStatus();
+  messageEl.className = 'message good';
+  messageEl.textContent = message;
+  awaitingNext = true;
+  advancePuzzleOnNext = false;
+  gameActive = false;
+  nextBtn.textContent = '次の問題';
+  renderNumbers();
+}
+
+function getModelAnswerText(){
+  return currentSolvable
+    ? `模範解答：${formatExpr(currentSolution)}`
+    : '模範解答：この問題は10になりません。';
+}
+
+function registerMiss(message){
+  if(!gameActive) return;
+
+  misses += 1;
+  streak = 0;
+  refreshStatus();
+  messageEl.className = 'message bad';
+  const isGameOver = misses >= MAX_MISSES;
+  messageEl.textContent = `${message}　ミス ${misses}/${MAX_MISSES}　${getModelAnswerText()}　${isGameOver ? 'ゲーム終了です。' : '「次の問題」を押してください。'}`;
+  awaitingNext = !isGameOver;
+  advancePuzzleOnNext = !isGameOver;
+  gameActive = false;
+  nextBtn.textContent = isGameOver ? 'ゲーム終了' : '次の問題';
+  renderNumbers();
+
+  if(isGameOver){
+    setTimeout(endGame,1200);
+  }
+}
+
+function checkAnswer(){
+  if(!gameActive) return;
+
+  if(!currentSolvable){
+    registerMiss('この問題は10になりません。「10にならない」が正解です。');
+    return;
+  }
+
+  if(!used.every(Boolean)){
+    registerMiss('まだ使っていない数字があります。4つ全部使ってください。');
+    return;
+  }
+
+  const expr = tokens.map(t=>t.value).join('');
+
+  let result;
+  try{
+    result = safeEvalExpression(expr);
+  }catch(err){
+    registerMiss('式の形が正しくありません。カッコや演算子の位置を確認してください。');
+    return;
+  }
+
+  if(approxEqual(result,TARGET)){
+    const add = 100 + level * 20 + streak * 10;
+
+    score += add;
+    streak += 1;
+    advanceAfterCorrect(`正解！ ${formatExpr(expr)} = 10　+${add}点`);
+  }else{
+    registerMiss(`惜しいです。今の答えは ${Number(result.toFixed(4))} です。`);
+  }
+}
+
+function markImpossible(){
+  if(!gameActive) return;
+
+  if(currentSolvable){
+    registerMiss(`この問題は10になります。例：${formatExpr(currentSolution)}`);
+    return;
+  }
+
+  const add = 120 + level * 20 + streak * 10;
+  score += add;
+  streak += 1;
+  advanceAfterCorrect(`正解！ この数字では10になりません。 +${add}点`);
+}
+
+function goToNextPuzzle(){
+  if(advancePuzzleOnNext){
+    puzzleNo += 1;
+  }
+  awaitingNext = false;
+  advancePuzzleOnNext = false;
+  gameActive = true;
+  newPuzzle();
+}
+
+function showNextConfirm(){
+  confirmOverlayEl.style.display = 'flex';
+}
+
+function hideNextConfirm(){
+  confirmOverlayEl.style.display = 'none';
+}
+
+function showRestartConfirm(){
+  restartConfirmOverlayEl.style.display = 'flex';
+}
+
+function hideRestartConfirm(){
+  restartConfirmOverlayEl.style.display = 'none';
+}
+
+function requestNextPuzzle(){
+  if(awaitingNext){
+    goToNextPuzzle();
+    return;
+  }
+
+  if(!gameActive) return;
+  showNextConfirm();
+}
+
+function confirmNextPuzzle(){
+  hideNextConfirm();
+  if(!gameActive) return;
+
+  registerMiss(currentSolvable
+    ? `次の問題に進みました。答えの一例：${formatExpr(currentSolution)}`
+    : '次の問題に進みました。この問題は10になりません。');
+
+  if(misses < MAX_MISSES) goToNextPuzzle();
+}
+
+function skipPuzzle(){
+  requestNextPuzzle();
+}
+
+function restartGame(){
+  score = 0;
+  streak = 0;
+  level = 1;
+  puzzleNo = 1;
+  misses = 0;
+  gameActive = true;
+  awaitingNext = false;
+  advancePuzzleOnNext = false;
+  overlayEl.style.display = 'none';
+  hideNextConfirm();
+  hideRestartConfirm();
+
+  refreshStatus();
+  newPuzzle();
+}
+
+function endGame(){
+  gameActive = false;
+
+  saveScore(score);
+  renderRanking();
+
+  finalTextEl.textContent = `スコア：${score}　到達レベル：${level}　ミス：${misses}/${MAX_MISSES}`;
+  overlayEl.style.display = 'flex';
+
+  renderNumbers();
+}
+
+function loadScores(){
+  try{
+    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+  }catch(err){
+    return [];
+  }
+}
+
+function saveScore(value){
+  const scores = loadScores();
+  const now = new Date();
+  const label = `${now.getFullYear()}/${String(now.getMonth()+1).padStart(2,'0')}/${String(now.getDate()).padStart(2,'0')}`;
+
+  scores.push({
+    score:value,
+    date:label
+  });
+
+  scores.sort((a,b)=>b.score-a.score);
+  localStorage.setItem(STORAGE_KEY,JSON.stringify(scores.slice(0,10)));
+}
+
+function renderRanking(){
+  const scores = loadScores();
+  rankBodyEl.innerHTML = '';
+
+  if(scores.length === 0){
+    rankBodyEl.innerHTML = '<tr><td colspan="3">まだ記録なし</td></tr>';
+    return;
+  }
+
+  scores.forEach((item,index)=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${index+1}</td>
+      <td>${item.date}</td>
+      <td>${item.score}</td>
+    `;
+    rankBodyEl.appendChild(tr);
+  });
+}
+
+document.querySelectorAll('[data-op]').forEach(btn=>{
+  btn.addEventListener('click',()=>addOperator(btn.dataset.op));
+});
+
+document.getElementById('checkBtn').addEventListener('click',checkAnswer);
+document.getElementById('impossibleBtn').addEventListener('click',markImpossible);
+document.getElementById('nextBtn').addEventListener('click',skipPuzzle);
+document.getElementById('restartBtn').addEventListener('click',showRestartConfirm);
+document.getElementById('skipBtn').addEventListener('click',skipPuzzle);
+document.getElementById('againBtn').addEventListener('click',restartGame);
+document.getElementById('cancelNextBtn').addEventListener('click',hideNextConfirm);
+document.getElementById('confirmNextBtn').addEventListener('click',confirmNextPuzzle);
+document.getElementById('cancelRestartBtn').addEventListener('click',hideRestartConfirm);
+document.getElementById('confirmRestartBtn').addEventListener('click',restartGame);
+
+window.addEventListener('keydown',(e)=>{
+  if(restartConfirmOverlayEl.style.display === 'flex'){
+    if(e.key === 'Escape') hideRestartConfirm();
+    if(e.key === 'Enter') restartGame();
+    return;
+  }
+
+  if(confirmOverlayEl.style.display === 'flex'){
+    if(e.key === 'Escape') hideNextConfirm();
+    if(e.key === 'Enter') confirmNextPuzzle();
+    return;
+  }
+
+  if(awaitingNext && e.key === 'Enter'){
+    goToNextPuzzle();
+    return;
+  }
+
+  if(!gameActive && e.key !== 'Enter') return;
+
+  const map = {
+    '+':'+',
+    '-':'-',
+    '*':'*',
+    '/':'/',
+    '(':'(',
+    ')':')'
+  };
+
+  if(map[e.key]){
+    addOperator(map[e.key]);
+    return;
+  }
+
+  if(e.key === 'Backspace'){
+    e.preventDefault();
+    undo();
+    return;
+  }
+
+  if(e.key === 'Enter'){
+    if(overlayEl.style.display === 'flex'){
+      restartGame();
+    }else{
+      checkAnswer();
+    }
+    return;
+  }
+
+  const digit = Number(e.key);
+  if(Number.isInteger(digit)){
+    const idx = currentNums.findIndex((n,i)=>n === digit && !used[i]);
+    if(idx !== -1){
+      used[idx] = true;
+      insertToken({type:'num', value:String(digit), index:idx});
+      renderNumbers();
+      renderExpression();
+    }
+  }
+});
+
+renderRanking();
+restartGame();
+</script>
+</body>
+</html>
